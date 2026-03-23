@@ -50,7 +50,7 @@ header {
   gap: 10px;
 }
 .logo img {
-  height: 36px;
+  height: 48px;
   width: auto;
 }
 
@@ -438,8 +438,8 @@ header {
   width: 100%;
 }
 .role-box .role-logo {
-  height: 56px;
-  margin-bottom: 8px;
+  height: 72px;
+  margin-bottom: 12px;
 }
 .role-box p {
   color: var(--text-muted);
@@ -537,5 +537,5 @@ header {
   .lyrics-block { padding: 18px 20px; }
   header { padding: 14px 16px; }
   .tabs { padding: 10px 16px; }
-  .logo img { height: 28px; }
+  .logo img { height: 36px; }
 }
