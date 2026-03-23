@@ -449,6 +449,8 @@
     .tabs { padding: 10px 16px; }
   }
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -470,7 +472,7 @@
 <div class="page active" id="page-setlist">
   <div class="firebase-notice">
     <div class="dot"></div>
-    <span>Modo demo — Los datos se guardan localmente. Conecta Firebase para sincronización en tiempo real con tu equipo.</span>
+    <span>Conectado — Los cambios se sincronizan en tiempo real con tu equipo.</span>
   </div>
 
   <h1 class="section-title">Servicio de hoy</h1>
@@ -583,7 +585,23 @@ Santo, Santo, Santo..."></textarea>
 
 <script>
 // ──────────────────────────────────────────────────────
-// DATA — canciones de ejemplo
+// FIREBASE INIT
+// ──────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyCvvuj8B8HJvzjew32ZqsOxd-P6xwug7QQ",
+  authDomain: "jubal-1cbcc.firebaseapp.com",
+  databaseURL: "https://jubal-1cbcc-default-rtdb.firebaseio.com",
+  projectId: "jubal-1cbcc",
+  storageBucket: "jubal-1cbcc.firebasestorage.app",
+  messagingSenderId: "607684618832",
+  appId: "1:607684618832:web:369dca080c4e20eb89bf55"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ──────────────────────────────────────────────────────
+// DATA — canciones de ejemplo (solo para primera carga)
 // ──────────────────────────────────────────────────────
 const defaultSongs = [
   {
@@ -738,14 +756,46 @@ Su nombre alabamos`
 // ──────────────────────────────────────────────────────
 // STATE
 // ──────────────────────────────────────────────────────
-let songs = JSON.parse(localStorage.getItem('songs')) || defaultSongs;
-let setlist = JSON.parse(localStorage.getItem('setlist')) || [];
+let songs = [];
+let setlist = [];
 let prevPage = 'setlist';
 let deleteTargetId = null;
+let firebaseReady = false;
 
 function save() {
-  localStorage.setItem('songs', JSON.stringify(songs));
-  localStorage.setItem('setlist', JSON.stringify(setlist));
+  db.ref('songs').set(songs);
+  db.ref('setlist').set(setlist);
+}
+
+// ──────────────────────────────────────────────────────
+// FIREBASE LISTENERS (tiempo real)
+// ──────────────────────────────────────────────────────
+db.ref('songs').on('value', snap => {
+  const data = snap.val();
+  if (data) {
+    songs = Array.isArray(data) ? data.filter(Boolean) : Object.values(data);
+  } else if (!firebaseReady) {
+    // Primera vez: subir canciones de ejemplo
+    songs = defaultSongs;
+    db.ref('songs').set(songs);
+  } else {
+    songs = [];
+  }
+  firebaseReady = true;
+  renderCurrentPage();
+});
+
+db.ref('setlist').on('value', snap => {
+  const data = snap.val();
+  setlist = data ? (Array.isArray(data) ? data.filter(Boolean) : Object.values(data)) : [];
+  renderCurrentPage();
+});
+
+function renderCurrentPage() {
+  const activePage = document.querySelector('.page.active');
+  if (!activePage) return;
+  if (activePage.id === 'page-setlist') renderSetlist();
+  if (activePage.id === 'page-repertorio') renderRepertorio(document.getElementById('search-input')?.value || '');
 }
 
 // ──────────────────────────────────────────────────────
@@ -977,8 +1027,6 @@ const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto
 const now = new Date();
 document.getElementById('today-date').textContent =
   `${days[now.getDay()]}, ${now.getDate()} de ${months[now.getMonth()]} ${now.getFullYear()}`;
-
-renderSetlist();
 </script>
 </body>
 </html>
