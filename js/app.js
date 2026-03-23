@@ -14,6 +14,12 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// Helper: date to YYYY-MM-DD string
+function pad2(date) {
+  const p = n => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
+}
+
 // ──────────────────────────────────────────────────────
 // ROLES: lider, musico, cantante
 // ──────────────────────────────────────────────────────
@@ -472,9 +478,9 @@ function renderActivitiesList() {
   const container = document.getElementById('activities-list');
   if (!container) return;
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const today = `${pad2(new Date())}`;
   const upcoming = activities
-    .filter(a => a.date >= todayStr)
+    .filter(a => a.date >= today)
     .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
 
   if (upcoming.length === 0) {
@@ -503,9 +509,9 @@ function renderDashboardActivities() {
   const container = document.getElementById('dashboard-activities-list');
   if (!container) return;
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const today = `${pad2(new Date())}`;
   const upcoming = activities
-    .filter(a => a.date >= todayStr)
+    .filter(a => a.date >= today)
     .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''))
     .slice(0, 3);
 
@@ -595,11 +601,9 @@ function showToast(msg) {
 // ──────────────────────────────────────────────────────
 // INIT
 // ──────────────────────────────────────────────────────
-const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-const now = new Date();
-
-// Set default service date to today
-const todayStr = now.toISOString().split('T')[0];
-document.getElementById('service-date').value = todayStr;
-selectedServiceDate = todayStr;
+const initToday = pad2(new Date());
+const serviceDate = document.getElementById('service-date');
+if (serviceDate) {
+  serviceDate.value = initToday;
+  selectedServiceDate = initToday;
+}
