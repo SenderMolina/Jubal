@@ -407,6 +407,79 @@
     50% { opacity: 0.3; }
   }
 
+  /* ── ROLE SCREEN ── */
+  .role-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .role-screen.hidden { display: none; }
+  .role-box {
+    text-align: center;
+    max-width: 360px;
+    width: 100%;
+  }
+  .role-box h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .role-box p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 32px;
+  }
+  .role-options { display: flex; flex-direction: column; gap: 12px; }
+  .role-option {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.18s;
+    text-align: left;
+  }
+  .role-option:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .role-option-title {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 4px;
+  }
+  .role-option-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .password-input-wrap {
+    margin-top: 12px;
+    display: none;
+  }
+  .password-input-wrap.show { display: flex; gap: 8px; }
+  .password-input-wrap input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+  }
+  .password-input-wrap input:focus { border-color: var(--accent); }
+  .password-error {
+    color: var(--red);
+    font-size: 0.8rem;
+    margin-top: 8px;
+    display: none;
+  }
+  .password-error.show { display: block; }
+
   /* Modal */
   .modal-overlay {
     display: none;
@@ -454,18 +527,42 @@
 </head>
 <body>
 
+<!-- ══════════════ ROLE SELECTION ══════════════ -->
+<div class="role-screen" id="role-screen">
+  <div class="role-box">
+    <h1>Jubal &#9835;</h1>
+    <p>Selecciona cómo quieres entrar</p>
+    <div class="role-options">
+      <div class="role-option" onclick="enterAs('musico')">
+        <div class="role-option-title">Músico</div>
+        <div class="role-option-desc">Ver el setlist del día con letra y acordes</div>
+      </div>
+      <div class="role-option" id="leader-option" onclick="togglePasswordInput()">
+        <div class="role-option-title">Líder de alabanza</div>
+        <div class="role-option-desc">Administrar repertorio y armar el setlist</div>
+        <div class="password-input-wrap" id="password-wrap">
+          <input type="password" id="leader-password" placeholder="Contraseña" onkeydown="if(event.key==='Enter')checkPassword()">
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); checkPassword()">Entrar</button>
+        </div>
+        <div class="password-error" id="password-error">Contraseña incorrecta</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <header>
   <div class="logo">Repertorio <span>&#9835;</span></div>
   <div class="header-actions">
-    <span class="role-badge">Líder</span>
-    <button class="btn btn-primary btn-sm" onclick="showTab('agregar')">+ Añadir</button>
+    <span class="role-badge" id="role-badge-display"></span>
+    <button class="btn btn-primary btn-sm leader-only" onclick="showTab('agregar')">+ Añadir</button>
+    <button class="btn btn-ghost btn-sm" onclick="changeRole()">Cambiar rol</button>
   </div>
 </header>
 
 <nav class="tabs">
   <div class="tab active" onclick="showTab('setlist')" id="tab-setlist">Servicio de hoy</div>
   <div class="tab" onclick="showTab('repertorio')" id="tab-repertorio">Repertorio</div>
-  <div class="tab" onclick="showTab('agregar')" id="tab-agregar">Añadir alabanza</div>
+  <div class="tab leader-only" onclick="showTab('agregar')" id="tab-agregar">Añadir alabanza</div>
 </nav>
 
 <!-- ══════════════ SETLIST PAGE ══════════════ -->
@@ -599,6 +696,76 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+
+// ──────────────────────────────────────────────────────
+// ROLES
+// ──────────────────────────────────────────────────────
+let currentRole = sessionStorage.getItem('role') || null;
+
+// Guardar contraseña en Firebase (solo la primera vez)
+db.ref('config/leaderPassword').once('value', snap => {
+  if (!snap.val()) db.ref('config/leaderPassword').set('musicman');
+});
+
+function togglePasswordInput() {
+  const wrap = document.getElementById('password-wrap');
+  wrap.classList.toggle('show');
+  if (wrap.classList.contains('show')) {
+    document.getElementById('leader-password').focus();
+  }
+}
+
+function checkPassword() {
+  const input = document.getElementById('leader-password').value;
+  db.ref('config/leaderPassword').once('value', snap => {
+    if (input === snap.val()) {
+      enterAs('lider');
+    } else {
+      document.getElementById('password-error').classList.add('show');
+      setTimeout(() => document.getElementById('password-error').classList.remove('show'), 2000);
+    }
+  });
+}
+
+function enterAs(role) {
+  currentRole = role;
+  sessionStorage.setItem('role', role);
+  document.getElementById('role-screen').classList.add('hidden');
+  applyRole();
+}
+
+function changeRole() {
+  sessionStorage.removeItem('role');
+  currentRole = null;
+  document.getElementById('role-screen').classList.remove('hidden');
+  document.getElementById('password-wrap').classList.remove('show');
+  document.getElementById('leader-password').value = '';
+  document.getElementById('password-error').classList.remove('show');
+}
+
+function applyRole() {
+  const isLeader = currentRole === 'lider';
+  document.getElementById('role-badge-display').textContent = isLeader ? 'Líder' : 'Músico';
+  document.querySelectorAll('.leader-only').forEach(el => {
+    el.style.display = isLeader ? '' : 'none';
+  });
+  // Si es músico y está en la página de agregar, redirigir
+  if (!isLeader) {
+    const active = document.querySelector('.page.active');
+    if (active && active.id === 'page-agregar') showTab('setlist');
+  }
+  renderCurrentPage();
+}
+
+function isLeader() {
+  return currentRole === 'lider';
+}
+
+// Verificar si ya tiene rol guardado
+if (currentRole) {
+  document.getElementById('role-screen').classList.add('hidden');
+  applyRole();
+}
 
 // ──────────────────────────────────────────────────────
 // DATA — canciones de ejemplo (solo para primera carga)
@@ -894,7 +1061,7 @@ function renderSetlist() {
         <div style="display:flex; gap:6px; align-items:center;">
           ${s.key ? `<span class="tag tag-key">${s.key}</span>` : ''}
           ${s.bpm ? `<span class="tag tag-bpm">${s.bpm}</span>` : ''}
-          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); removeFromSetlist(${s.id})">✕</button>
+          ${isLeader() ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); removeFromSetlist(${s.id})">✕</button>` : ''}
         </div>
       </div>`).join('') +
     `</div>`;
@@ -941,8 +1108,8 @@ function renderRepertorio(filter = '') {
       <div class="song-row-actions">
         ${setlist.includes(s.id)
           ? `<span class="in-setlist-badge">En setlist</span>`
-          : `<button class="btn btn-ghost btn-sm" onclick="addToSetlist(${s.id})">+ Setlist</button>`}
-        <button class="btn btn-danger btn-sm" onclick="openDeleteModal(${s.id})">✕</button>
+          : isLeader() ? `<button class="btn btn-ghost btn-sm" onclick="addToSetlist(${s.id})">+ Setlist</button>` : ''}
+        ${isLeader() ? `<button class="btn btn-danger btn-sm" onclick="openDeleteModal(${s.id})">✕</button>` : ''}
       </div>
     </div>`).join('');
 }
