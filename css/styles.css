@@ -438,7 +438,8 @@ header {
   width: 100%;
 }
 .role-box .role-logo {
-  height: 100px;
+  height: 200px;
+  width: auto;
   margin-bottom: 16px;
 }
 .role-box p {
@@ -537,6 +538,15 @@ header {
 }
 .modal-sub { font-size: 0.83rem; color: var(--text-muted); margin-bottom: 20px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+/* ── DATE PICKER (servicios) ── */
+.date-picker-wrap {
+  margin-bottom: 24px;
+}
+.date-picker-input {
+  max-width: 220px;
+  cursor: pointer;
+}
 
 /* ── CALENDAR ── */
 .calendar-wrapper {

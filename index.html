@@ -18,11 +18,18 @@
     <img src="jubal_logo.png" alt="Jubal" class="role-logo">
     <p>Selecciona cómo quieres entrar</p>
     <div class="role-options">
+      <div class="role-option" onclick="enterAs('cantante')">
+        <img src="musician_icon.png" alt="" class="role-option-icon">
+        <div>
+          <div class="role-option-title">Cantante</div>
+          <div class="role-option-desc">Ver el setlist con letras (sin acordes)</div>
+        </div>
+      </div>
       <div class="role-option" onclick="enterAs('musico')">
         <img src="musician_icon.png" alt="" class="role-option-icon">
         <div>
           <div class="role-option-title">Músico</div>
-          <div class="role-option-desc">Ver el setlist del día con letra y acordes</div>
+          <div class="role-option-desc">Ver el setlist con letras y acordes</div>
         </div>
       </div>
       <div class="role-option" id="leader-option" onclick="togglePasswordInput()">
@@ -51,24 +58,25 @@
 </header>
 
 <nav class="tabs">
-  <div class="tab active" onclick="showTab('setlist')" id="tab-setlist">Servicio de hoy</div>
+  <div class="tab active" onclick="showTab('servicios')" id="tab-servicios">Servicios</div>
   <div class="tab" onclick="showTab('repertorio')" id="tab-repertorio">Repertorio</div>
   <div class="tab" onclick="showTab('actividades')" id="tab-actividades">Actividades</div>
   <div class="tab leader-only" onclick="showTab('agregar')" id="tab-agregar">Añadir alabanza</div>
 </nav>
 
-<!-- ══════════════ SETLIST PAGE ══════════════ -->
-<div class="page active" id="page-setlist">
+<!-- ══════════════ SERVICIOS PAGE ══════════════ -->
+<div class="page active" id="page-servicios">
   <div class="firebase-notice">
     <div class="dot"></div>
     <span>Conectado — Los cambios se sincronizan en tiempo real con tu equipo.</span>
   </div>
 
-  <h1 class="section-title">Servicio de hoy</h1>
-  <p class="section-subtitle">Selecciona las canciones desde el repertorio y aparecerán aquí.</p>
+  <h1 class="section-title">Servicios</h1>
+  <p class="section-subtitle">Selecciona la fecha del servicio para ver o armar el setlist.</p>
 
-  <div class="date-display">
-    📅 <span id="today-date"></span>
+  <div class="date-picker-wrap">
+    <label class="form-label">Fecha del servicio</label>
+    <input type="date" class="form-input date-picker-input" id="service-date" onchange="onServiceDateChange()">
   </div>
 
   <div id="setlist-container"></div>
@@ -112,7 +120,6 @@
   </div>
   <p class="section-subtitle">Calendario de actividades del grupo.</p>
 
-  <!-- Calendar -->
   <div class="calendar-wrapper">
     <div class="calendar-header">
       <button class="btn btn-ghost btn-sm" onclick="changeMonth(-1)">←</button>
@@ -122,7 +129,6 @@
     <div class="calendar-grid" id="calendar-grid"></div>
   </div>
 
-  <!-- Upcoming list -->
   <h2 class="section-title" style="margin-top:28px; font-size:1.1rem;">Próximas actividades</h2>
   <div id="activities-list" style="margin-top:12px;"></div>
 </div>

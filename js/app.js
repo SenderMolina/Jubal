@@ -15,7 +15,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 // ──────────────────────────────────────────────────────
-// ROLES
+// ROLES: lider, musico, cantante
 // ──────────────────────────────────────────────────────
 let currentRole = sessionStorage.getItem('role') || null;
 
@@ -61,20 +61,20 @@ function changeRole() {
 
 function applyRole() {
   const leader = currentRole === 'lider';
-  document.getElementById('role-badge-display').textContent = leader ? 'Líder' : 'Músico';
+  const roleLabels = { lider: 'Líder', musico: 'Músico', cantante: 'Cantante' };
+  document.getElementById('role-badge-display').textContent = roleLabels[currentRole] || '';
   document.querySelectorAll('.leader-only').forEach(el => {
     el.style.display = leader ? '' : 'none';
   });
   if (!leader) {
     const active = document.querySelector('.page.active');
-    if (active && active.id === 'page-agregar') showTab('setlist');
+    if (active && active.id === 'page-agregar') showTab('servicios');
   }
   renderCurrentPage();
 }
 
-function isLeader() {
-  return currentRole === 'lider';
-}
+function isLeader() { return currentRole === 'lider'; }
+function isCantante() { return currentRole === 'cantante'; }
 
 if (currentRole) {
   document.getElementById('role-screen').classList.add('hidden');
@@ -85,171 +85,29 @@ if (currentRole) {
 // DATA — canciones de ejemplo (solo para primera carga)
 // ──────────────────────────────────────────────────────
 const defaultSongs = [
-  {
-    id: 1,
-    title: "Cuán Grande es Él",
-    author: "Stuart K. Hine",
-    key: "G",
-    bpm: 68,
-    lyrics: `[Intro]
-G  C  G  D
-
-[Verso 1]
-G                    C
-Señor mi Dios, al contemplar los cielos
-G               D
-El firmamento y las estrellas mil
-G                    C
-Al oír Tu voz en los poderosos truenos
-G         D       G
-Y ver brillar el sol en su cenit
-
-[Coro]
-G       C      G
-Mi alma canta a Ti
-          D
-Señor mi Dios
-G       C       G    D    G
-¡Cuán grande es Él! ¡Cuán grande es Él!`
-  },
-  {
-    id: 2,
-    title: "Santo, Santo, Santo",
-    author: "Reginald Heber",
-    key: "D",
-    bpm: 72,
-    lyrics: `[Intro]
-D  A  Bm  G  D
-
-[Verso 1]
-D          A        D
-Santo, Santo, Santo
-D          G        A
-Señor omnipotente
-D         A          D    G
-Siempre el labio mío loores te dará
-D        A        D
-Santo, Santo, Santo
-G          D       A    D
-Te adoro reverente
-
-[Coro]
-G         D
-Santo, Santo, Santo
-A              D
-Es el Señor`
-  },
-  {
-    id: 3,
-    title: "Majestuoso",
-    author: "Danilo Montero",
-    key: "E",
-    bpm: 80,
-    lyrics: `[Intro]
-E  B  C#m  A  (x2)
-
-[Verso 1]
-E              B
-Majestuoso y poderoso
-C#m              A
-Digno de honor y gloria eres Tú
-E              B
-Rey de reyes, Señor de señores
-C#m          A      B
-Todo el cielo proclama Tu valor
-
-[Pre-Coro]
-C#m        B
-Oh, Te alabamos
-A           B
-Oh, Te adoramos
-
-[Coro]
-E         B
-¡Majestuoso!
-C#m         A
-¡Glorioso!
-E          B
-¡Poderoso!
-C#m    A    B
-¡Rey!`
-  },
-  {
-    id: 4,
-    title: "Tu Fidelidad",
-    author: "Marcos Witt",
-    key: "C",
-    bpm: 64,
-    lyrics: `[Intro]
-C  G  Am  F  (x2)
-
-[Verso 1]
-C           G
-Grande es Tu fidelidad
-Am            F
-Dios mi padre, no hay sombra
-C           G
-De variación en Ti
-Am      F
-Siempre el mismo serás
-
-[Coro]
-C         G         Am
-Grande es Tu fidelidad
-F          C
-Grande es Tu fidelidad
-G              Am    F
-Cada mañana se renueva
-C  G  Am  F
-Tu misericordia en mí`
-  },
-  {
-    id: 5,
-    title: "Eres Todo Poderoso",
-    author: "Generación 12",
-    key: "A",
-    bpm: 88,
-    lyrics: `[Intro]
-A  E  F#m  D  (x2)
-
-[Verso 1]
-A                E
-Eres todopoderoso, eres asombroso
-F#m                D
-Digno de alabanza, digno de honor
-A                E
-Tu nombre es eterno, Tu nombre es glorioso
-F#m             D        E
-Por siempre y para siempre, Señor
-
-[Coro]
-A       E
-¡Aleluya! ¡Aleluya!
-F#m      D
-Al Rey adoramos
-A       E
-¡Aleluya! ¡Aleluya!
-F#m    D   E   A
-Su nombre alabamos`
-  }
+  { id: 1, title: "Cuán Grande es Él", author: "Stuart K. Hine", key: "G", bpm: 68, lyrics: `[Intro]\nG  C  G  D\n\n[Verso 1]\nG                    C\nSeñor mi Dios, al contemplar los cielos\nG               D\nEl firmamento y las estrellas mil\nG                    C\nAl oír Tu voz en los poderosos truenos\nG         D       G\nY ver brillar el sol en su cenit\n\n[Coro]\nG       C      G\nMi alma canta a Ti\n          D\nSeñor mi Dios\nG       C       G    D    G\n¡Cuán grande es Él! ¡Cuán grande es Él!` },
+  { id: 2, title: "Santo, Santo, Santo", author: "Reginald Heber", key: "D", bpm: 72, lyrics: `[Intro]\nD  A  Bm  G  D\n\n[Verso 1]\nD          A        D\nSanto, Santo, Santo\nD          G        A\nSeñor omnipotente\nD         A          D    G\nSiempre el labio mío loores te dará\nD        A        D\nSanto, Santo, Santo\nG          D       A    D\nTe adoro reverente\n\n[Coro]\nG         D\nSanto, Santo, Santo\nA              D\nEs el Señor` },
+  { id: 3, title: "Majestuoso", author: "Danilo Montero", key: "E", bpm: 80, lyrics: `[Intro]\nE  B  C#m  A  (x2)\n\n[Verso 1]\nE              B\nMajestuoso y poderoso\nC#m              A\nDigno de honor y gloria eres Tú\nE              B\nRey de reyes, Señor de señores\nC#m          A      B\nTodo el cielo proclama Tu valor\n\n[Coro]\nE         B\n¡Majestuoso!\nC#m         A\n¡Glorioso!\nE          B\n¡Poderoso!\nC#m    A    B\n¡Rey!` },
+  { id: 4, title: "Tu Fidelidad", author: "Marcos Witt", key: "C", bpm: 64, lyrics: `[Intro]\nC  G  Am  F  (x2)\n\n[Verso 1]\nC           G\nGrande es Tu fidelidad\nAm            F\nDios mi padre, no hay sombra\nC           G\nDe variación en Ti\nAm      F\nSiempre el mismo serás\n\n[Coro]\nC         G         Am\nGrande es Tu fidelidad\nF          C\nGrande es Tu fidelidad\nG              Am    F\nCada mañana se renueva\nC  G  Am  F\nTu misericordia en mí` },
+  { id: 5, title: "Eres Todo Poderoso", author: "Generación 12", key: "A", bpm: 88, lyrics: `[Intro]\nA  E  F#m  D  (x2)\n\n[Verso 1]\nA                E\nEres todopoderoso, eres asombroso\nF#m                D\nDigno de alabanza, digno de honor\nA                E\nTu nombre es eterno, Tu nombre es glorioso\nF#m             D        E\nPor siempre y para siempre, Señor\n\n[Coro]\nA       E\n¡Aleluya! ¡Aleluya!\nF#m      D\nAl Rey adoramos\nA       E\n¡Aleluya! ¡Aleluya!\nF#m    D   E   A\nSu nombre alabamos` }
 ];
 
 // ──────────────────────────────────────────────────────
 // STATE
 // ──────────────────────────────────────────────────────
 let songs = [];
-let setlist = [];
+let services = {};  // { "2026-03-30": [songId1, songId2, ...], ... }
 let activities = [];
-let prevPage = 'setlist';
+let prevPage = 'servicios';
 let deleteTargetId = null;
 let deleteActivityId = null;
 let firebaseReady = false;
+let selectedServiceDate = '';
 let calendarMonth = new Date().getMonth();
 let calendarYear = new Date().getFullYear();
 
-function save() {
-  db.ref('songs').set(songs);
-  db.ref('setlist').set(setlist);
+function saveServices() {
+  db.ref('services').set(services);
 }
 
 // ──────────────────────────────────────────────────────
@@ -269,9 +127,8 @@ db.ref('songs').on('value', snap => {
   renderCurrentPage();
 });
 
-db.ref('setlist').on('value', snap => {
-  const data = snap.val();
-  setlist = data ? (Array.isArray(data) ? data.filter(Boolean) : Object.values(data)) : [];
+db.ref('services').on('value', snap => {
+  services = snap.val() || {};
   renderCurrentPage();
 });
 
@@ -288,7 +145,7 @@ db.ref('activities').on('value', snap => {
 function renderCurrentPage() {
   const activePage = document.querySelector('.page.active');
   if (!activePage) return;
-  if (activePage.id === 'page-setlist') {
+  if (activePage.id === 'page-servicios') {
     renderSetlist();
     renderDashboardActivities();
   }
@@ -309,14 +166,14 @@ function showTab(name) {
   const tab = document.getElementById('tab-' + name);
   if (tab) tab.classList.add('active');
 
-  if (name === 'setlist') { renderSetlist(); renderDashboardActivities(); }
+  if (name === 'servicios') { renderSetlist(); renderDashboardActivities(); }
   if (name === 'repertorio') renderRepertorio();
   if (name === 'agregar') clearForm();
   if (name === 'actividades') { renderCalendar(); renderActivitiesList(); }
 }
 
 function showSong(id, from) {
-  prevPage = from || 'setlist';
+  prevPage = from || 'servicios';
   const song = songs.find(s => s.id === id);
   if (!song) return;
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -339,12 +196,29 @@ function goBack() {
 }
 
 // ──────────────────────────────────────────────────────
-// RENDER LYRICS
+// SERVICE DATE
 // ──────────────────────────────────────────────────────
+function onServiceDateChange() {
+  selectedServiceDate = document.getElementById('service-date').value;
+  renderSetlist();
+}
+
+function getSelectedSetlist() {
+  if (!selectedServiceDate) return [];
+  return services[selectedServiceDate] || [];
+}
+
+// ──────────────────────────────────────────────────────
+// RENDER LYRICS (respeta rol: cantante sin acordes)
+// ──────────────────────────────────────────────────────
+const chordRegex = /^[A-G][#b]?(m|maj|min|sus|aug|dim|add|2|4|5|6|7|9|11|13|\/)?[A-G0-9#b]*(\s+[A-G][#b]?(m|maj|min|sus|aug|dim|add|2|4|5|6|7|9|11|13|\/)?[A-G0-9#b]*)*\s*$/;
+
 function renderLyrics(text) {
   const container = document.getElementById('sv-lyrics');
   container.innerHTML = '';
   const lines = text.split('\n');
+  const hideChords = isCantante();
+
   lines.forEach(line => {
     if (!line.trim()) {
       const br = document.createElement('div');
@@ -352,11 +226,16 @@ function renderLyrics(text) {
       container.appendChild(br);
       return;
     }
+    const isChordLine = chordRegex.test(line.trim());
+
+    // Si es cantante, omitir líneas de acordes
+    if (hideChords && isChordLine) return;
+
     const div = document.createElement('div');
     if (/^\[.+\]$/.test(line.trim())) {
       div.className = 'section-label';
       div.textContent = line.trim().replace(/[\[\]]/g, '');
-    } else if (/^[A-G][#b]?(m|maj|min|sus|aug|dim|add|2|4|5|6|7|9|11|13|\/)?[A-G0-9#b]*(\s+[A-G][#b]?(m|maj|min|sus|aug|dim|add|2|4|5|6|7|9|11|13|\/)?[A-G0-9#b]*)*\s*$/.test(line.trim())) {
+    } else if (isChordLine) {
       div.className = 'chord-line';
       div.textContent = line;
     } else {
@@ -368,24 +247,35 @@ function renderLyrics(text) {
 }
 
 // ──────────────────────────────────────────────────────
-// SETLIST
+// SETLIST (por fecha de servicio)
 // ──────────────────────────────────────────────────────
 function renderSetlist() {
   const container = document.getElementById('setlist-container');
-  const inSetlist = songs.filter(s => setlist.includes(s.id));
+
+  if (!selectedServiceDate) {
+    container.innerHTML = `
+      <div class="setlist-empty">
+        <div class="icon">📅</div>
+        <p>Selecciona una fecha de servicio para ver o armar el setlist.</p>
+      </div>`;
+    return;
+  }
+
+  const setlistIds = getSelectedSetlist();
+  const inSetlist = setlistIds.map(id => songs.find(s => s.id === id)).filter(Boolean);
 
   if (inSetlist.length === 0) {
     container.innerHTML = `
       <div class="setlist-empty">
         <div class="icon">🎶</div>
-        <p>No hay canciones en el setlist de hoy.<br>Ve al <strong>Repertorio</strong> y agrégalas.</p>
+        <p>No hay canciones para este servicio.${isLeader() ? '<br>Ve al <strong>Repertorio</strong> y agrégalas.' : ''}</p>
       </div>`;
     return;
   }
 
   container.innerHTML = `<div class="setlist-songs">` +
     inSetlist.map((s, i) => `
-      <div class="setlist-card" onclick="showSong(${s.id}, 'setlist')">
+      <div class="setlist-card" onclick="showSong(${s.id}, 'servicios')">
         <div class="song-num">${i + 1}</div>
         <div class="song-info">
           <div class="song-title">${s.title}</div>
@@ -403,16 +293,24 @@ function renderSetlist() {
 }
 
 function removeFromSetlist(id) {
-  setlist = setlist.filter(x => x !== id);
-  save();
+  if (!selectedServiceDate) return;
+  const list = services[selectedServiceDate] || [];
+  services[selectedServiceDate] = list.filter(x => x !== id);
+  if (services[selectedServiceDate].length === 0) delete services[selectedServiceDate];
+  saveServices();
   renderSetlist();
 }
 
 function addToSetlist(id) {
-  if (!setlist.includes(id)) {
-    setlist.push(id);
-    save();
-    showToast('Añadida al servicio de hoy ✓');
+  if (!selectedServiceDate) {
+    alert('Primero selecciona una fecha de servicio en la pestaña Servicios.');
+    return;
+  }
+  if (!services[selectedServiceDate]) services[selectedServiceDate] = [];
+  if (!services[selectedServiceDate].includes(id)) {
+    services[selectedServiceDate].push(id);
+    saveServices();
+    showToast('Añadida al servicio ✓');
     renderRepertorio();
   }
 }
@@ -434,6 +332,8 @@ function renderRepertorio(filter = '') {
     return;
   }
 
+  const currentSetlist = getSelectedSetlist();
+
   grid.innerHTML = filtered.map(s => `
     <div class="song-row">
       <div class="song-row-info" onclick="showSong(${s.id}, 'repertorio')" style="cursor:pointer;">
@@ -441,7 +341,7 @@ function renderRepertorio(filter = '') {
         <div class="song-row-sub">${[s.author, s.key ? '🎵 ' + s.key : '', s.bpm ? '♩ ' + s.bpm + ' bpm' : ''].filter(Boolean).join(' · ')}</div>
       </div>
       <div class="song-row-actions">
-        ${setlist.includes(s.id)
+        ${currentSetlist.includes(s.id)
           ? `<span class="in-setlist-badge">En setlist</span>`
           : isLeader() ? `<button class="btn btn-ghost btn-sm" onclick="addToSetlist(${s.id})">+ Setlist</button>` : ''}
         ${isLeader() ? `<button class="btn btn-danger btn-sm" onclick="openDeleteModal(${s.id})">✕</button>` : ''}
@@ -480,7 +380,7 @@ function saveSong() {
   };
 
   songs.push(newSong);
-  save();
+  db.ref('songs').set(songs);
   showToast('Alabanza guardada ✓');
   clearForm();
   showTab('repertorio');
@@ -504,8 +404,13 @@ function closeModal() {
 function confirmDelete() {
   if (!deleteTargetId) return;
   songs = songs.filter(s => s.id !== deleteTargetId);
-  setlist = setlist.filter(x => x !== deleteTargetId);
-  save();
+  // Remove from all services
+  for (const date in services) {
+    services[date] = services[date].filter(x => x !== deleteTargetId);
+    if (services[date].length === 0) delete services[date];
+  }
+  db.ref('songs').set(songs);
+  saveServices();
   closeModal();
   showToast('Alabanza eliminada');
   renderRepertorio();
@@ -536,7 +441,6 @@ function renderCalendar() {
   const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
   const today = new Date();
 
-  // Event dates for this month
   const eventDates = new Set();
   activities.forEach(a => {
     if (!a.date) return;
@@ -548,7 +452,6 @@ function renderCalendar() {
 
   let html = dayNamesShort.map(d => `<div class="calendar-day-header">${d}</div>`).join('');
 
-  // Empty cells before first day
   for (let i = 0; i < firstDay; i++) {
     html += `<div class="calendar-day other-month"></div>`;
   }
@@ -627,7 +530,6 @@ function renderDashboardActivities() {
   }).join('');
 }
 
-// Activity modals
 function openAddActivity() {
   document.getElementById('act-title').value = '';
   document.getElementById('act-date').value = '';
@@ -696,5 +598,8 @@ function showToast(msg) {
 const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const now = new Date();
-document.getElementById('today-date').textContent =
-  `${days[now.getDay()]}, ${now.getDate()} de ${months[now.getMonth()]} ${now.getFullYear()}`;
+
+// Set default service date to today
+const todayStr = now.toISOString().split('T')[0];
+document.getElementById('service-date').value = todayStr;
+selectedServiceDate = todayStr;
