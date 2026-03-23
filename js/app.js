@@ -32,6 +32,7 @@ db.ref('config/leaderPassword').once('value', snap => {
 function togglePasswordInput() {
   const wrap = document.getElementById('password-wrap');
   wrap.classList.toggle('show');
+  document.getElementById('leader-option').classList.toggle('selected', wrap.classList.contains('show'));
   if (wrap.classList.contains('show')) {
     document.getElementById('leader-password').focus();
   }
@@ -61,6 +62,7 @@ function changeRole() {
   currentRole = null;
   document.getElementById('role-screen').classList.remove('hidden');
   document.getElementById('password-wrap').classList.remove('show');
+  document.getElementById('leader-option').classList.remove('selected');
   document.getElementById('leader-password').value = '';
   document.getElementById('password-error').classList.remove('show');
 }
@@ -104,6 +106,7 @@ const defaultSongs = [
 let songs = [];
 let services = {};  // { "2026-03-30": [songId1, songId2, ...], ... }
 let activities = [];
+let songTypes = [];
 let prevPage = 'servicios';
 let deleteTargetId = null;
 let deleteActivityId = null;
@@ -111,6 +114,7 @@ let firebaseReady = false;
 let selectedServiceDate = '';
 let calendarMonth = new Date().getMonth();
 let calendarYear = new Date().getFullYear();
+let activeTypeFilter = '';
 
 function saveServices() {
   db.ref('services').set(services);
@@ -148,6 +152,14 @@ db.ref('activities').on('value', snap => {
   renderCurrentPage();
 });
 
+db.ref('songTypes').on('value', snap => {
+  const data = snap.val();
+  songTypes = data ? (Array.isArray(data) ? data.filter(Boolean) : Object.values(data)) : [];
+  updateTypeSelect();
+  renderTypeFilters();
+  renderCurrentPage();
+});
+
 function renderCurrentPage() {
   const activePage = document.querySelector('.page.active');
   if (!activePage) return;
@@ -160,6 +172,7 @@ function renderCurrentPage() {
     renderCalendar();
     renderActivitiesList();
   }
+  if (activePage.id === 'page-tipos') renderTipos();
 }
 
 // ──────────────────────────────────────────────────────
@@ -173,9 +186,10 @@ function showTab(name) {
   if (tab) tab.classList.add('active');
 
   if (name === 'servicios') { renderSetlist(); renderDashboardActivities(); }
-  if (name === 'repertorio') renderRepertorio();
-  if (name === 'agregar') clearForm();
+  if (name === 'repertorio') { renderTypeFilters(); renderRepertorio(); }
+  if (name === 'agregar') { updateTypeSelect(); clearForm(); }
   if (name === 'actividades') { renderCalendar(); renderActivitiesList(); }
+  if (name === 'tipos') renderTipos();
 }
 
 function showSong(id, from) {
@@ -324,14 +338,37 @@ function addToSetlist(id) {
 // ──────────────────────────────────────────────────────
 // REPERTORIO
 // ──────────────────────────────────────────────────────
+function renderTypeFilters() {
+  const container = document.getElementById('type-filters');
+  if (!container) return;
+  if (songTypes.length === 0) { container.innerHTML = ''; return; }
+  const pills = songTypes.map(t =>
+    `<button class="type-pill ${activeTypeFilter === String(t.id) ? 'active' : ''}" onclick="setTypeFilter('${t.id}')">${t.name}</button>`
+  );
+  container.innerHTML = `<div class="type-pills">
+    <button class="type-pill ${!activeTypeFilter ? 'active' : ''}" onclick="setTypeFilter('')">Todos</button>
+    ${pills.join('')}
+  </div>`;
+}
+
+function setTypeFilter(typeId) {
+  activeTypeFilter = typeId;
+  renderTypeFilters();
+  renderRepertorio(document.getElementById('search-input')?.value || '');
+}
+
 function renderRepertorio(filter = '') {
   const grid = document.getElementById('songs-grid');
   const q = filter.toLowerCase();
-  const filtered = songs.filter(s =>
+  let filtered = songs.filter(s =>
     s.title.toLowerCase().includes(q) ||
     (s.author || '').toLowerCase().includes(q) ||
     (s.key || '').toLowerCase().includes(q)
   );
+
+  if (activeTypeFilter) {
+    filtered = filtered.filter(s => String(s.type) === activeTypeFilter);
+  }
 
   if (filtered.length === 0) {
     grid.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted)">Sin resultados.</div>`;
@@ -340,19 +377,24 @@ function renderRepertorio(filter = '') {
 
   const currentSetlist = getSelectedSetlist();
 
-  grid.innerHTML = filtered.map(s => `
+  grid.innerHTML = filtered.map(s => {
+    const typeObj = songTypes.find(t => String(t.id) === String(s.type));
+    const typeBadge = typeObj ? `<span class="tag tag-type">${typeObj.name}</span>` : '';
+    return `
     <div class="song-row">
       <div class="song-row-info" onclick="showSong(${s.id}, 'repertorio')" style="cursor:pointer;">
         <div class="song-row-title">${s.title}</div>
         <div class="song-row-sub">${[s.author, s.key ? '🎵 ' + s.key : '', s.bpm ? '♩ ' + s.bpm + ' bpm' : ''].filter(Boolean).join(' · ')}</div>
       </div>
       <div class="song-row-actions">
+        ${typeBadge}
         ${currentSetlist.includes(s.id)
           ? `<span class="in-setlist-badge">En setlist</span>`
           : isLeader() ? `<button class="btn btn-ghost btn-sm" onclick="addToSetlist(${s.id})">+ Setlist</button>` : ''}
         ${isLeader() ? `<button class="btn btn-danger btn-sm" onclick="openDeleteModal(${s.id})">✕</button>` : ''}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function filterSongs(val) {
@@ -362,9 +404,17 @@ function filterSongs(val) {
 // ──────────────────────────────────────────────────────
 // FORM
 // ──────────────────────────────────────────────────────
+function updateTypeSelect() {
+  const select = document.getElementById('f-type');
+  if (!select) return;
+  select.innerHTML = `<option value="">— Sin tipo —</option>` +
+    songTypes.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+}
+
 function clearForm() {
-  ['f-title','f-author','f-key','f-bpm','f-lyrics'].forEach(id => {
+  ['f-title','f-author','f-key','f-bpm','f-lyrics','f-type'].forEach(id => {
     const el = document.getElementById(id);
+    if (!el) return;
     if (el.tagName === 'SELECT') el.selectedIndex = 0;
     else el.value = '';
   });
@@ -382,6 +432,7 @@ function saveSong() {
     author: document.getElementById('f-author').value.trim(),
     key: document.getElementById('f-key').value,
     bpm: parseInt(document.getElementById('f-bpm').value) || null,
+    type: document.getElementById('f-type').value || null,
     lyrics
   };
 
@@ -468,7 +519,10 @@ function renderCalendar() {
     const classes = ['calendar-day'];
     if (isToday) classes.push('today');
     if (hasEvent) classes.push('has-event');
-    html += `<div class="${classes.join(' ')}">${d}</div>`;
+    if (isLeader()) classes.push('clickable');
+    const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const clickAttr = isLeader() ? `onclick="openAddActivity('${dateStr}')"` : '';
+    html += `<div class="${classes.join(' ')}" ${clickAttr}>${d}</div>`;
   }
 
   grid.innerHTML = html;
@@ -536,9 +590,9 @@ function renderDashboardActivities() {
   }).join('');
 }
 
-function openAddActivity() {
+function openAddActivity(date) {
   document.getElementById('act-title').value = '';
-  document.getElementById('act-date').value = '';
+  document.getElementById('act-date').value = date || '';
   document.getElementById('act-time').value = '';
   document.getElementById('act-desc').value = '';
   document.getElementById('modal-activity').classList.add('open');
@@ -596,6 +650,47 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ──────────────────────────────────────────────────────
+// TIPOS DE ALABANZAS
+// ──────────────────────────────────────────────────────
+function renderTipos() {
+  const container = document.getElementById('tipos-list');
+  if (!container) return;
+  if (songTypes.length === 0) {
+    container.innerHTML = '<div class="activity-empty">No hay tipos. Agrega el primero arriba.</div>';
+    return;
+  }
+  container.innerHTML = songTypes.map(t => {
+    const count = songs.filter(s => String(s.type) === String(t.id)).length;
+    return `
+    <div class="song-row">
+      <div class="song-row-info">
+        <div class="song-row-title">${t.name}</div>
+        <div class="song-row-sub">${count} alabanza${count !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="song-row-actions">
+        <button class="btn btn-danger btn-sm" onclick="deleteType(${t.id})">✕ Eliminar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function saveType() {
+  const name = document.getElementById('tipo-name').value.trim();
+  if (!name) { alert('El nombre es obligatorio.'); return; }
+  const newType = { id: Date.now(), name };
+  songTypes.push(newType);
+  db.ref('songTypes').set(songTypes);
+  document.getElementById('tipo-name').value = '';
+  showToast('Tipo guardado ✓');
+}
+
+function deleteType(id) {
+  songTypes = songTypes.filter(t => t.id !== id);
+  db.ref('songTypes').set(songTypes.length ? songTypes : null);
+  showToast('Tipo eliminado');
 }
 
 // ──────────────────────────────────────────────────────

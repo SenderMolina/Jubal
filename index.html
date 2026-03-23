@@ -6,7 +6,7 @@
 <title>Jubal - Repertorio de Alabanzas</title>
 <link rel="icon" type="image/png" href="icon.png">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=3">
+<link rel="stylesheet" href="css/styles.css?v=4">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 </head>
@@ -20,29 +20,20 @@
     <div class="role-options">
       <div class="role-option" onclick="enterAs('cantante')">
         <img src="musician_icon.png" alt="" class="role-option-icon">
-        <div>
-          <div class="role-option-title">Cantante</div>
-          <div class="role-option-desc">Ver el setlist con letras (sin acordes)</div>
-        </div>
+        <div class="role-option-title">Cantante</div>
       </div>
       <div class="role-option" onclick="enterAs('musico')">
         <img src="musician_icon.png" alt="" class="role-option-icon">
-        <div>
-          <div class="role-option-title">Músico</div>
-          <div class="role-option-desc">Ver el setlist con letras y acordes</div>
-        </div>
+        <div class="role-option-title">Músico</div>
       </div>
       <div class="role-option" id="leader-option" onclick="togglePasswordInput()">
         <img src="leader_icon.png" alt="" class="role-option-icon">
-        <div style="flex:1">
-          <div class="role-option-title">Líder de alabanza</div>
-          <div class="role-option-desc">Administrar repertorio y armar el setlist</div>
-          <div class="password-input-wrap" id="password-wrap">
-            <input type="password" id="leader-password" placeholder="Contraseña" onkeydown="if(event.key==='Enter')checkPassword()">
-            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); checkPassword()">Entrar</button>
-          </div>
-          <div class="password-error" id="password-error">Contraseña incorrecta</div>
+        <div class="role-option-title">Líder</div>
+        <div class="password-input-wrap" id="password-wrap">
+          <input type="password" id="leader-password" placeholder="Contraseña" onkeydown="if(event.key==='Enter')checkPassword()">
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); checkPassword()">Entrar</button>
         </div>
+        <div class="password-error" id="password-error">Contraseña incorrecta</div>
       </div>
     </div>
   </div>
@@ -62,6 +53,7 @@
   <div class="tab" onclick="showTab('repertorio')" id="tab-repertorio">Repertorio</div>
   <div class="tab" onclick="showTab('actividades')" id="tab-actividades">Actividades</div>
   <div class="tab leader-only" onclick="showTab('agregar')" id="tab-agregar">Añadir alabanza</div>
+  <div class="tab leader-only" onclick="showTab('tipos')" id="tab-tipos">Tipos</div>
 </nav>
 
 <!-- ══════════════ SERVICIOS PAGE ══════════════ -->
@@ -109,15 +101,14 @@
     <input class="search-input" type="text" placeholder="Buscar por título, tono, autor…" oninput="filterSongs(this.value)" id="search-input">
   </div>
 
+  <div id="type-filters"></div>
+
   <div class="songs-grid" id="songs-grid"></div>
 </div>
 
 <!-- ══════════════ ACTIVIDADES PAGE ══════════════ -->
 <div class="page" id="page-actividades">
-  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-    <h1 class="section-title">Actividades</h1>
-    <button class="btn btn-primary btn-sm leader-only" onclick="openAddActivity()">+ Nueva actividad</button>
-  </div>
+  <h1 class="section-title">Actividades</h1>
   <p class="section-subtitle">Calendario de actividades del grupo.</p>
 
   <div class="calendar-wrapper">
@@ -167,6 +158,13 @@
   </div>
 
   <div class="form-group">
+    <label class="form-label">Tipo</label>
+    <select class="form-select" id="f-type">
+      <option value="">— Sin tipo —</option>
+    </select>
+  </div>
+
+  <div class="form-group">
     <label class="form-label">Letra y acordes *</label>
     <textarea class="form-textarea" id="f-lyrics" placeholder="Escribe los acordes en una línea y la letra debajo. Usa etiquetas como [Intro], [Verso 1], [Coro], [Puente]…
 
@@ -190,6 +188,19 @@ Santo, Santo, Santo..."></textarea>
     <button class="btn btn-ghost" onclick="showTab('repertorio')">Cancelar</button>
     <button class="btn btn-primary" onclick="saveSong()">Guardar alabanza</button>
   </div>
+</div>
+
+<!-- ══════════════ TIPOS PAGE ══════════════ -->
+<div class="page" id="page-tipos">
+  <h1 class="section-title">Tipos de alabanzas</h1>
+  <p class="section-subtitle">Categorías para organizar el repertorio.</p>
+
+  <div style="display:flex; gap:10px; max-width:400px; margin-bottom:24px;">
+    <input class="form-input" id="tipo-name" type="text" placeholder="Ej: Adoración, Alabanza, Reflexión…" onkeydown="if(event.key==='Enter')saveType()">
+    <button class="btn btn-primary" onclick="saveType()">Agregar</button>
+  </div>
+
+  <div id="tipos-list"></div>
 </div>
 
 <!-- ══════════════ MODAL CONFIRM DELETE ══════════════ -->
@@ -250,6 +261,6 @@ Santo, Santo, Santo..."></textarea>
 
 <div class="success-toast" id="toast"></div>
 
-<script src="js/app.js?v=3"></script>
+<script src="js/app.js?v=4"></script>
 </body>
 </html>
