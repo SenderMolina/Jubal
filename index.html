@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jubal - Repertorio de Alabanzas</title>
+<link rel="icon" type="image/png" href="icon.png">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -18,17 +19,23 @@
     <p>Selecciona cómo quieres entrar</p>
     <div class="role-options">
       <div class="role-option" onclick="enterAs('musico')">
-        <div class="role-option-title">Músico</div>
-        <div class="role-option-desc">Ver el setlist del día con letra y acordes</div>
+        <img src="musician_icon.png" alt="" class="role-option-icon">
+        <div>
+          <div class="role-option-title">Músico</div>
+          <div class="role-option-desc">Ver el setlist del día con letra y acordes</div>
+        </div>
       </div>
       <div class="role-option" id="leader-option" onclick="togglePasswordInput()">
-        <div class="role-option-title">Líder de alabanza</div>
-        <div class="role-option-desc">Administrar repertorio y armar el setlist</div>
-        <div class="password-input-wrap" id="password-wrap">
-          <input type="password" id="leader-password" placeholder="Contraseña" onkeydown="if(event.key==='Enter')checkPassword()">
-          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); checkPassword()">Entrar</button>
+        <img src="leader_icon.png" alt="" class="role-option-icon">
+        <div style="flex:1">
+          <div class="role-option-title">Líder de alabanza</div>
+          <div class="role-option-desc">Administrar repertorio y armar el setlist</div>
+          <div class="password-input-wrap" id="password-wrap">
+            <input type="password" id="leader-password" placeholder="Contraseña" onkeydown="if(event.key==='Enter')checkPassword()">
+            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); checkPassword()">Entrar</button>
+          </div>
+          <div class="password-error" id="password-error">Contraseña incorrecta</div>
         </div>
-        <div class="password-error" id="password-error">Contraseña incorrecta</div>
       </div>
     </div>
   </div>
@@ -46,6 +53,7 @@
 <nav class="tabs">
   <div class="tab active" onclick="showTab('setlist')" id="tab-setlist">Servicio de hoy</div>
   <div class="tab" onclick="showTab('repertorio')" id="tab-repertorio">Repertorio</div>
+  <div class="tab" onclick="showTab('actividades')" id="tab-actividades">Actividades</div>
   <div class="tab leader-only" onclick="showTab('agregar')" id="tab-agregar">Añadir alabanza</div>
 </nav>
 
@@ -64,6 +72,12 @@
   </div>
 
   <div id="setlist-container"></div>
+
+  <!-- Dashboard: próximas actividades -->
+  <div class="dashboard-activities" id="dashboard-activities">
+    <h2 class="section-title" style="margin-top:32px; font-size:1.2rem;">Próximas actividades</h2>
+    <div id="dashboard-activities-list"></div>
+  </div>
 </div>
 
 <!-- ══════════════ SONG VIEW ══════════════ -->
@@ -88,6 +102,29 @@
   </div>
 
   <div class="songs-grid" id="songs-grid"></div>
+</div>
+
+<!-- ══════════════ ACTIVIDADES PAGE ══════════════ -->
+<div class="page" id="page-actividades">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+    <h1 class="section-title">Actividades</h1>
+    <button class="btn btn-primary btn-sm leader-only" onclick="openAddActivity()">+ Nueva actividad</button>
+  </div>
+  <p class="section-subtitle">Calendario de actividades del grupo.</p>
+
+  <!-- Calendar -->
+  <div class="calendar-wrapper">
+    <div class="calendar-header">
+      <button class="btn btn-ghost btn-sm" onclick="changeMonth(-1)">←</button>
+      <span class="calendar-month-label" id="calendar-month-label"></span>
+      <button class="btn btn-ghost btn-sm" onclick="changeMonth(1)">→</button>
+    </div>
+    <div class="calendar-grid" id="calendar-grid"></div>
+  </div>
+
+  <!-- Upcoming list -->
+  <h2 class="section-title" style="margin-top:28px; font-size:1.1rem;">Próximas actividades</h2>
+  <div id="activities-list" style="margin-top:12px;"></div>
 </div>
 
 <!-- ══════════════ AGREGAR PAGE ══════════════ -->
@@ -158,6 +195,49 @@ Santo, Santo, Santo..."></textarea>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-danger" onclick="confirmDelete()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL ADD ACTIVITY ══════════════ -->
+<div class="modal-overlay" id="modal-activity">
+  <div class="modal">
+    <div class="modal-title">Nueva actividad</div>
+    <div class="modal-sub">Agrega un evento al calendario del grupo.</div>
+    <div class="form-group">
+      <label class="form-label">Título *</label>
+      <input class="form-input" id="act-title" type="text" placeholder="Ej: Ensayo general">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Fecha *</label>
+        <input class="form-input" id="act-date" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hora</label>
+        <input class="form-input" id="act-time" type="time">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descripción</label>
+      <input class="form-input" id="act-desc" type="text" placeholder="Ej: Preparar canciones para el domingo">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeActivityModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveActivity()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL DELETE ACTIVITY ══════════════ -->
+<div class="modal-overlay" id="modal-delete-activity">
+  <div class="modal">
+    <div class="modal-title">¿Eliminar actividad?</div>
+    <div class="modal-sub" id="modal-delete-activity-name"></div>
+    <p style="font-size:0.85rem; color:var(--text-mid);">Esta acción no se puede deshacer.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeDeleteActivityModal()">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmDeleteActivity()">Eliminar</button>
     </div>
   </div>
 </div>

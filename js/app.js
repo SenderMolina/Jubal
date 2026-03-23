@@ -19,7 +19,6 @@ const db = firebase.database();
 // ──────────────────────────────────────────────────────
 let currentRole = sessionStorage.getItem('role') || null;
 
-// Guardar contraseña en Firebase (solo la primera vez)
 db.ref('config/leaderPassword').once('value', snap => {
   if (!snap.val()) db.ref('config/leaderPassword').set('musicman');
 });
@@ -77,7 +76,6 @@ function isLeader() {
   return currentRole === 'lider';
 }
 
-// Verificar si ya tiene rol guardado
 if (currentRole) {
   document.getElementById('role-screen').classList.add('hidden');
   applyRole();
@@ -241,9 +239,13 @@ Su nombre alabamos`
 // ──────────────────────────────────────────────────────
 let songs = [];
 let setlist = [];
+let activities = [];
 let prevPage = 'setlist';
 let deleteTargetId = null;
+let deleteActivityId = null;
 let firebaseReady = false;
+let calendarMonth = new Date().getMonth();
+let calendarYear = new Date().getFullYear();
 
 function save() {
   db.ref('songs').set(songs);
@@ -273,11 +275,28 @@ db.ref('setlist').on('value', snap => {
   renderCurrentPage();
 });
 
+db.ref('activities').on('value', snap => {
+  const data = snap.val();
+  if (data) {
+    activities = Array.isArray(data) ? data.filter(Boolean) : Object.values(data);
+  } else {
+    activities = [];
+  }
+  renderCurrentPage();
+});
+
 function renderCurrentPage() {
   const activePage = document.querySelector('.page.active');
   if (!activePage) return;
-  if (activePage.id === 'page-setlist') renderSetlist();
+  if (activePage.id === 'page-setlist') {
+    renderSetlist();
+    renderDashboardActivities();
+  }
   if (activePage.id === 'page-repertorio') renderRepertorio(document.getElementById('search-input')?.value || '');
+  if (activePage.id === 'page-actividades') {
+    renderCalendar();
+    renderActivitiesList();
+  }
 }
 
 // ──────────────────────────────────────────────────────
@@ -290,9 +309,10 @@ function showTab(name) {
   const tab = document.getElementById('tab-' + name);
   if (tab) tab.classList.add('active');
 
-  if (name === 'setlist') renderSetlist();
+  if (name === 'setlist') { renderSetlist(); renderDashboardActivities(); }
   if (name === 'repertorio') renderRepertorio();
   if (name === 'agregar') clearForm();
+  if (name === 'actividades') { renderCalendar(); renderActivitiesList(); }
 }
 
 function showSong(id, from) {
@@ -489,6 +509,175 @@ function confirmDelete() {
   closeModal();
   showToast('Alabanza eliminada');
   renderRepertorio();
+}
+
+// ──────────────────────────────────────────────────────
+// ACTIVITIES / CALENDAR
+// ──────────────────────────────────────────────────────
+const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const monthNamesShort = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const dayNamesShort = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+function changeMonth(dir) {
+  calendarMonth += dir;
+  if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+  if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const label = document.getElementById('calendar-month-label');
+  const grid = document.getElementById('calendar-grid');
+  if (!label || !grid) return;
+
+  label.textContent = `${monthNames[calendarMonth]} ${calendarYear}`;
+
+  const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  const today = new Date();
+
+  // Event dates for this month
+  const eventDates = new Set();
+  activities.forEach(a => {
+    if (!a.date) return;
+    const [y, m] = a.date.split('-').map(Number);
+    if (y === calendarYear && m - 1 === calendarMonth) {
+      eventDates.add(parseInt(a.date.split('-')[2]));
+    }
+  });
+
+  let html = dayNamesShort.map(d => `<div class="calendar-day-header">${d}</div>`).join('');
+
+  // Empty cells before first day
+  for (let i = 0; i < firstDay; i++) {
+    html += `<div class="calendar-day other-month"></div>`;
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === today.getDate() && calendarMonth === today.getMonth() && calendarYear === today.getFullYear();
+    const hasEvent = eventDates.has(d);
+    const classes = ['calendar-day'];
+    if (isToday) classes.push('today');
+    if (hasEvent) classes.push('has-event');
+    html += `<div class="${classes.join(' ')}">${d}</div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+function renderActivitiesList() {
+  const container = document.getElementById('activities-list');
+  if (!container) return;
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const upcoming = activities
+    .filter(a => a.date >= todayStr)
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
+
+  if (upcoming.length === 0) {
+    container.innerHTML = '<div class="activity-empty">No hay actividades próximas.</div>';
+    return;
+  }
+
+  container.innerHTML = upcoming.map(a => {
+    const [y, m, d] = a.date.split('-').map(Number);
+    return `
+    <div class="activity-card">
+      <div class="activity-date-badge">
+        <div class="day">${d}</div>
+        <div class="month">${monthNamesShort[m - 1]}</div>
+      </div>
+      <div class="activity-info">
+        <div class="activity-title">${a.title}</div>
+        <div class="activity-meta">${a.time ? a.time + ' · ' : ''}${a.description || ''}</div>
+      </div>
+      ${isLeader() ? `<button class="btn btn-danger btn-sm" onclick="openDeleteActivityModal(${a.id})">✕</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderDashboardActivities() {
+  const container = document.getElementById('dashboard-activities-list');
+  if (!container) return;
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const upcoming = activities
+    .filter(a => a.date >= todayStr)
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''))
+    .slice(0, 3);
+
+  if (upcoming.length === 0) {
+    container.innerHTML = '<div class="activity-empty">No hay actividades próximas.</div>';
+    return;
+  }
+
+  container.innerHTML = upcoming.map(a => {
+    const [y, m, d] = a.date.split('-').map(Number);
+    return `
+    <div class="activity-card">
+      <div class="activity-date-badge">
+        <div class="day">${d}</div>
+        <div class="month">${monthNamesShort[m - 1]}</div>
+      </div>
+      <div class="activity-info">
+        <div class="activity-title">${a.title}</div>
+        <div class="activity-meta">${a.time ? a.time + ' · ' : ''}${a.description || ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Activity modals
+function openAddActivity() {
+  document.getElementById('act-title').value = '';
+  document.getElementById('act-date').value = '';
+  document.getElementById('act-time').value = '';
+  document.getElementById('act-desc').value = '';
+  document.getElementById('modal-activity').classList.add('open');
+}
+
+function closeActivityModal() {
+  document.getElementById('modal-activity').classList.remove('open');
+}
+
+function saveActivity() {
+  const title = document.getElementById('act-title').value.trim();
+  const date = document.getElementById('act-date').value;
+  if (!title) { alert('El título es obligatorio.'); return; }
+  if (!date) { alert('La fecha es obligatoria.'); return; }
+
+  const activity = {
+    id: Date.now(),
+    title,
+    date,
+    time: document.getElementById('act-time').value || '',
+    description: document.getElementById('act-desc').value.trim()
+  };
+
+  activities.push(activity);
+  db.ref('activities').set(activities);
+  closeActivityModal();
+  showToast('Actividad guardada ✓');
+}
+
+function openDeleteActivityModal(id) {
+  deleteActivityId = id;
+  const act = activities.find(a => a.id === id);
+  document.getElementById('modal-delete-activity-name').textContent = `"${act?.title}"`;
+  document.getElementById('modal-delete-activity').classList.add('open');
+}
+
+function closeDeleteActivityModal() {
+  document.getElementById('modal-delete-activity').classList.remove('open');
+  deleteActivityId = null;
+}
+
+function confirmDeleteActivity() {
+  if (!deleteActivityId) return;
+  activities = activities.filter(a => a.id !== deleteActivityId);
+  db.ref('activities').set(activities.length ? activities : null);
+  closeDeleteActivityModal();
+  showToast('Actividad eliminada');
 }
 
 // ──────────────────────────────────────────────────────

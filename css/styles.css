@@ -438,8 +438,8 @@ header {
   width: 100%;
 }
 .role-box .role-logo {
-  height: 72px;
-  margin-bottom: 12px;
+  height: 100px;
+  margin-bottom: 16px;
 }
 .role-box p {
   color: var(--text-muted);
@@ -456,6 +456,15 @@ header {
   transition: all 0.18s;
   text-align: left;
   box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.role-option-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 .role-option:hover { border-color: var(--teal); transform: translateY(-2px); box-shadow: var(--shadow-hover); }
 .role-option-title {
@@ -528,6 +537,125 @@ header {
 }
 .modal-sub { font-size: 0.83rem; color: var(--text-muted); margin-bottom: 20px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+/* ── CALENDAR ── */
+.calendar-wrapper {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.calendar-month-label {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.1rem;
+  color: var(--text);
+  text-transform: capitalize;
+}
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.calendar-day-header {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  padding: 6px 0;
+}
+.calendar-day {
+  text-align: center;
+  padding: 8px 4px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--text-mid);
+  position: relative;
+  cursor: default;
+}
+.calendar-day.today {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 50%;
+}
+.calendar-day.has-event {
+  font-weight: 600;
+  color: var(--text);
+}
+.calendar-day.has-event::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--teal);
+}
+.calendar-day.today.has-event::after {
+  background: #fff;
+}
+.calendar-day.other-month {
+  color: var(--border);
+}
+
+/* ── ACTIVITY CARDS ── */
+.activity-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 8px;
+  box-shadow: var(--shadow);
+  transition: all 0.15s;
+}
+.activity-card:hover { border-color: var(--teal); box-shadow: var(--shadow-hover); }
+.activity-date-badge {
+  background: var(--teal-soft);
+  color: var(--teal);
+  border-radius: 10px;
+  padding: 8px 12px;
+  text-align: center;
+  min-width: 52px;
+  flex-shrink: 0;
+}
+.activity-date-badge .day {
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.activity-date-badge .month {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.activity-info { flex: 1; }
+.activity-title { font-weight: 600; font-size: 0.92rem; color: var(--text); }
+.activity-meta { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+.activity-empty {
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ── DASHBOARD ACTIVITIES ── */
+.dashboard-activities {
+  margin-top: 8px;
+}
 
 /* ── RESPONSIVE ── */
 @media (max-width: 600px) {
