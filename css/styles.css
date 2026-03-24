@@ -441,7 +441,7 @@ header {
   height: 300px;
   width: auto;
   max-width: 100%;
-  margin-bottom: 16px;
+  margin-bottom: 4px;
 }
 .role-box p {
   color: var(--text-muted);
