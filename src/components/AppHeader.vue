@@ -5,8 +5,7 @@
     </div>
     <div class="header-actions">
       <span class="role-badge">{{ roleLabels[roleStore.currentRole] }}</span>
-      <button v-if="roleStore.isLeader" class="btn btn-primary btn-sm" @click="router.push('/agregar')">+ Añadir</button>
-      <button class="btn btn-ghost btn-sm" @click="roleStore.changeRole()">Cambiar rol</button>
+<button class="btn btn-ghost btn-sm" @click="roleStore.changeRole()">Cambiar rol</button>
     </div>
   </header>
 </template>

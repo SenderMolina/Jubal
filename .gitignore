@@ -1,0 +1,7 @@
+node_modules/
+dist/
+
+# Entornos — contienen credenciales, no subir al repo
+.env.development
+.env.production
+# .env.example sí se puede commitear (no tiene credenciales reales)

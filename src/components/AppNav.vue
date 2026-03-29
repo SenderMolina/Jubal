@@ -3,7 +3,6 @@
     <RouterLink class="tab" :class="{ active: isActive('/') }" to="/">Actividades</RouterLink>
     <RouterLink class="tab" :class="{ active: isActive('/canciones') }" to="/canciones">Canciones</RouterLink>
     <template v-if="roleStore.isLeader">
-      <RouterLink class="tab" :class="{ active: isActive('/agregar') }" to="/agregar">Añadir canción</RouterLink>
       <RouterLink class="tab" :class="{ active: isActive('/tipos') }" to="/tipos">Tipos</RouterLink>
     </template>
   </nav>
