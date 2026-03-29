@@ -37,7 +37,7 @@
     </div>
 
     <div class="form-group">
-      <label class="form-label">Letra y acordes *</label>
+      <label class="form-label">Letra y acordes</label>
       <textarea class="form-textarea" v-model="form.lyrics" :placeholder="lyricsPlaceholder"></textarea>
       <div class="form-hint">Pon los acordes en una línea y la letra en la siguiente. Usa [Coro], [Verso], [Puente] para secciones.</div>
     </div>
@@ -79,7 +79,6 @@ Santo, Santo, Santo...`
 
 function save() {
   if (!form.value.title.trim()) { alert('El título es obligatorio.'); return }
-  if (!form.value.lyrics.trim()) { alert('La letra y acordes son obligatorios.'); return }
 
   store.songs.push({
     id:     Date.now(),
@@ -88,7 +87,7 @@ function save() {
     key:    form.value.key,
     bpm:    form.value.bpm || null,
     type:   form.value.type || null,
-    lyrics: form.value.lyrics.trim(),
+    lyrics: form.value.lyrics.trim() || '',
   })
   store.saveSongs()
   showToast('Alabanza guardada ✓')

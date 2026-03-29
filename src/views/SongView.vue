@@ -71,10 +71,18 @@
 
     <!-- View mode -->
     <div v-else class="lyrics-block">
-      <template v-for="(line, i) in renderedLines" :key="i">
-        <div v-if="line.type === 'spacer'" style="height:10px;"></div>
-        <div v-else :class="line.type">{{ line.text }}</div>
+      <template v-if="renderedLines.length">
+        <template v-for="(line, i) in renderedLines" :key="i">
+          <div v-if="line.type === 'spacer'" style="height:10px;"></div>
+          <div v-else :class="line.type">{{ line.text }}</div>
+        </template>
       </template>
+      <div v-else style="text-align:center;padding:40px;color:var(--text-muted)">
+        Esta canción aún no tiene letra.
+        <span v-if="roleStore.isLeader" style="display:block;margin-top:8px">
+          <button class="btn btn-ghost btn-sm" @click="startEdit">Agregar letra</button>
+        </span>
+      </div>
     </div>
   </div>
 </template>

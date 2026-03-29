@@ -56,7 +56,7 @@
 
       <!-- Letra y acordes -->
       <div class="sf-block">
-        <div class="sf-block-label">Letra y acordes <span style="color:var(--accent)">*</span></div>
+        <div class="sf-block-label">Letra y acordes</div>
         <textarea class="sf-lyrics" v-model="form.lyrics" :placeholder="lyricsPlaceholder"></textarea>
         <div class="form-hint">Acordes en su propia línea, letra debajo. Usa [Coro], [Verso], [Puente] para secciones.</div>
       </div>
@@ -173,7 +173,6 @@ function toggleForm() {
 
 function _doSave() {
   if (!form.value.title.trim()) { alert('El título es obligatorio.'); return false }
-  if (!form.value.lyrics.trim()) { alert('La letra y acordes son obligatorios.'); return false }
   if (form.value.key)    localStorage.setItem('lastSongKey',    form.value.key)
   if (form.value.author) localStorage.setItem('lastSongAuthor', form.value.author.trim())
   store.songs.push({
@@ -183,7 +182,7 @@ function _doSave() {
     key:    form.value.key,
     bpm:    form.value.bpm || null,
     type:   form.value.type || null,
-    lyrics: form.value.lyrics.trim(),
+    lyrics: form.value.lyrics.trim() || '',
   })
   store.saveSongs()
   return true
