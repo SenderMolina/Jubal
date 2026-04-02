@@ -58,11 +58,17 @@
             <input class="form-input" v-model.number="form.bpm" type="number" placeholder="Ej: 75" min="40" max="200">
           </div>
           <div class="sf-field">
-            <label class="sf-label">Tipo</label>
-            <select class="form-select" v-model="form.type">
-              <option value="">— Sin tipo —</option>
-              <option v-for="t in store.songTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
-            </select>
+            <label class="sf-label">Tipos</label>
+            <div class="type-pills type-pills--form">
+              <button
+                v-for="t in store.songTypes"
+                :key="t.id"
+                type="button"
+                class="type-pill"
+                :class="{ active: form.types.includes(t.id) }"
+                @click="toggleFormType(t.id)"
+              >{{ t.name }}</button>
+            </div>
           </div>
         </div>
       </div>
@@ -125,8 +131,15 @@ const meta = computed(() => {
 
 function startEdit() {
   const s = song.value
-  form.value = { title: s.title, author: s.author || '', key: s.key || '', bpm: s.bpm || null, type: s.type || '', lyrics: s.lyrics || '' }
+  const types = Array.isArray(s.types) ? [...s.types] : (s.type ? [s.type] : [])
+  form.value = { title: s.title, author: s.author || '', key: s.key || '', bpm: s.bpm || null, types, lyrics: s.lyrics || '' }
   editing.value = true
+}
+
+function toggleFormType(id) {
+  const idx = form.value.types.indexOf(id)
+  if (idx >= 0) form.value.types.splice(idx, 1)
+  else form.value.types.push(id)
 }
 
 function cancelEdit() {
@@ -138,7 +151,7 @@ function saveEdit() {
   if (!form.value.title.trim()) { alert('El título es obligatorio.'); return }
   const idx = store.songs.findIndex(s => s.id === Number(route.params.id))
   if (idx === -1) return
-  store.songs[idx] = { ...store.songs[idx], ...form.value, title: form.value.title.trim(), lyrics: form.value.lyrics.trim(), bpm: form.value.bpm || null, type: form.value.type || null }
+  store.songs[idx] = { ...store.songs[idx], ...form.value, title: form.value.title.trim(), lyrics: form.value.lyrics.trim(), bpm: form.value.bpm || null, types: form.value.types.length ? form.value.types : [] }
   store.saveSongs()
   editing.value = false
   showDetails.value = false

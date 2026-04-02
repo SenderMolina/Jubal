@@ -1,14 +1,5 @@
 <template>
   <div>
-    <!-- ── Header ── -->
-    <div class="songs-header">
-      <div>
-        <h1 class="songs-header__title">Repertorios</h1>
-        <p class="songs-header__subtitle">Listas reutilizables de canciones</p>
-      </div>
-      <span class="songs-header__count">{{ store.repertoires.length }}</span>
-    </div>
-
     <!-- ── Crear nuevo repertorio ── -->
     <div v-if="roleStore.isLeader && !creating" class="repertorio-create-trigger" @click="startCreate">
       <span class="repertorio-create-trigger__icon">+</span>

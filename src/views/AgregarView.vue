@@ -29,11 +29,17 @@
     </div>
 
     <div class="form-group">
-      <label class="form-label">Tipo</label>
-      <select class="form-select" v-model="form.type">
-        <option value="">— Sin tipo —</option>
-        <option v-for="t in store.songTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
-      </select>
+      <label class="form-label">Tipos</label>
+      <div class="type-pills type-pills--form">
+        <button
+          v-for="t in store.songTypes"
+          :key="t.id"
+          type="button"
+          class="type-pill"
+          :class="{ active: form.types.includes(t.id) }"
+          @click="toggleFormType(t.id)"
+        >{{ t.name }}</button>
+      </div>
     </div>
 
     <div class="form-group">
@@ -61,7 +67,13 @@ const { showToast } = useToast()
 
 const keys = ['A','A#/Bb','B','C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab']
 
-const emptyForm = () => ({ title: '', author: '', key: '', bpm: null, type: '', lyrics: '' })
+const emptyForm = () => ({ title: '', author: '', key: '', bpm: null, types: [], lyrics: '' })
+
+function toggleFormType(id) {
+  const idx = form.value.types.indexOf(id)
+  if (idx >= 0) form.value.types.splice(idx, 1)
+  else form.value.types.push(id)
+}
 const form = ref(emptyForm())
 
 const lyricsPlaceholder = `[Intro]
@@ -86,7 +98,7 @@ function save() {
     author: form.value.author.trim(),
     key:    form.value.key,
     bpm:    form.value.bpm || null,
-    type:   form.value.type || null,
+    types:  form.value.types.length ? form.value.types : [],
     lyrics: form.value.lyrics.trim() || '',
   })
   store.saveSongs()

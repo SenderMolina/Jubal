@@ -3,15 +3,7 @@
 
     <!-- ── Lista de canciones ── -->
     <template v-if="!showForm">
-      <div class="songs-header">
-        <div>
-          <h1 class="songs-header__title">Canciones aprendidas</h1>
-          <p class="songs-header__subtitle">Biblioteca disponible para la banda</p>
-        </div>
-        <span class="songs-header__count">{{ store.songs.length }}</span>
-      </div>
-
-      <div class="search-box">
+      <div class="search-box" style="margin-top:12px">
         <span class="search-box__icon">🔍</span>
         <input
           class="search-box__input"
@@ -22,14 +14,14 @@
       </div>
 
       <div v-if="store.songTypes.length" class="type-pills">
-        <button class="type-pill" :class="{ active: !activeType }" @click="activeType = ''">Todos</button>
         <button
           v-for="t in store.songTypes"
           :key="t.id"
           class="type-pill"
-          :class="{ active: activeType === String(t.id) }"
-          @click="activeType = String(t.id)"
+          :class="{ active: activeTypes.includes(String(t.id)) }"
+          @click="toggleType(String(t.id))"
         >{{ t.name }}</button>
+        <button v-if="activeTypes.length" class="type-pill type-pill--clear" @click="activeTypes = []">✕</button>
       </div>
 
       <div v-if="filteredSongs.length === 0" class="songs-empty">
@@ -50,7 +42,7 @@
             <div class="song-card__meta">
               <span v-if="s.key" class="song-card__tag song-card__tag--key">♪ {{ s.key }}</span>
               <span v-if="s.bpm" class="song-card__tag song-card__tag--bpm">♩ {{ s.bpm }} bpm</span>
-              <span v-if="typeLabel(s)" class="song-card__tag song-card__tag--type">{{ typeLabel(s) }}</span>
+              <span v-for="tl in typeLabels(s)" :key="tl" class="song-card__tag song-card__tag--type">{{ tl }}</span>
             </div>
           </div>
           <span class="song-card__chevron">›</span>
@@ -125,11 +117,17 @@
             <input class="form-input" v-model.number="form.bpm" type="number" placeholder="Ej: 75" min="40" max="200">
           </div>
           <div class="sf-field">
-            <label class="sf-label">Tipo</label>
-            <select class="form-select" v-model="form.type">
-              <option value="">— Sin tipo —</option>
-              <option v-for="t in store.songTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
-            </select>
+            <label class="sf-label">Tipos</label>
+            <div class="type-pills type-pills--form">
+              <button
+                v-for="t in store.songTypes"
+                :key="t.id"
+                type="button"
+                class="type-pill"
+                :class="{ active: form.types.includes(t.id) }"
+                @click="toggleFormType(t.id)"
+              >{{ t.name }}</button>
+            </div>
           </div>
         </div>
       </div>
@@ -160,7 +158,7 @@ const { showToast } = useToast()
 const { confirm }   = useConfirm()
 
 const query       = ref('')
-const activeType  = ref('')
+const activeTypes = ref([])
 const showForm    = ref(false)
 const showDetails = ref(false)
 const ctxMenu     = ref({ visible: false, x: 0, y: 0, song: null })
@@ -184,7 +182,7 @@ const emptyForm = () => ({
   author: localStorage.getItem('lastSongAuthor') || '',
   key:    localStorage.getItem('lastSongKey')    || '',
   bpm:    null,
-  type:   '',
+  types:  [],
   lyrics: '',
 })
 const form = ref(emptyForm())
@@ -217,7 +215,7 @@ function _doSave() {
     author: form.value.author.trim(),
     key:    form.value.key,
     bpm:    form.value.bpm || null,
-    type:   form.value.type || null,
+    types:  form.value.types.length ? form.value.types : [],
     lyrics: form.value.lyrics.trim() || '',
   })
   store.saveSongs()
@@ -239,6 +237,24 @@ function saveAndAnother() {
   form.value = emptyForm()
 }
 
+function toggleType(id) {
+  const idx = activeTypes.value.indexOf(id)
+  if (idx >= 0) activeTypes.value.splice(idx, 1)
+  else activeTypes.value.push(id)
+}
+
+function toggleFormType(id) {
+  const idx = form.value.types.indexOf(id)
+  if (idx >= 0) form.value.types.splice(idx, 1)
+  else form.value.types.push(id)
+}
+
+function getSongTypes(s) {
+  if (Array.isArray(s.types) && s.types.length) return s.types.map(String)
+  if (s.type) return [String(s.type)]
+  return []
+}
+
 const filteredSongs = computed(() => {
   const q = query.value.toLowerCase()
   let list = store.songs.filter(s =>
@@ -247,12 +263,18 @@ const filteredSongs = computed(() => {
     (s.key||'').toLowerCase().includes(q) ||
     (s.bpm ? String(s.bpm).includes(q) : false)
   )
-  if (activeType.value) list = list.filter(s => String(s.type) === activeType.value)
+  if (activeTypes.value.length) {
+    list = list.filter(s => {
+      const sTypes = getSongTypes(s)
+      return activeTypes.value.some(at => sTypes.includes(at))
+    })
+  }
   return list
 })
 
-function typeLabel(s) {
-  return store.songTypes.find(t => String(t.id) === String(s.type))?.name || ''
+function typeLabels(s) {
+  const sTypes = getSongTypes(s)
+  return sTypes.map(tid => store.songTypes.find(t => String(t.id) === tid)?.name).filter(Boolean)
 }
 
 function openContextMenu(e, song) {

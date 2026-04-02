@@ -1,29 +1,24 @@
 <template>
   <div>
-    <h1 class="section-title">Tipos de alabanzas</h1>
-    <p class="section-subtitle">Categorías para organizar el repertorio.</p>
-
-    <div style="display:flex; gap:10px; max-width:400px; margin-bottom:24px;">
+    <div class="tipos-add" style="margin-top:12px;">
       <input
         class="form-input"
         v-model="newName"
         type="text"
-        placeholder="Ej: Adoración, Alabanza, Reflexión…"
+        placeholder="Nuevo tipo…"
         @keydown.enter="save"
       >
-      <button class="btn btn-primary" @click="save">Agregar</button>
+      <button class="tipos-add__btn" @click="save" aria-label="Agregar tipo">+</button>
     </div>
 
     <div v-if="store.songTypes.length === 0" class="activity-empty">No hay tipos. Agrega el primero arriba.</div>
-    <div v-else class="songs-grid">
-      <div v-for="t in store.songTypes" :key="t.id" class="song-row">
-        <div class="song-row-info">
-          <div class="song-row-title">{{ t.name }}</div>
-          <div class="song-row-sub">{{ songCount(t.id) }} alabanza{{ songCount(t.id) !== 1 ? 's' : '' }}</div>
+    <div v-else class="tipos-list">
+      <div v-for="t in store.songTypes" :key="t.id" class="tipos-item">
+        <div class="tipos-item__info">
+          <span class="tipos-item__name">{{ t.name }}</span>
+          <span class="tipos-item__count">{{ songCount(t.id) }}</span>
         </div>
-        <div class="song-row-actions">
-          <button class="btn btn-danger btn-sm" @click="deleteType(t)">✕ Eliminar</button>
-        </div>
+        <button class="tipos-item__delete" @click="deleteType(t)" aria-label="Eliminar tipo">✕</button>
       </div>
     </div>
   </div>
@@ -39,7 +34,10 @@ const { showToast } = useToast()
 const newName = ref('')
 
 function songCount(typeId) {
-  return store.songs.filter(s => String(s.type) === String(typeId)).length
+  return store.songs.filter(s => {
+    if (Array.isArray(s.types)) return s.types.map(String).includes(String(typeId))
+    return String(s.type) === String(typeId)
+  }).length
 }
 
 function save() {

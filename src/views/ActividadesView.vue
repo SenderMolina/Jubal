@@ -1,11 +1,7 @@
 <template>
   <div>
-    <div class="page-heading">
-      <div>
-        <h1 class="section-title">Actividades</h1>
-        <p class="section-subtitle">Eventos y servicios del grupo.</p>
-      </div>
-      <button v-if="roleStore.isLeader" class="btn btn-primary btn-sm" @click="modal?.open()">+ Nueva actividad</button>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px;margin-top:8px;">
+      <button v-if="roleStore.isLeader" class="btn btn-primary btn-sm" @click="modal?.open()">+ Agregar</button>
     </div>
 
     <div v-if="upcoming.length === 0" class="setlist-empty">

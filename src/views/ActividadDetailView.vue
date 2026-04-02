@@ -321,7 +321,8 @@ const filteredLibrary = computed(() => {
     const matchQuery = !q ||
       s.title.toLowerCase().includes(q) ||
       (s.author || '').toLowerCase().includes(q)
-    const matchType = !libraryType.value || String(s.type) === libraryType.value
+    const sTypes = Array.isArray(s.types) ? s.types.map(String) : (s.type ? [String(s.type)] : [])
+    const matchType = !libraryType.value || sTypes.includes(libraryType.value)
     return matchQuery && matchType
   })
 })
