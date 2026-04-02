@@ -52,10 +52,17 @@ export const useAppStore = defineStore('app', () => {
       : []
   })
 
-  function saveSongs()       { set(dbRef(db, 'songs'), songs.value) }
-  function saveActivities()  { set(dbRef(db, 'activities'), activities.value.length ? activities.value : null) }
-  function saveSongTypes()   { set(dbRef(db, 'songTypes'), songTypes.value.length ? songTypes.value : null) }
-  function saveRepertoires() { set(dbRef(db, 'repertoires'), repertoires.value.length ? repertoires.value : null) }
+  function saveSongs()       { set(dbRef(db, 'songs'), JSON.parse(JSON.stringify(songs.value))) }
+  function saveActivities()  { set(dbRef(db, 'activities'), activities.value.length ? JSON.parse(JSON.stringify(activities.value)) : null) }
+  function saveSongTypes()   { set(dbRef(db, 'songTypes'), songTypes.value.length ? JSON.parse(JSON.stringify(songTypes.value)) : null) }
+  function saveRepertoires() {
+    const clean = repertoires.value.map(r => ({
+      ...JSON.parse(JSON.stringify(r)),
+      songs: r.songs && r.songs.length ? r.songs : null,
+    }))
+    set(dbRef(db, 'repertoires'), clean.length ? clean : null)
+      .catch(err => console.error('Error guardando repertorios:', err))
+  }
 
   return { songs, activities, songTypes, repertoires, saveSongs, saveActivities, saveSongTypes, saveRepertoires }
 })
