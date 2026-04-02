@@ -107,6 +107,22 @@
                 </div>
               </div>
 
+              <!-- Importar repertorio -->
+              <div v-if="store.repertoires.length && selectedTiempo" class="repertorio-import-section">
+                <div class="repertorio-import-label">Importar desde repertorio</div>
+                <div class="repertorio-import-list">
+                  <button
+                    v-for="rep in store.repertoires"
+                    :key="rep.id"
+                    class="repertorio-import-btn"
+                    @click="importRepertoire(rep)"
+                  >
+                    <span class="repertorio-import-btn__name">{{ rep.name }}</span>
+                    <span class="repertorio-import-btn__count">{{ (rep.songs || []).length }} canciones</span>
+                  </button>
+                </div>
+              </div>
+
               <!-- Footer: crear tiempo -->
               <div v-if="!creatingTiempo" class="setlist-column-footer">
                 <button class="btn-create-tiempo" @click="startCreateTiempo">+ Crear tiempo</button>
@@ -362,6 +378,22 @@ function addSongToSelected(songId) {
 function removeSong(tiempo, songId) {
   tiempo.songs = tiempo.songs.filter(id => id !== songId)
   save()
+}
+
+function importRepertoire(rep) {
+  if (!selectedTiempo.value) return
+  if (!selectedTiempo.value.songs) selectedTiempo.value.songs = []
+  const existing = new Set(selectedTiempo.value.songs)
+  let added = 0
+  for (const songId of (rep.songs || [])) {
+    if (!existing.has(songId)) {
+      selectedTiempo.value.songs.push(songId)
+      existing.add(songId)
+      added++
+    }
+  }
+  save()
+  showToast(`${added} canciones importadas de "${rep.name}"`)
 }
 
 async function handleDelete() {

@@ -22,7 +22,7 @@
       <div class="icon">🎶</div>
       <p>
         No hay canciones para este servicio.
-        <template v-if="roleStore.isLeader"><br>Ve al <strong>Repertorio</strong> y agrégalas.</template>
+        <template v-if="roleStore.isLeader"><br>Ve al <strong>Repertorios</strong> y agrégalas.</template>
       </p>
     </div>
     <div v-else class="setlist-songs">

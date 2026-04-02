@@ -3,14 +3,22 @@
 
     <!-- ── Lista de canciones ── -->
     <template v-if="!showForm">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-        <h1 class="section-title" style="margin-bottom:0">Canciones</h1>
-        <button v-if="roleStore.isLeader" class="btn btn-primary btn-sm" @click="openForm">+ Añadir canción</button>
+      <div class="songs-header">
+        <div>
+          <h1 class="songs-header__title">Canciones aprendidas</h1>
+          <p class="songs-header__subtitle">Biblioteca disponible para la banda</p>
+        </div>
+        <span class="songs-header__count">{{ store.songs.length }}</span>
       </div>
-      <p class="section-subtitle">Librería de alabanzas disponibles.</p>
 
-      <div class="search-bar">
-        <input class="search-input" type="text" placeholder="Buscar por título, tono, autor…" v-model="query">
+      <div class="search-box">
+        <span class="search-box__icon">🔍</span>
+        <input
+          class="search-box__input"
+          type="text"
+          placeholder="Buscar canción, tono o BPM…"
+          v-model="query"
+        >
       </div>
 
       <div v-if="store.songTypes.length" class="type-pills">
@@ -24,19 +32,46 @@
         >{{ t.name }}</button>
       </div>
 
-      <div v-if="filteredSongs.length === 0" style="text-align:center;padding:40px;color:var(--text-muted)">Sin resultados.</div>
+      <div v-if="filteredSongs.length === 0" class="songs-empty">
+        <span class="songs-empty__icon">🎵</span>
+        <p>Sin resultados</p>
+      </div>
       <div v-else class="songs-grid">
-        <div v-for="s in filteredSongs" :key="s.id" class="song-row">
-          <div class="song-row-info" style="cursor:pointer" @click="router.push('/cancion/' + s.id)">
-            <div class="song-row-title">{{ s.title }}</div>
-            <div class="song-row-sub">{{ songMeta(s) }}</div>
+        <div
+          v-for="s in filteredSongs"
+          :key="s.id"
+          class="song-card"
+          @click="router.push('/cancion/' + s.id)"
+          @contextmenu.prevent="roleStore.isLeader && openContextMenu($event, s)"
+        >
+          <div class="song-card__body">
+            <div class="song-card__title">{{ s.title }}</div>
+            <div v-if="s.author" class="song-card__author">{{ s.author }}</div>
+            <div class="song-card__meta">
+              <span v-if="s.key" class="song-card__tag song-card__tag--key">♪ {{ s.key }}</span>
+              <span v-if="s.bpm" class="song-card__tag song-card__tag--bpm">♩ {{ s.bpm }} bpm</span>
+              <span v-if="typeLabel(s)" class="song-card__tag song-card__tag--type">{{ typeLabel(s) }}</span>
+            </div>
           </div>
-          <div class="song-row-actions">
-            <span v-if="typeLabel(s)" class="tag tag-type">{{ typeLabel(s) }}</span>
-            <button v-if="roleStore.isLeader" class="btn btn-danger btn-sm" @click="deleteSong(s)">✕</button>
-          </div>
+          <span class="song-card__chevron">›</span>
         </div>
       </div>
+
+      <!-- Context menu for delete -->
+      <Teleport to="body">
+        <div v-if="ctxMenu.visible" class="ctx-overlay" @click="closeContextMenu">
+          <div class="ctx-menu" :style="{ top: ctxMenu.y + 'px', left: ctxMenu.x + 'px' }">
+            <button class="ctx-menu__item ctx-menu__item--danger" @click="deleteSongFromCtx">
+              🗑 Eliminar canción
+            </button>
+          </div>
+        </div>
+      </Teleport>
+
+      <!-- FAB -->
+      <button v-if="roleStore.isLeader" class="fab-add-song" @click="openForm" aria-label="Añadir canción">
+        <span>+</span>
+      </button>
     </template>
 
     <!-- ── Formulario nueva canción ── -->
@@ -128,6 +163,7 @@ const query       = ref('')
 const activeType  = ref('')
 const showForm    = ref(false)
 const showDetails = ref(false)
+const ctxMenu     = ref({ visible: false, x: 0, y: 0, song: null })
 const keys = ['A','A#/Bb','B','C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab']
 
 const lyricsPlaceholder = `[Intro]
@@ -208,7 +244,8 @@ const filteredSongs = computed(() => {
   let list = store.songs.filter(s =>
     s.title.toLowerCase().includes(q) ||
     (s.author||'').toLowerCase().includes(q) ||
-    (s.key||'').toLowerCase().includes(q)
+    (s.key||'').toLowerCase().includes(q) ||
+    (s.bpm ? String(s.bpm).includes(q) : false)
   )
   if (activeType.value) list = list.filter(s => String(s.type) === activeType.value)
   return list
@@ -218,11 +255,20 @@ function typeLabel(s) {
   return store.songTypes.find(t => String(t.id) === String(s.type))?.name || ''
 }
 
-function songMeta(s) {
-  return [s.author, s.key ? '🎵 ' + s.key : '', s.bpm ? '♩ ' + s.bpm + ' bpm' : ''].filter(Boolean).join(' · ')
+function openContextMenu(e, song) {
+  const x = Math.min(e.clientX, window.innerWidth - 200)
+  const y = Math.min(e.clientY, window.innerHeight - 60)
+  ctxMenu.value = { visible: true, x, y, song }
 }
 
-async function deleteSong(s) {
+function closeContextMenu() {
+  ctxMenu.value = { visible: false, x: 0, y: 0, song: null }
+}
+
+async function deleteSongFromCtx() {
+  const s = ctxMenu.value.song
+  closeContextMenu()
+  if (!s) return
   const ok = await confirm('¿Eliminar canción?', `"${s.title}"`)
   if (!ok) return
   store.songs = store.songs.filter(x => x.id !== s.id)

@@ -12,9 +12,10 @@ const defaultSongs = [
 ]
 
 export const useAppStore = defineStore('app', () => {
-  const songs      = ref([])
-  const activities = ref([])
-  const songTypes  = ref([])
+  const songs       = ref([])
+  const activities  = ref([])
+  const songTypes   = ref([])
+  const repertoires = ref([])
   let firebaseReady = false
 
   onValue(dbRef(db, 'songs'), snap => {
@@ -44,9 +45,17 @@ export const useAppStore = defineStore('app', () => {
       : []
   })
 
-  function saveSongs()      { set(dbRef(db, 'songs'), songs.value) }
-  function saveActivities() { set(dbRef(db, 'activities'), activities.value.length ? activities.value : null) }
-  function saveSongTypes()  { set(dbRef(db, 'songTypes'), songTypes.value.length ? songTypes.value : null) }
+  onValue(dbRef(db, 'repertoires'), snap => {
+    const data = snap.val()
+    repertoires.value = data
+      ? (Array.isArray(data) ? data.filter(Boolean) : Object.values(data))
+      : []
+  })
 
-  return { songs, activities, songTypes, saveSongs, saveActivities, saveSongTypes }
+  function saveSongs()       { set(dbRef(db, 'songs'), songs.value) }
+  function saveActivities()  { set(dbRef(db, 'activities'), activities.value.length ? activities.value : null) }
+  function saveSongTypes()   { set(dbRef(db, 'songTypes'), songTypes.value.length ? songTypes.value : null) }
+  function saveRepertoires() { set(dbRef(db, 'repertoires'), repertoires.value.length ? repertoires.value : null) }
+
+  return { songs, activities, songTypes, repertoires, saveSongs, saveActivities, saveSongTypes, saveRepertoires }
 })

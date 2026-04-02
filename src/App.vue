@@ -2,10 +2,10 @@
   <RoleScreen v-if="!roleStore.currentRole" />
   <template v-else>
     <AppHeader />
-    <AppNav />
     <main class="page active">
       <RouterView />
     </main>
+    <AppNav />
     <Toast />
     <ConfirmModal />
   </template>

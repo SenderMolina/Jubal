@@ -288,7 +288,7 @@ function renderSetlist() {
     container.innerHTML = `
       <div class="setlist-empty">
         <div class="icon">🎶</div>
-        <p>No hay canciones para este servicio.${isLeader() ? '<br>Ve al <strong>Repertorio</strong> y agrégalas.' : ''}</p>
+        <p>No hay canciones para este servicio.${isLeader() ? '<br>Ve al <strong>Repertorios</strong> y agrégalas.' : ''}</p>
       </div>`;
     return;
   }
