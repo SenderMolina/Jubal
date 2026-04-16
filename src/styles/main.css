@@ -979,6 +979,22 @@ header {
 .activities-section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 .activities-section-label--today { color: var(--accent); }
 .activities-section-label--later { color: var(--text-muted); }
+.activities-section-label--past  { color: var(--text-muted); margin-top: 12px; }
+
+.activities-past-section { margin-top: 28px; }
+.activities-past-toggle {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  background: none; border: none; cursor: pointer;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-muted); padding: 0; margin-bottom: 2px;
+}
+.activities-past-toggle::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.activities-past-count { background: var(--surface2); border-radius: 20px; padding: 1px 7px; font-size: 0.68rem; }
+.activities-past-chevron { font-size: 0.6rem; }
+
+.activity-card--past { opacity: 0.55; }
+.activity-card--past:hover { opacity: 1; }
+.activity-date-badge--past { background: var(--surface2); color: var(--text-muted); }
 
 /* ── REPERTORIO ── */
 .repertorio-create-trigger {

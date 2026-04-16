@@ -90,6 +90,42 @@
 
     </div>
 
+    <!-- PASADAS -->
+    <div v-if="past.length" class="activities-past-section">
+      <button class="activities-past-toggle" @click="showPast = !showPast">
+        <span>Pasadas</span>
+        <span class="activities-past-count">{{ past.length }}</span>
+        <span class="activities-past-chevron">{{ showPast ? '▲' : '▼' }}</span>
+      </button>
+      <template v-if="showPast">
+        <template v-for="(group, idx) in pastGrouped" :key="group.label">
+          <div class="activities-section-label activities-section-label--past" :style="idx === 0 ? 'margin-top:8px' : ''">
+            {{ group.label }}
+          </div>
+          <div
+            v-for="a in group.items"
+            :key="a.id"
+            class="activity-card activity-card--past"
+            @click="router.push('/actividad/' + a.id)"
+          >
+            <div class="activity-date-badge activity-date-badge--past">
+              <div class="day">{{ getDay(a.date) }}</div>
+              <div class="month">{{ getMonth(a.date) }}</div>
+            </div>
+            <div class="activity-info">
+              <div class="activity-title">{{ a.title }}</div>
+              <div v-if="a.time" class="activity-time">{{ a.time }}</div>
+              <div v-if="a.tiempos?.length" class="activity-badges">
+                <span class="activity-badge activity-badge--tiempos">{{ a.tiempos.length }} tiempo{{ a.tiempos.length !== 1 ? 's' : '' }}</span>
+                <span class="activity-badge activity-badge--songs">{{ totalSongs(a) }} canción{{ totalSongs(a) !== 1 ? 'es' : '' }}</span>
+              </div>
+            </div>
+            <span class="activity-chevron">›</span>
+          </div>
+        </template>
+      </template>
+    </div>
+
     <ActivityModal ref="modal" />
   </div>
 </template>
@@ -136,4 +172,30 @@ const featuredId   = computed(() => upcoming.value[0]?.id)
 const todayEvents  = computed(() => upcoming.value.filter(a => a.date === today))
 const nearEvents   = computed(() => upcoming.value.filter(a => a.date > today && a.date <= next7))
 const laterEvents  = computed(() => upcoming.value.filter(a => a.date > next7))
+
+const showPast = ref(false)
+
+const monthNamesFull = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+
+const past = computed(() =>
+  store.activities
+    .filter(a => a.date < today)
+    .sort((a, b) => b.date.localeCompare(a.date) || (b.time||'').localeCompare(a.time||''))
+)
+
+const pastGrouped = computed(() => {
+  const groups = []
+  const seen = {}
+  for (const a of past.value) {
+    const [y, m] = a.date.split('-')
+    const key    = `${y}-${m}`
+    const label  = `${monthNamesFull[parseInt(m) - 1]} ${y}`
+    if (!seen[key]) {
+      seen[key] = true
+      groups.push({ label, items: [] })
+    }
+    groups[groups.length - 1].items.push(a)
+  }
+  return groups
+})
 </script>

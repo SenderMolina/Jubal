@@ -10,8 +10,12 @@
         </div>
         <div v-if="activity?.description" class="activity-detail-desc">{{ activity.description }}</div>
       </div>
-      <button v-if="roleStore.isLeader" class="btn btn-danger btn-sm" @click="handleDelete">Eliminar</button>
+      <div v-if="roleStore.isLeader" style="display:flex;gap:6px;">
+        <button class="btn btn-ghost btn-sm" @click="modal?.openEdit(activity)">Editar</button>
+        <button class="btn btn-danger btn-sm" @click="handleDelete">Eliminar</button>
+      </div>
     </div>
+    <ActivityModal ref="modal" />
 
     <!-- ══════════ VISTA LÍDER ══════════ -->
     <template v-if="roleStore.isLeader">
@@ -244,6 +248,7 @@ import { useRoleStore } from '../stores/role'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import draggable from 'vuedraggable'
+import ActivityModal from '../components/ActivityModal.vue'
 
 const route     = useRoute()
 const router    = useRouter()
@@ -252,6 +257,7 @@ const roleStore = useRoleStore()
 const { showToast } = useToast()
 const { confirm }   = useConfirm()
 
+const modal             = ref(null)
 const newTiempoName     = ref('')
 const selectedTiempoId  = ref(null)
 const creatingTiempo    = ref(false)
