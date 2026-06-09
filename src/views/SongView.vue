@@ -29,6 +29,12 @@
         <textarea class="sf-lyrics" v-model="form.lyrics"></textarea>
       </div>
 
+      <!-- Presentación embebida -->
+      <div class="sf-block">
+        <div class="sf-block-label">Presentación embebida (Genially)</div>
+        <textarea class="sf-lyrics" v-model="form.embed" placeholder="Pega el código <iframe> de Genially o el enlace. Si lo agregas, se mostrará en lugar de la letra."></textarea>
+      </div>
+
       <!-- Tono + Autor -->
       <div class="sf-inline-row">
         <div class="sf-field">
@@ -75,7 +81,12 @@
 
     </div>
 
-    <!-- View mode -->
+    <!-- View mode: presentación embebida -->
+    <div v-else-if="embedSrc" class="embed-block">
+      <iframe :src="embedSrc" frameborder="0" allowfullscreen allow="fullscreen" loading="lazy"></iframe>
+    </div>
+
+    <!-- View mode: letra y acordes -->
     <div v-else class="lyrics-block">
       <template v-if="renderedLines.length">
         <template v-for="(line, i) in renderedLines" :key="i">
@@ -120,6 +131,17 @@ const authorSuggestions = computed(() =>
   [...new Set(store.songs.map(s => s.author).filter(Boolean))]
 )
 
+// Extrae solo la URL del código embebido (evita inyectar HTML crudo / XSS).
+// Acepta el <iframe> completo de Genially o un enlace pelado.
+const embedSrc = computed(() => {
+  const raw = (song.value?.embed || '').trim()
+  if (!raw) return ''
+  const m = raw.match(/src=["']([^"']+)["']/i)
+  if (m) return m[1]
+  if (/^https?:\/\//i.test(raw)) return raw
+  return ''
+})
+
 const meta = computed(() => {
   if (!song.value) return []
   return [
@@ -132,7 +154,7 @@ const meta = computed(() => {
 function startEdit() {
   const s = song.value
   const types = Array.isArray(s.types) ? [...s.types] : (s.type ? [s.type] : [])
-  form.value = { title: s.title, author: s.author || '', key: s.key || '', bpm: s.bpm || null, types, lyrics: s.lyrics || '' }
+  form.value = { title: s.title, author: s.author || '', key: s.key || '', bpm: s.bpm || null, types, lyrics: s.lyrics || '', embed: s.embed || '' }
   editing.value = true
 }
 
@@ -151,7 +173,7 @@ function saveEdit() {
   if (!form.value.title.trim()) { alert('El título es obligatorio.'); return }
   const idx = store.songs.findIndex(s => s.id === Number(route.params.id))
   if (idx === -1) return
-  store.songs[idx] = { ...store.songs[idx], ...form.value, title: form.value.title.trim(), lyrics: form.value.lyrics.trim(), bpm: form.value.bpm || null, types: form.value.types.length ? form.value.types : [] }
+  store.songs[idx] = { ...store.songs[idx], ...form.value, title: form.value.title.trim(), lyrics: form.value.lyrics.trim(), embed: (form.value.embed || '').trim(), bpm: form.value.bpm || null, types: form.value.types.length ? form.value.types : [] }
   store.saveSongs()
   editing.value = false
   showDetails.value = false

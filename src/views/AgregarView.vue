@@ -48,6 +48,12 @@
       <div class="form-hint">Pon los acordes en una línea y la letra en la siguiente. Usa [Coro], [Verso], [Puente] para secciones.</div>
     </div>
 
+    <div class="form-group">
+      <label class="form-label">Presentación embebida (Genially)</label>
+      <textarea class="form-textarea" v-model="form.embed" placeholder='Pega el código <iframe> de Genially o el enlace de la presentación'></textarea>
+      <div class="form-hint">Si agregas una presentación, esta se mostrará en lugar de la letra y los acordes.</div>
+    </div>
+
     <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:8px;">
       <button class="btn btn-ghost" @click="router.push('/repertorio')">Cancelar</button>
       <button class="btn btn-primary" @click="save">Guardar alabanza</button>
@@ -67,7 +73,7 @@ const { showToast } = useToast()
 
 const keys = ['A','A#/Bb','B','C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab']
 
-const emptyForm = () => ({ title: '', author: '', key: '', bpm: null, types: [], lyrics: '' })
+const emptyForm = () => ({ title: '', author: '', key: '', bpm: null, types: [], lyrics: '', embed: '' })
 
 function toggleFormType(id) {
   const idx = form.value.types.indexOf(id)
@@ -100,6 +106,7 @@ function save() {
     bpm:    form.value.bpm || null,
     types:  form.value.types.length ? form.value.types : [],
     lyrics: form.value.lyrics.trim() || '',
+    embed:  form.value.embed.trim() || '',
   })
   store.saveSongs()
   showToast('Alabanza guardada ✓')
