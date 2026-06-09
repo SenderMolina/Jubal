@@ -29,10 +29,16 @@
         <textarea class="sf-lyrics" v-model="form.lyrics"></textarea>
       </div>
 
-      <!-- Presentación embebida -->
+      <!-- Presentación para coristas -->
       <div class="sf-block">
-        <div class="sf-block-label">Presentación embebida (Genially)</div>
-        <textarea class="sf-lyrics" v-model="form.embed" placeholder="Pega el código <iframe> de Genially o el enlace. Si lo agregas, se mostrará en lugar de la letra."></textarea>
+        <div class="sf-block-label">Presentación para coristas (Genially)</div>
+        <textarea class="sf-lyrics" v-model="form.embedCantante" placeholder="Código <iframe> o enlace de Genially. Se mostrará a los coristas en lugar de la letra."></textarea>
+      </div>
+
+      <!-- Presentación para músicos -->
+      <div class="sf-block">
+        <div class="sf-block-label">Presentación para músicos (Genially)</div>
+        <textarea class="sf-lyrics" v-model="form.embedMusico" placeholder="Código <iframe> o enlace de Genially. Se mostrará a los músicos en lugar de la letra y acordes."></textarea>
       </div>
 
       <!-- Tono + Autor -->
@@ -133,13 +139,23 @@ const authorSuggestions = computed(() =>
 
 // Extrae solo la URL del código embebido (evita inyectar HTML crudo / XSS).
 // Acepta el <iframe> completo de Genially o un enlace pelado.
-const embedSrc = computed(() => {
-  const raw = (song.value?.embed || '').trim()
-  if (!raw) return ''
-  const m = raw.match(/src=["']([^"']+)["']/i)
+function extractSrc(raw) {
+  const s = (raw || '').trim()
+  if (!s) return ''
+  const m = s.match(/src=["']([^"']+)["']/i)
   if (m) return m[1]
-  if (/^https?:\/\//i.test(raw)) return raw
+  if (/^https?:\/\//i.test(s)) return s
   return ''
+}
+
+// Elige la presentación según el rol. El líder ve la de músico, y si no hay,
+// la de corista, para poder previsualizar.
+const embedSrc = computed(() => {
+  const s = song.value
+  if (!s) return ''
+  if (roleStore.isCantante) return extractSrc(s.embedCantante)
+  if (roleStore.isMusico)   return extractSrc(s.embedMusico)
+  return extractSrc(s.embedMusico) || extractSrc(s.embedCantante)
 })
 
 const meta = computed(() => {
@@ -154,7 +170,7 @@ const meta = computed(() => {
 function startEdit() {
   const s = song.value
   const types = Array.isArray(s.types) ? [...s.types] : (s.type ? [s.type] : [])
-  form.value = { title: s.title, author: s.author || '', key: s.key || '', bpm: s.bpm || null, types, lyrics: s.lyrics || '', embed: s.embed || '' }
+  form.value = { title: s.title, author: s.author || '', key: s.key || '', bpm: s.bpm || null, types, lyrics: s.lyrics || '', embedCantante: s.embedCantante || '', embedMusico: s.embedMusico || '' }
   editing.value = true
 }
 
@@ -173,7 +189,7 @@ function saveEdit() {
   if (!form.value.title.trim()) { alert('El título es obligatorio.'); return }
   const idx = store.songs.findIndex(s => s.id === Number(route.params.id))
   if (idx === -1) return
-  store.songs[idx] = { ...store.songs[idx], ...form.value, title: form.value.title.trim(), lyrics: form.value.lyrics.trim(), embed: (form.value.embed || '').trim(), bpm: form.value.bpm || null, types: form.value.types.length ? form.value.types : [] }
+  store.songs[idx] = { ...store.songs[idx], ...form.value, title: form.value.title.trim(), lyrics: form.value.lyrics.trim(), embedCantante: (form.value.embedCantante || '').trim(), embedMusico: (form.value.embedMusico || '').trim(), bpm: form.value.bpm || null, types: form.value.types.length ? form.value.types : [] }
   store.saveSongs()
   editing.value = false
   showDetails.value = false

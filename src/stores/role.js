@@ -8,6 +8,7 @@ export const useRoleStore = defineStore('role', () => {
 
   const isLeader   = computed(() => currentRole.value === 'lider')
   const isCantante = computed(() => currentRole.value === 'cantante')
+  const isMusico   = computed(() => currentRole.value === 'musico')
 
   // Ensure default password exists on first run
   get(dbRef(db, 'config/leaderPassword')).then(snap => {
@@ -29,5 +30,5 @@ export const useRoleStore = defineStore('role', () => {
     sessionStorage.removeItem('role')
   }
 
-  return { currentRole, isLeader, isCantante, checkPassword, enterAs, changeRole }
+  return { currentRole, isLeader, isCantante, isMusico, checkPassword, enterAs, changeRole }
 })

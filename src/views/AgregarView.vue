@@ -49,9 +49,15 @@
     </div>
 
     <div class="form-group">
-      <label class="form-label">Presentación embebida (Genially)</label>
-      <textarea class="form-textarea" v-model="form.embed" placeholder='Pega el código <iframe> de Genially o el enlace de la presentación'></textarea>
-      <div class="form-hint">Si agregas una presentación, esta se mostrará en lugar de la letra y los acordes.</div>
+      <label class="form-label">Presentación para coristas (Genially)</label>
+      <textarea class="form-textarea" v-model="form.embedCantante" placeholder='Pega el código <iframe> de Genially o el enlace'></textarea>
+      <div class="form-hint">Se mostrará a los coristas en lugar de la letra.</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Presentación para músicos (Genially)</label>
+      <textarea class="form-textarea" v-model="form.embedMusico" placeholder='Pega el código <iframe> de Genially o el enlace'></textarea>
+      <div class="form-hint">Se mostrará a los músicos en lugar de la letra y los acordes.</div>
     </div>
 
     <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:8px;">
@@ -73,7 +79,7 @@ const { showToast } = useToast()
 
 const keys = ['A','A#/Bb','B','C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab']
 
-const emptyForm = () => ({ title: '', author: '', key: '', bpm: null, types: [], lyrics: '', embed: '' })
+const emptyForm = () => ({ title: '', author: '', key: '', bpm: null, types: [], lyrics: '', embedCantante: '', embedMusico: '' })
 
 function toggleFormType(id) {
   const idx = form.value.types.indexOf(id)
@@ -106,7 +112,8 @@ function save() {
     bpm:    form.value.bpm || null,
     types:  form.value.types.length ? form.value.types : [],
     lyrics: form.value.lyrics.trim() || '',
-    embed:  form.value.embed.trim() || '',
+    embedCantante: form.value.embedCantante.trim() || '',
+    embedMusico:   form.value.embedMusico.trim() || '',
   })
   store.saveSongs()
   showToast('Alabanza guardada ✓')
