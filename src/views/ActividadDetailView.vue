@@ -1,47 +1,52 @@
 <template>
-  <div>
-    <!-- ── Header ── -->
-    <div class="activity-detail-header">
-      <button class="back-btn" @click="router.back()">←</button>
-      <div class="activity-detail-info">
-        <div class="activity-detail-title">{{ activity?.title }}</div>
-        <div class="activity-detail-meta">
-          {{ formattedDate }}{{ activity?.time ? ' · ' + activity.time : '' }}
-        </div>
-        <div v-if="activity?.description" class="activity-detail-desc">{{ activity.description }}</div>
+  <div @click="selectedTiempoId = null">
+    <!-- ── Topbar ── -->
+    <div class="detail-topbar">
+      <button class="icon-circle-btn" aria-label="Volver" @click="router.back()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"/>
+          <polyline points="12 19 5 12 12 5"/>
+        </svg>
+      </button>
+      <button v-if="roleStore.isLeader" class="icon-circle-btn" aria-label="Opciones" @click="openMenu">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+      </button>
+    </div>
+
+    <!-- ── Hero ── -->
+    <div class="detail-hero">
+      <div class="detail-hero__thumb">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
       </div>
-      <div v-if="roleStore.isLeader" style="display:flex;gap:6px;">
-        <button class="btn btn-ghost btn-sm" @click="modal?.openEdit(activity)">Editar</button>
-        <button class="btn btn-danger btn-sm" @click="handleDelete">Eliminar</button>
+      <div class="detail-hero__title">{{ activity?.title }}</div>
+      <div class="detail-hero__meta">
+        {{ formattedDate }}{{ activity?.time ? ' · ' + activity.time : '' }}
+      </div>
+      <div v-if="activity?.description && activity.description !== activity.title" class="detail-hero__desc">{{ activity.description }}</div>
+      <div v-if="roleStore.isLeader" class="detail-hero__actions">
+        <button class="btn-pill btn-pill--primary" @click.stop="openLibrary">
+          <span class="btn-pill__icon">+</span> Agregar
+        </button>
       </div>
     </div>
+
+    <!-- Franja de aviso -->
+    <Teleport to="body">
+      <Transition name="banner">
+        <div v-if="banner" class="top-banner">{{ banner }}</div>
+      </Transition>
+    </Teleport>
     <ActivityModal ref="modal" />
+    <ActionSheet ref="sheet" />
 
     <!-- ══════════ VISTA LÍDER ══════════ -->
     <template v-if="roleStore.isLeader">
-      <div class="activity-workspace">
-
-        <!-- Tabs móvil -->
-        <div class="editor-mobile-tabs">
-          <button
-            class="editor-tab"
-            :class="{ active: mobilePanel === 'setlist' }"
-            @click="mobilePanel = 'setlist'"
-          >Setlist</button>
-          <button
-            class="editor-tab"
-            :class="{ active: mobilePanel === 'biblioteca' }"
-            @click="mobilePanel = 'biblioteca'"
-          >Biblioteca</button>
-        </div>
-
-        <!-- Layout dos columnas -->
-        <div class="activity-editor-layout">
-
-          <!-- ── Columna izquierda: Setlist ── -->
-          <div class="editor-panel" :class="{ 'panel-hidden-mobile': mobilePanel !== 'setlist' }">
-            <div class="editor-panel-header">Setlist</div>
-            <div class="editor-panel-content">
+      <div>
 
               <!-- Estado vacío -->
               <div v-if="!activity?.tiempos?.length && !creatingTiempo" class="setlist-zero-state">
@@ -54,11 +59,16 @@
                 :key="tiempo.id"
                 class="tiempo-block"
                 :class="{ 'tiempo-selected': selectedTiempoId === tiempo.id }"
-                @click="selectedTiempoId = tiempo.id"
+                @click.stop="selectedTiempoId = tiempo.id"
               >
                 <div class="tiempo-header">
                   <h2 class="tiempo-name">{{ tiempo.name }}</h2>
-                  <button class="btn btn-danger btn-sm icon-btn" @click.stop="deleteTiempo(tiempo.id)">✕</button>
+                  <button class="dots-btn dots-btn--danger" aria-label="Eliminar tiempo" @click.stop="deleteTiempo(tiempo.id)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                    </svg>
+                  </button>
                 </div>
 
                 <div v-if="!tiempo.songs?.length" class="tiempo-empty">
@@ -70,29 +80,27 @@
                   :model-value="tiempoSongObjects(tiempo)"
                   @update:model-value="v => setTiempoSongs(tiempo, v)"
                   item-key="id"
-                  handle=".drag-handle"
+                  handle=".song-thumb"
                   ghost-class="drag-ghost"
                 >
-                  <template #item="{ element: song, index }">
-                    <div class="setlist-card compact-card" @click.stop>
-                      <span class="drag-handle">⠿</span>
-                      <span class="setlist-song-num">{{ index + 1 }}</span>
-                      <div class="song-info">
-                        <div class="song-title">{{ song.title }}</div>
-                        <div class="song-meta">{{ song.author }}</div>
+                  <template #item="{ element: song }">
+                    <div class="song-row" @click.stop="router.push('/cancion/' + song.id)">
+                      <div class="song-thumb song-thumb--drag">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M9 18V5l12-2v13"/>
+                          <circle cx="6" cy="18" r="3"/>
+                          <circle cx="18" cy="16" r="3"/>
+                        </svg>
                       </div>
-                      <div style="display:flex; gap:4px; align-items:center;">
-                        <span v-if="song.key" class="tag tag-key">{{ song.key }}</span>
-                        <button class="btn btn-danger btn-sm icon-btn" @click.stop="removeSong(tiempo, song.id)">✕</button>
+                      <div class="song-row__info">
+                        <div class="song-row__title">{{ song.title }}</div>
+                        <div class="song-row__meta">{{ song.author }}</div>
                       </div>
+                      <span v-if="song.key" class="tag tag-key">{{ song.key }}</span>
+                      <button class="song-remove" aria-label="Quitar canción" @click.stop="removeSong(tiempo, song.id)">✕</button>
                     </div>
                   </template>
                 </draggable>
-
-                <button
-                  class="btn-add-song-to-tiempo"
-                  @click.stop="selectAndOpenLibrary(tiempo.id)"
-                >+ Agregar canción</button>
               </div>
 
               <!-- Creación inline de tiempo -->
@@ -112,7 +120,7 @@
               </div>
 
               <!-- Importar repertorio -->
-              <div v-if="store.repertoires.length && selectedTiempo" class="repertorio-import-section">
+              <div v-if="store.repertoires.length && selectedTiempo" class="repertorio-import-section" @click.stop>
                 <div class="repertorio-import-label">Importar desde repertorio</div>
                 <div class="repertorio-import-list">
                   <button
@@ -132,40 +140,21 @@
                 <button class="btn-create-tiempo" @click="startCreateTiempo">+ Crear tiempo</button>
               </div>
 
-            </div>
-          </div>
+      </div>
 
-          <!-- ── Columna derecha: Biblioteca ── -->
-          <div class="editor-panel" :class="{ 'panel-hidden-mobile': mobilePanel !== 'biblioteca' }">
-            <div class="editor-panel-header">Biblioteca</div>
-            <div class="editor-panel-content">
-
-              <!-- Indicador de tiempo activo -->
-              <div
-                class="library-active-indicator"
-                :class="{ 'library-active-indicator--active': !!selectedTiempo }"
-              >
-                <template v-if="selectedTiempo">
-                  Agregando a: <strong>{{ selectedTiempo.name }}</strong>
-                </template>
-                <template v-else-if="activity?.tiempos?.length">
-                  Selecciona un tiempo para agregar canciones
-                </template>
-                <template v-else>
-                  Crea un tiempo en el setlist primero
-                </template>
-              </div>
-
-              <!-- Búsqueda -->
+      <!-- ── Biblioteca (hoja inferior) ── -->
+      <Teleport to="body">
+        <Transition name="sheet">
+          <div v-if="libraryOpen" class="sheet-overlay" @click="libraryOpen = false">
+            <div class="sheet sheet--library" @click.stop>
+              <div class="sheet-handle"></div>
+              <div class="sheet-title">Agregar a: {{ selectedTiempo?.name }}</div>
               <input
-                class="form-input song-library-search"
+                class="form-input"
                 v-model="libraryQuery"
                 placeholder="Buscar canción..."
-                style="margin-top:10px"
               >
-
-              <!-- Filtros por tipo -->
-              <div v-if="store.songTypes.length" class="type-pills" style="margin-top:10px">
+              <div v-if="store.songTypes.length" class="type-pills" style="margin-top:8px">
                 <button class="type-pill" :class="{ active: !libraryType }" @click="libraryType = ''">Todos</button>
                 <button
                   v-for="t in store.songTypes"
@@ -175,36 +164,35 @@
                   @click="libraryType = String(t.id)"
                 >{{ t.name }}</button>
               </div>
-
-              <!-- Lista de canciones -->
-              <div v-if="filteredLibrary.length === 0" class="tiempo-empty" style="margin-top:12px">
-                Sin resultados.
-              </div>
-              <div
-                v-for="song in filteredLibrary"
-                :key="song.id"
-                class="library-song-row"
-                :class="{ 'library-song-row--in-selected': isInSelectedTiempo(song.id) }"
-              >
-                <div class="library-song-info">
-                  <div class="library-song-title">{{ song.title }}</div>
-                  <div class="library-song-meta">{{ [song.author, song.key].filter(Boolean).join(' · ') }}</div>
+              <div class="sheet-library-list">
+                <div v-if="filteredLibrary.length === 0" class="tiempo-empty">Sin resultados.</div>
+                <div
+                  v-for="song in filteredLibrary"
+                  :key="song.id"
+                  class="library-song-row"
+                  :class="{ 'library-song-row--in-selected': isInSelectedTiempo(song.id) }"
+                >
+                  <div class="library-song-info">
+                    <div class="library-song-title">{{ song.title }}</div>
+                    <div class="library-song-meta">{{ [song.author, song.key].filter(Boolean).join(' · ') }}</div>
+                  </div>
+                  <span v-if="isInSelectedTiempo(song.id)" class="library-check" aria-label="Agregada">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                  <span v-else-if="songAssignments[song.id]" class="library-assignment-badge">{{ songAssignments[song.id] }}</span>
+                  <button
+                    v-else
+                    class="library-add-btn"
+                    :disabled="!selectedTiempoId"
+                    aria-label="Agregar canción"
+                    @click="addSongToSelected(song.id)"
+                  >+</button>
                 </div>
-                <span v-if="isInSelectedTiempo(song.id)" class="library-assignment-badge library-assignment-badge--current">Este tiempo</span>
-                <span v-else-if="songAssignments[song.id]" class="library-assignment-badge">{{ songAssignments[song.id] }}</span>
-                <button
-                  v-else
-                  class="btn btn-primary btn-sm"
-                  :disabled="!selectedTiempoId"
-                  @click="addSongToSelected(song.id)"
-                >+</button>
               </div>
-
             </div>
           </div>
-
-        </div><!-- /activity-editor-layout -->
-      </div><!-- /activity-workspace -->
+        </Transition>
+      </Teleport>
     </template>
 
     <!-- ══════════ VISTA MÚSICO / CANTANTE ══════════ -->
@@ -214,25 +202,25 @@
         <p>El líder aún no ha armado el setlist para esta actividad.</p>
       </div>
 
-      <div v-for="tiempo in activity?.tiempos" :key="tiempo.id" class="tiempo-block">
-        <div class="tiempo-header">
-          <h2 class="tiempo-name">{{ tiempo.name }}</h2>
-        </div>
+      <div v-for="tiempo in activity?.tiempos" :key="tiempo.id" class="tiempo-section">
+        <div class="tiempo-section__label">{{ tiempo.name }}</div>
         <div v-if="!tiempo.songs?.length" class="tiempo-empty">Sin canciones.</div>
         <div
-          v-for="(songId, index) in tiempo.songs"
+          v-for="songId in tiempo.songs"
           :key="songId"
-          class="setlist-card"
+          class="song-row"
           @click="router.push('/cancion/' + songId)"
         >
-          <span class="song-num">{{ index + 1 }}</span>
-          <div class="song-info">
-            <div class="song-title">{{ songById(songId)?.title }}</div>
-            <div class="song-meta">{{ songMeta(songById(songId)) }}</div>
+          <div class="song-thumb">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18V5l12-2v13"/>
+              <circle cx="6" cy="18" r="3"/>
+              <circle cx="18" cy="16" r="3"/>
+            </svg>
           </div>
-          <div style="display:flex; gap:6px; align-items:center;">
-            <span v-if="songById(songId)?.key" class="tag tag-key">{{ songById(songId)?.key }}</span>
-            <span v-if="songById(songId)?.bpm" class="tag tag-bpm">{{ songById(songId)?.bpm }}</span>
+          <div class="song-row__info">
+            <div class="song-row__title">{{ songById(songId)?.title }}</div>
+            <div class="song-row__meta">{{ [songById(songId)?.author, songById(songId)?.key].filter(Boolean).join(' · ') }}</div>
           </div>
         </div>
       </div>
@@ -249,6 +237,7 @@ import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import draggable from 'vuedraggable'
 import ActivityModal from '../components/ActivityModal.vue'
+import ActionSheet from '../components/ActionSheet.vue'
 
 const route     = useRoute()
 const router    = useRouter()
@@ -258,11 +247,12 @@ const { showToast } = useToast()
 const { confirm }   = useConfirm()
 
 const modal             = ref(null)
+const sheet             = ref(null)
 const newTiempoName     = ref('')
 const selectedTiempoId  = ref(null)
 const creatingTiempo    = ref(false)
 const createTiempoInput = ref(null)
-const mobilePanel       = ref('setlist')
+const libraryOpen       = ref(false)
 const libraryQuery      = ref('')
 const libraryType       = ref('')
 
@@ -307,10 +297,6 @@ const formattedDate = computed(() => {
 })
 
 function songById(id) { return store.songs.find(s => s.id === id) }
-function songMeta(s) {
-  if (!s) return ''
-  return [s.author, s.key ? '🎵 ' + s.key : '', s.bpm ? '♩ ' + s.bpm + ' bpm' : ''].filter(Boolean).join(' · ')
-}
 
 function tiempoSongObjects(tiempo) {
   return (tiempo.songs || []).map(id => songById(id)).filter(Boolean)
@@ -357,8 +343,10 @@ function cancelCreateTiempo() {
   creatingTiempo.value = false
 }
 
-function deleteTiempo(tiempoId) {
+async function deleteTiempo(tiempoId) {
   const nombre = activity.value.tiempos.find(t => t.id === tiempoId)?.name
+  const ok = await confirm('¿Estás seguro de eliminar este tiempo?', `"${nombre}"`)
+  if (!ok) return
   activity.value.tiempos = activity.value.tiempos.filter(t => t.id !== tiempoId)
   if (selectedTiempoId.value === tiempoId) {
     selectedTiempoId.value = activity.value.tiempos[0]?.id ?? null
@@ -367,9 +355,21 @@ function deleteTiempo(tiempoId) {
   showToast(`Tiempo "${nombre}" eliminado`)
 }
 
-function selectAndOpenLibrary(tiempoId) {
-  selectedTiempoId.value = tiempoId
-  mobilePanel.value = 'biblioteca'
+const banner = ref('')
+let bannerTimer = null
+function showBanner(msg) {
+  banner.value = msg
+  clearTimeout(bannerTimer)
+  bannerTimer = setTimeout(() => { banner.value = '' }, 3000)
+}
+
+function openLibrary() {
+  if (!activity.value?.tiempos?.length) {
+    showBanner('No hay tiempos creados. Crea un tiempo primero.')
+    return
+  }
+  if (!selectedTiempoId.value) selectedTiempoId.value = activity.value.tiempos[0].id
+  libraryOpen.value = true
 }
 
 function addSongToSelected(songId) {
@@ -403,8 +403,18 @@ function importRepertoire(rep) {
   showToast(`${added} canciones importadas de "${rep.name}"`)
 }
 
+function openMenu() {
+  sheet.value?.open({
+    title: activity.value?.title,
+    actions: [
+      { label: 'Editar actividad', icon: 'edit', onSelect: () => modal.value?.openEdit(activity.value) },
+      { label: 'Eliminar actividad', icon: 'trash', danger: true, onSelect: handleDelete },
+    ],
+  })
+}
+
 async function handleDelete() {
-  const ok = await confirm('¿Eliminar actividad?', `"${activity.value?.title}"`)
+  const ok = await confirm('¿Estás seguro que quieres eliminar esta actividad?', `"${activity.value?.title}"`)
   if (!ok) return
   store.activities = store.activities.filter(a => a.id !== activity.value.id)
   store.saveActivities()

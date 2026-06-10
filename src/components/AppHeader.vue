@@ -2,10 +2,13 @@
   <header class="app-header">
     <div class="app-header__left">
       <h1 class="app-header__title">{{ pageTitle }}</h1>
-      <span v-if="pageCount !== null" class="app-header__count">{{ pageCount }}</span>
     </div>
     <button class="app-header__back" @click="roleStore.changeRole()" aria-label="Cambiar rol">
-      <img src="../assets/out_ico.png" alt="Salir" class="app-header__back-icon">
+      <svg class="app-header__back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
     </button>
   </header>
 </template>
@@ -14,11 +17,9 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useRoleStore } from '../stores/role'
-import { useAppStore } from '../stores/app'
 
 const route = useRoute()
 const roleStore = useRoleStore()
-const store = useAppStore()
 
 const pageTitle = computed(() => {
   const path = route.path
@@ -30,12 +31,4 @@ const pageTitle = computed(() => {
   return 'Jubal'
 })
 
-const pageCount = computed(() => {
-  const path = route.path
-  if (path === '/' || path.startsWith('/actividad/')) return store.activities.length || null
-  if (path === '/repertorio') return store.repertoires.length || null
-  if (path === '/canciones' || path.startsWith('/cancion/')) return store.songs.length || null
-  if (path === '/tipos') return store.songTypes.length || null
-  return null
-})
 </script>

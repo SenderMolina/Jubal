@@ -1,9 +1,10 @@
 <template>
   <div>
     <!-- ── Crear nuevo repertorio ── -->
-    <div v-if="roleStore.isLeader && !creating" class="repertorio-create-trigger" @click="startCreate">
-      <span class="repertorio-create-trigger__icon">+</span>
-      <span>Crear repertorio</span>
+    <div v-if="roleStore.isLeader && !creating" class="page-actions">
+      <button class="btn-pill btn-pill--primary" @click="startCreate">
+        <span class="btn-pill__icon">+</span> Crear repertorio
+      </button>
     </div>
 
     <div v-if="creating" class="repertorio-inline-create">
@@ -30,9 +31,9 @@
     <!-- ── Lista de repertorios ── -->
     <div v-else class="songs-grid">
       <div
-        v-for="r in store.repertoires"
+        v-for="(r, i) in store.repertoires"
         :key="r.id"
-        class="song-card"
+        :class="['song-card', i % 2 ? '' : 'song-card--alt']"
         @click="router.push('/repertorio/' + r.id)"
         @contextmenu.prevent="roleStore.isLeader && openCtx($event, r)"
       >

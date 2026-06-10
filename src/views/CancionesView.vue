@@ -3,6 +3,12 @@
 
     <!-- ── Lista de canciones ── -->
     <template v-if="!showForm">
+      <div v-if="roleStore.isLeader" class="page-actions">
+        <button class="btn-pill btn-pill--primary" @click="openForm">
+          <span class="btn-pill__icon">+</span> Agregar canción
+        </button>
+      </div>
+
       <div class="search-box" style="margin-top:12px">
         <span class="search-box__icon">🔍</span>
         <input
@@ -24,15 +30,24 @@
         <button v-if="activeTypes.length" class="type-pill type-pill--clear" @click="activeTypes = []">✕</button>
       </div>
 
+      <div class="list-toolbar">
+        <span class="list-toolbar__count">
+          {{ isFiltering ? 'Filtradas' : 'Todas' }} ({{ filteredSongs.length }})
+        </span>
+        <button class="list-toolbar__sort" @click="toggleSort">
+          {{ sortMode === 'added' ? 'Añadido' : 'A–Z' }} <span>↓</span>
+        </button>
+      </div>
+
       <div v-if="filteredSongs.length === 0" class="songs-empty">
         <span class="songs-empty__icon">🎵</span>
         <p>Sin resultados</p>
       </div>
       <div v-else class="songs-grid">
         <div
-          v-for="s in filteredSongs"
+          v-for="(s, i) in sortedSongs"
           :key="s.id"
-          class="song-card"
+          :class="['song-card', i % 2 ? '' : 'song-card--alt']"
           @click="router.push('/cancion/' + s.id)"
           @contextmenu.prevent="roleStore.isLeader && openContextMenu($event, s)"
         >
@@ -60,10 +75,6 @@
         </div>
       </Teleport>
 
-      <!-- FAB -->
-      <button v-if="roleStore.isLeader" class="fab-add-song" @click="openForm" aria-label="Añadir canción">
-        <span>+</span>
-      </button>
     </template>
 
     <!-- ── Formulario nueva canción ── -->
@@ -271,6 +282,21 @@ const filteredSongs = computed(() => {
   }
   return list
 })
+
+const sortMode = ref('added')
+
+function toggleSort() {
+  sortMode.value = sortMode.value === 'added' ? 'alpha' : 'added'
+}
+
+const sortedSongs = computed(() => {
+  if (sortMode.value === 'alpha') {
+    return [...filteredSongs.value].sort((a, b) => a.title.localeCompare(b.title, 'es'))
+  }
+  return filteredSongs.value
+})
+
+const isFiltering = computed(() => query.value.trim() !== '' || activeTypes.value.length > 0)
 
 function typeLabels(s) {
   const sTypes = getSongTypes(s)

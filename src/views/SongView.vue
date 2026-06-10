@@ -1,24 +1,35 @@
 <template>
   <div>
-    <div class="song-view-header">
-      <button class="back-btn" @click="router.back()">←</button>
-      <div style="flex:1">
-        <template v-if="!editing">
-          <div class="song-view-title">{{ song?.title }}</div>
-          <div class="song-view-meta">
-            <span v-for="m in meta" :key="m">{{ m }}</span>
-          </div>
-        </template>
-        <template v-else>
-          <input class="form-input" v-model="form.title" placeholder="Título" style="font-size:1.1rem;font-weight:600;margin-bottom:6px">
-        </template>
+    <!-- Topbar (modo vista) -->
+    <div v-if="!editing" class="detail-topbar">
+      <button class="icon-circle-btn" aria-label="Volver" @click="router.back()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"/>
+          <polyline points="12 19 5 12 12 5"/>
+        </svg>
+      </button>
+      <div class="song-topbar-info">
+        <div class="song-topbar-title">
+          {{ song?.title }}
+          <span v-if="song?.key" class="song-topbar-key">{{ song.key }}</span>
+        </div>
       </div>
-      <button v-if="roleStore.isLeader && !editing" class="btn btn-ghost btn-sm" @click="startEdit">Editar</button>
-      <template v-if="editing">
-        <span class="sf-cancel-link" @click="cancelEdit">Cancelar</span>
-        <button class="sf-save-btn sf-save-btn-sm" @click="saveEdit">Guardar</button>
-      </template>
+      <button v-if="roleStore.isLeader" class="icon-circle-btn" aria-label="Opciones" @click="openMenu">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+      </button>
+      <div v-else class="song-topbar-spacer"></div>
     </div>
+
+    <!-- Header (modo edición) -->
+    <div v-else class="song-view-header">
+      <div style="flex:1">
+        <input class="form-input" v-model="form.title" placeholder="Título" style="font-size:1.1rem;font-weight:600;margin-bottom:6px">
+      </div>
+      <span class="sf-cancel-link" @click="cancelEdit">Cancelar</span>
+      <button class="sf-save-btn sf-save-btn-sm" @click="saveEdit">Guardar</button>
+    </div>
+
+    <ActionSheet ref="sheet" />
 
     <!-- Edit form -->
     <div v-if="editing">
@@ -87,9 +98,9 @@
 
     </div>
 
-    <!-- View mode: presentación embebida -->
-    <div v-else-if="embedSrc" class="embed-block">
-      <iframe :src="embedSrc" frameborder="0" allowfullscreen allow="fullscreen" loading="lazy"></iframe>
+    <!-- View mode: presentación embebida (abre ya maximizada) -->
+    <div v-else-if="embedSrc" class="embed-block embed-block--full">
+      <iframe :src="embedSrc" frameborder="0" allow="fullscreen; autoplay; encrypted-media; picture-in-picture" loading="lazy"></iframe>
     </div>
 
     <!-- View mode: letra y acordes -->
@@ -116,13 +127,17 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useRoleStore } from '../stores/role'
 import { useToast } from '../composables/useToast'
+import { useConfirm } from '../composables/useConfirm'
+import ActionSheet from '../components/ActionSheet.vue'
 
 const route     = useRoute()
 const router    = useRouter()
 const store     = useAppStore()
 const roleStore = useRoleStore()
 const { showToast } = useToast()
+const { confirm }   = useConfirm()
 
+const sheet       = ref(null)
 const editing     = ref(false)
 const form        = ref({})
 const showDetails = ref(false)
@@ -158,14 +173,24 @@ const embedSrc = computed(() => {
   return extractSrc(s.embedMusico) || extractSrc(s.embedCantante)
 })
 
-const meta = computed(() => {
-  if (!song.value) return []
-  return [
-    song.value.author,
-    song.value.key  ? '🎵 ' + song.value.key : '',
-    song.value.bpm  ? '♩ ' + song.value.bpm + ' bpm' : '',
-  ].filter(Boolean)
-})
+function openMenu() {
+  sheet.value?.open({
+    title: song.value?.title,
+    actions: [
+      { label: 'Editar canción', icon: 'edit', onSelect: startEdit },
+      { label: 'Eliminar canción', icon: 'trash', danger: true, onSelect: deleteSong },
+    ],
+  })
+}
+
+async function deleteSong() {
+  const ok = await confirm('¿Eliminar canción?', `"${song.value?.title}"`)
+  if (!ok) return
+  store.songs = store.songs.filter(s => s.id !== song.value.id)
+  store.saveSongs()
+  showToast('Canción eliminada')
+  router.back()
+}
 
 function startEdit() {
   const s = song.value

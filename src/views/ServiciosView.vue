@@ -53,7 +53,7 @@
     <div class="dashboard-activities">
       <h2 class="section-title" style="margin-top:32px; font-size:1.2rem;">Próximas actividades</h2>
       <div v-if="upcomingActivities.length === 0" class="activity-empty">No hay actividades próximas.</div>
-      <div v-for="a in upcomingActivities" :key="a.id" class="activity-card">
+      <div v-for="(a, i) in upcomingActivities" :key="a.id" :class="['activity-card', i % 2 ? '' : 'activity-card--alt']">
         <div class="activity-date-badge">
           <div class="day">{{ a.day }}</div>
           <div class="month">{{ a.monthStr }}</div>
