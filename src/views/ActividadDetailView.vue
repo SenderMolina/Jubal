@@ -84,7 +84,7 @@
                   ghost-class="drag-ghost"
                 >
                   <template #item="{ element: song }">
-                    <div class="song-row" @click.stop="router.push('/cancion/' + song.id)">
+                    <div class="song-row" @click.stop="router.push('/cancion/' + song.id + '?act=' + route.params.id)">
                       <div class="song-thumb song-thumb--drag">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                           <path d="M9 18V5l12-2v13"/>
@@ -209,7 +209,7 @@
           v-for="songId in tiempo.songs"
           :key="songId"
           class="song-row"
-          @click="router.push('/cancion/' + songId)"
+          @click="router.push('/cancion/' + songId + '?act=' + route.params.id)"
         >
           <div class="song-thumb">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

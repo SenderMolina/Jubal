@@ -28,6 +28,15 @@
       </div>
     </div>
 
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Duración (min:seg)</label>
+        <input class="form-input" v-model="form.durationText" type="text" inputmode="numeric" placeholder="Ej: 4:30">
+        <div class="form-hint">Se usa para el autoscroll de la letra en modo Play.</div>
+      </div>
+      <div class="form-group"></div>
+    </div>
+
     <div class="form-group">
       <label class="form-label">Tipos</label>
       <div class="type-pills type-pills--form">
@@ -45,7 +54,7 @@
     <div class="form-group">
       <label class="form-label">Letra y acordes</label>
       <textarea class="form-textarea" v-model="form.lyrics" :placeholder="lyricsPlaceholder"></textarea>
-      <div class="form-hint">Pon los acordes en una línea y la letra en la siguiente. Usa [Coro], [Verso], [Puente] para secciones.</div>
+      <div class="form-hint">Pon los acordes en una línea y la letra en la siguiente. Usa [Coro], [Verso], [Puente] para secciones. Opcional: fija el tiempo de una sección para el autoscroll, ej. [Intro 0:25] o [Coro 1:10] — el tiempo no se muestra en pantalla.</div>
     </div>
 
     <div class="form-group">
@@ -72,6 +81,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useToast } from '../composables/useToast'
+import { parseDuration } from '../utils/duration'
 
 const router = useRouter()
 const store  = useAppStore()
@@ -79,7 +89,7 @@ const { showToast } = useToast()
 
 const keys = ['A','A#/Bb','B','C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab']
 
-const emptyForm = () => ({ title: '', author: '', key: '', bpm: null, types: [], lyrics: '', embedCantante: '', embedMusico: '' })
+const emptyForm = () => ({ title: '', author: '', key: '', bpm: null, durationText: '', types: [], lyrics: '', embedCantante: '', embedMusico: '' })
 
 function toggleFormType(id) {
   const idx = form.value.types.indexOf(id)
@@ -110,6 +120,7 @@ function save() {
     author: form.value.author.trim(),
     key:    form.value.key,
     bpm:    form.value.bpm || null,
+    duration: parseDuration(form.value.durationText),
     types:  form.value.types.length ? form.value.types : [],
     lyrics: form.value.lyrics.trim() || '',
     embedCantante: form.value.embedCantante.trim() || '',

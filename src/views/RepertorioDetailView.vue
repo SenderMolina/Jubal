@@ -44,7 +44,7 @@
           <div class="song-card repertorio-song-card">
             <span v-if="roleStore.isLeader" class="drag-handle">⠿</span>
             <span class="repertorio-song-num">{{ index + 1 }}</span>
-            <div class="song-card__body">
+            <div class="song-card__body" style="cursor:pointer" @click="router.push('/cancion/' + song.id + '?rep=' + repertoire.id)">
               <div class="song-card__title" style="font-size:16px">{{ song.title }}</div>
               <div class="song-card__meta" style="margin-top:4px">
                 <span v-if="song.author" style="font-size:13px;color:var(--text-muted)">{{ song.author }}</span>
