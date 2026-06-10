@@ -5,13 +5,13 @@
 
       <div class="role-options">
         <!-- Cantante -->
-        <div class="role-option" @click="roleStore.enterAs('cantante')">
+        <div class="role-option" @click="enter('cantante')">
           <img :src="singerIcon" alt="" class="role-option-icon">
           <div class="role-option-title">Cantante</div>
         </div>
 
         <!-- Músico -->
-        <div class="role-option" @click="roleStore.enterAs('musico')">
+        <div class="role-option" @click="enter('musico')">
           <img :src="musicianIcon" alt="" class="role-option-icon">
           <div class="role-option-title">Músico</div>
         </div>
@@ -41,6 +41,7 @@
 
 <script setup>
 import { ref, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { useRoleStore } from '../stores/role'
 import logo        from '../assets/jubal_logo.png'
 import singerIcon  from '../assets/singer_icon.png'
@@ -48,6 +49,7 @@ import musicianIcon from '../assets/musician_icon.png'
 import leaderIcon  from '../assets/leader_icon.png'
 
 const roleStore     = useRoleStore()
+const router        = useRouter()
 const showPassword  = ref(false)
 const password      = ref('')
 const passwordError = ref(false)
@@ -61,10 +63,17 @@ async function togglePassword() {
   }
 }
 
+// Al entrar con cualquier rol se arranca siempre en Actividades,
+// sin heredar la vista donde quedó el rol anterior.
+function enter(role) {
+  roleStore.enterAs(role)
+  router.replace('/')
+}
+
 async function checkPassword() {
   const ok = await roleStore.checkPassword(password.value)
   if (ok) {
-    roleStore.enterAs('lider')
+    enter('lider')
   } else {
     passwordError.value = true
     setTimeout(() => { passwordError.value = false }, 2000)
