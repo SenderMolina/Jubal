@@ -55,7 +55,7 @@
       <div class="sf-block">
         <div class="sf-block-label">Letra y acordes</div>
         <textarea class="sf-lyrics" v-model="form.lyrics"></textarea>
-        <div class="form-hint">Secciones: [Coro], [Verso]… Con tiempo opcional para el autoscroll: [Intro 0:25], [Coro 1:10].</div>
+        <div class="form-hint">Secciones: [Coro], [Verso]… Con tiempo opcional: [Intro 0:25], [Coro 1:10] — el autoscroll se pausa ahí ese tiempo.</div>
       </div>
 
       <!-- Presentación para coristas -->
@@ -359,8 +359,9 @@ let timeline = null      // { segs, total } — tramos px↔tiempo según seccio
 let wakeLock = null
 
 // Construye la línea de tiempo del autoscroll. Cada sección con tiempo
-// explícito ([Coro 1:10]) usa ese tiempo; el restante de la duración total
-// se reparte entre las secciones sin marcar, proporcional a su altura.
+// explícito ([Coro 1:10]) pausa el scroll en esa sección durante ese tiempo;
+// el resto de la duración total se usa para scrollear todo el contenido,
+// proporcional a su altura.
 function buildTimeline() {
   const el = playerBody.value
   if (!el) return null
@@ -375,19 +376,20 @@ function buildTimeline() {
     bounds.push({ px: clampPx(node.getBoundingClientRect().top - elTop), secs: line.secs })
   })
   if (!bounds.length || bounds[0].px > 0) bounds.unshift({ px: 0, secs: null })
-  const segs = bounds.map((b, i) => ({
-    from: b.px,
-    to: i + 1 < bounds.length ? Math.max(b.px, bounds[i + 1].px) : px,
-    secs: b.secs,
-  }))
-  const explicitSum = segs.reduce((a, s) => a + (s.secs ?? 0), 0)
-  const freePx = segs.reduce((a, s) => a + (s.secs == null ? s.to - s.from : 0), 0)
-  let freeTime = effectiveDuration.value - explicitSum
-  // Si los tiempos marcados consumen toda la duración, lo libre va a velocidad promedio.
-  if (freeTime <= 0) freeTime = freePx * (effectiveDuration.value / px)
+  const segs = []
+  bounds.forEach((b, i) => {
+    const to = i + 1 < bounds.length ? Math.max(b.px, bounds[i + 1].px) : px
+    // Sección con tiempo: segmento de pausa (sin avance) antes de scrollear.
+    if (b.secs != null) segs.push({ from: b.px, to: b.px, secs: b.secs })
+    if (to > b.px) segs.push({ from: b.px, to, secs: null })
+  })
+  const explicitSum = bounds.reduce((a, b) => a + (b.secs ?? 0), 0)
+  let scrollTime = effectiveDuration.value - explicitSum
+  // Si las pausas consumen toda la duración, el scroll va a velocidad promedio.
+  if (scrollTime <= 0) scrollTime = effectiveDuration.value
   let t = 0
   for (const s of segs) {
-    s.dur = s.secs != null ? s.secs : (freePx > 0 ? ((s.to - s.from) / freePx) * freeTime : 0)
+    s.dur = s.secs != null ? s.secs : ((s.to - s.from) / px) * scrollTime
     s.start = t
     t += s.dur
   }

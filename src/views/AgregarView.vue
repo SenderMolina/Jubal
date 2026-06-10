@@ -54,7 +54,7 @@
     <div class="form-group">
       <label class="form-label">Letra y acordes</label>
       <textarea class="form-textarea" v-model="form.lyrics" :placeholder="lyricsPlaceholder"></textarea>
-      <div class="form-hint">Pon los acordes en una línea y la letra en la siguiente. Usa [Coro], [Verso], [Puente] para secciones. Opcional: fija el tiempo de una sección para el autoscroll, ej. [Intro 0:25] o [Coro 1:10] — el tiempo no se muestra en pantalla.</div>
+      <div class="form-hint">Pon los acordes en una línea y la letra en la siguiente. Usa [Coro], [Verso], [Puente] para secciones. Opcional: dale tiempo a una sección, ej. [Intro 0:25] o [Coro 1:10] — el autoscroll se pausa ahí ese tiempo y luego continúa; el tiempo no se muestra en pantalla.</div>
     </div>
 
     <div class="form-group">
