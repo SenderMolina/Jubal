@@ -17,6 +17,14 @@ create table if not exists public.invitations (
 );
 create index if not exists invitations_band_idx on public.invitations(band_id);
 
+-- FK adicional band_members → profiles para poder embeber el perfil del miembro
+-- en las consultas de PostgREST (select ... profile:profiles(...)).
+alter table public.band_members
+  drop constraint if exists band_members_user_profile_fk;
+alter table public.band_members
+  add constraint band_members_user_profile_fk
+  foreign key (user_id) references public.profiles(id) on delete cascade;
+
 alter table public.invitations enable row level security;
 
 drop policy if exists invitations_manage on public.invitations;
