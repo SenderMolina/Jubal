@@ -21,26 +21,20 @@
     </RouterLink>
     <p v-else class="home-empty">No hay actividades próximas.</p>
 
-    <!-- Accesos rápidos -->
-    <h2 class="home-section">Accesos</h2>
-    <div class="home-grid">
-      <RouterLink class="home-tile" to="/actividades">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <span>Actividades</span>
-      </RouterLink>
-      <RouterLink class="home-tile" to="/repertorio">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-        <span>Repertorios</span>
-      </RouterLink>
-      <RouterLink class="home-tile" to="/canciones">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><path d="M9 9l12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-        <span>Canciones</span>
-      </RouterLink>
-      <RouterLink v-if="band.isLeader" class="home-tile" to="/banda">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-        <span>Banda</span>
-      </RouterLink>
-    </div>
+    <!-- Acciones rápidas (solo líder) -->
+    <template v-if="band.isLeader">
+      <h2 class="home-section">Acciones rápidas</h2>
+      <div class="home-actions">
+        <RouterLink class="home-action" to="/actividades?nueva=1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>Nueva actividad</span>
+        </RouterLink>
+        <RouterLink class="home-action" to="/banda">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          <span>Invitar miembro</span>
+        </RouterLink>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -111,13 +105,13 @@ function longDate(s)  { return d(s).toLocaleDateString('es', { weekday: 'long', 
 
 .home-empty { color: var(--text-muted); font-size: 14px; }
 
-.home-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.home-tile {
+.home-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.home-action {
   display: flex; flex-direction: column; align-items: center; gap: 8px;
-  padding: 20px 12px; background: var(--surface); border: 1px solid var(--border);
+  padding: 18px 12px; background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); box-shadow: var(--shadow); text-decoration: none;
   color: var(--text-mid); font-weight: 600; font-size: .9rem; transition: all .15s;
 }
-.home-tile svg { width: 26px; height: 26px; color: var(--accent); }
-.home-tile:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); box-shadow: var(--shadow-hover); }
+.home-action svg { width: 24px; height: 24px; color: var(--accent); }
+.home-action:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); box-shadow: var(--shadow-hover); }
 </style>

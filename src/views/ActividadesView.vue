@@ -130,8 +130,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, nextTick } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useRoleStore } from '../stores/role'
 import { useToast } from '../composables/useToast'
@@ -140,12 +140,22 @@ import ActivityModal from '../components/ActivityModal.vue'
 import ActionSheet from '../components/ActionSheet.vue'
 
 const router    = useRouter()
+const route     = useRoute()
 const store     = useAppStore()
 const roleStore = useRoleStore()
 const modal     = ref(null)
 const sheet     = ref(null)
 const { showToast } = useToast()
 const { confirm }   = useConfirm()
+
+// Acción rápida desde Inicio: /actividades?nueva=1 abre el modal de creación.
+onMounted(async () => {
+  if (route.query.nueva && roleStore.isLeader) {
+    await nextTick()
+    modal.value?.open()
+    router.replace('/actividades')
+  }
+})
 
 function openMenu(a) {
   sheet.value?.open({
