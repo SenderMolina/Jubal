@@ -7,6 +7,7 @@ import TiposView             from '../views/TiposView.vue'
 import SongView              from '../views/SongView.vue'
 import RepertorioView        from '../views/RepertorioView.vue'
 import RepertorioDetailView  from '../views/RepertorioDetailView.vue'
+import BandManageView        from '../views/BandManageView.vue'
 
 const routes = [
   { path: '/',                component: ActividadesView },
@@ -16,6 +17,7 @@ const routes = [
   { path: '/canciones',       component: CancionesView },
   { path: '/agregar',         component: AgregarView },
   { path: '/tipos',           component: TiposView },
+  { path: '/banda',           component: BandManageView },
   { path: '/cancion/:id',     component: SongView },
 ]
 

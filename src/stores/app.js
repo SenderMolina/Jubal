@@ -1,27 +1,19 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { supabase } from '../supabase'
+import { useBandStore } from './band'
 
-const defaultSongs = [
-  { id: 1, title: "Cuán Grande es Él", author: "Stuart K. Hine", key: "G", bpm: 68, lyrics: `[Intro]\nG  C  G  D\n\n[Verso 1]\nG                    C\nSeñor mi Dios, al contemplar los cielos\nG               D\nEl firmamento y las estrellas mil\nG                    C\nAl oír Tu voz en los poderosos truenos\nG         D       G\nY ver brillar el sol en su cenit\n\n[Coro]\nG       C      G\nMi alma canta a Ti\n          D\nSeñor mi Dios\nG       C       G    D    G\n¡Cuán grande es Él! ¡Cuán grande es Él!` },
-  { id: 2, title: "Santo, Santo, Santo", author: "Reginald Heber", key: "D", bpm: 72, lyrics: `[Intro]\nD  A  Bm  G  D\n\n[Verso 1]\nD          A        D\nSanto, Santo, Santo\nD          G        A\nSeñor omnipotente\nD         A          D    G\nSiempre el labio mío loores te dará\nD        A        D\nSanto, Santo, Santo\nG          D       A    D\nTe adoro reverente\n\n[Coro]\nG         D\nSanto, Santo, Santo\nA              D\nEs el Señor` },
-  { id: 3, title: "Majestuoso", author: "Danilo Montero", key: "E", bpm: 80, lyrics: `[Intro]\nE  B  C#m  A  (x2)\n\n[Verso 1]\nE              B\nMajestuoso y poderoso\nC#m              A\nDigno de honor y gloria eres Tú\nE              B\nRey de reyes, Señor de señores\nC#m          A      B\nTodo el cielo proclama Tu valor\n\n[Coro]\nE         B\n¡Majestuoso!\nC#m         A\n¡Glorioso!\nE          B\n¡Poderoso!\nC#m    A    B\n¡Rey!` },
-  { id: 4, title: "Tu Fidelidad", author: "Marcos Witt", key: "C", bpm: 64, lyrics: `[Intro]\nC  G  Am  F  (x2)\n\n[Verso 1]\nC           G\nGrande es Tu fidelidad\nAm            F\nDios mi padre, no hay sombra\nC           G\nDe variación en Ti\nAm      F\nSiempre el mismo serás\n\n[Coro]\nC         G         Am\nGrande es Tu fidelidad\nF          C\nGrande es Tu fidelidad\nG              Am    F\nCada mañana se renueva\nC  G  Am  F\nTu misericordia en mí` },
-  { id: 5, title: "Eres Todo Poderoso", author: "Generación 12", key: "A", bpm: 88, lyrics: `[Intro]\nA  E  F#m  D  (x2)\n\n[Verso 1]\nA                E\nEres todopoderoso, eres asombroso\nF#m                D\nDigno de alabanza, digno de honor\nA                E\nTu nombre es eterno, Tu nombre es glorioso\nF#m             D        E\nPor siempre y para siempre, Señor\n\n[Coro]\nA       E\n¡Aleluya! ¡Aleluya!\nF#m      D\nAl Rey adoramos\nA       E\n¡Aleluya! ¡Aleluya!\nF#m    D   E   A\nSu nombre alabamos` },
-]
-
-// Sincroniza una tabla con el estado local: upsert de las filas presentes y
-// borrado de las que ya no existen. Reemplaza el `set()` de Firebase pero por filas.
-async function syncTable(table, rows) {
+// Sincroniza una tabla con el estado local, ACOTADO a la banda activa:
+// upsert de las filas presentes y borrado de las que ya no existen en esa banda.
+async function syncTable(table, bandId, rows) {
   if (rows.length) {
     const { error } = await supabase.from(table).upsert(rows)
     if (error) { console.error(`Error guardando ${table}:`, error); return }
   }
   const ids = rows.map(r => r.id)
-  const del = supabase.from(table).delete()
-  const { error } = ids.length
-    ? await del.not('id', 'in', `(${ids.join(',')})`)
-    : await del.gte('id', 0)            // tabla vacía → borrar todo
+  let del = supabase.from(table).delete().eq('band_id', bandId)
+  if (ids.length) del = del.not('id', 'in', `(${ids.join(',')})`)
+  const { error } = await del
   if (error) console.error(`Error limpiando ${table}:`, error)
 }
 
@@ -30,102 +22,117 @@ export const useAppStore = defineStore('app', () => {
   const activities  = ref([])
   const songTypes   = ref([])
   const repertoires = ref([])
-  let seeded = false
 
-  // ---------- Cargas ----------
+  const band = useBandStore()
+  const bid = () => band.currentBandId
+  let channels = []
+
+  // ---------- Cargas (filtradas por banda) ----------
   async function loadSongs() {
-    const { data } = await supabase.from('songs').select('*').order('id')
-    if (data && data.length) {
-      songs.value = data
-    } else if (!seeded) {
-      songs.value = defaultSongs
-      await supabase.from('songs').upsert(defaultSongs)
-    } else {
-      songs.value = []
-    }
-    seeded = true
+    const b = bid(); if (!b) { songs.value = []; return }
+    const { data } = await supabase.from('songs').select('*').eq('band_id', b).order('id')
+    songs.value = data || []
   }
 
   async function loadSongTypes() {
-    const { data } = await supabase.from('song_types').select('*').order('id')
+    const b = bid(); if (!b) { songTypes.value = []; return }
+    const { data } = await supabase.from('song_types').select('*').eq('band_id', b).order('id')
     songTypes.value = data || []
   }
 
   async function loadActivities() {
-    const { data } = await supabase.from('activities').select('*').order('id')
+    const b = bid(); if (!b) { activities.value = []; return }
+    const { data } = await supabase.from('activities').select('*').eq('band_id', b).order('id')
     activities.value = (data || []).map(a => ({ ...a, tiempos: a.tiempos || [] }))
   }
 
   async function loadRepertoires() {
-    const [{ data: reps }, { data: links }] = await Promise.all([
-      supabase.from('repertoires').select('*').order('id'),
-      supabase.from('repertoire_songs').select('*').order('position'),
-    ])
+    const b = bid(); if (!b) { repertoires.value = []; return }
+    const { data: reps } = await supabase.from('repertoires').select('*').eq('band_id', b).order('id')
+    const repIds = (reps || []).map(r => r.id)
+    let links = []
+    if (repIds.length) {
+      const { data } = await supabase
+        .from('repertoire_songs').select('*').in('repertoire_id', repIds).order('position')
+      links = data || []
+    }
     repertoires.value = (reps || []).map(r => ({
       ...r,
-      songs: (links || [])
+      songs: links
         .filter(l => l.repertoire_id === r.id)
         .sort((a, b) => a.position - b.position)
         .map(l => l.song_id),
     }))
   }
 
-  // ---------- Guardados ----------
+  function loadAll() { loadSongs(); loadSongTypes(); loadActivities(); loadRepertoires() }
+
+  // ---------- Guardados (incluyen band_id) ----------
   function saveSongs() {
-    return syncTable('songs', songs.value.map(s => ({
+    const b = bid()
+    return syncTable('songs', b, songs.value.map(s => ({
       id: s.id, title: s.title, author: s.author,
-      key: s.key, bpm: s.bpm ?? null, lyrics: s.lyrics ?? '',
+      key: s.key, bpm: s.bpm ?? null, lyrics: s.lyrics ?? '', band_id: b,
     })))
   }
 
   function saveSongTypes() {
-    return syncTable('song_types', songTypes.value.map(t => ({ id: t.id, name: t.name })))
+    const b = bid()
+    return syncTable('song_types', b, songTypes.value.map(t => ({ id: t.id, name: t.name, band_id: b })))
   }
 
   function saveActivities() {
-    return syncTable('activities', activities.value.map(a => ({
+    const b = bid()
+    return syncTable('activities', b, activities.value.map(a => ({
       id: a.id, title: a.title, date: a.date ?? null, time: a.time ?? null,
-      description: a.description ?? '', tiempos: a.tiempos || [],
+      description: a.description ?? '', tiempos: a.tiempos || [], band_id: b,
     })))
   }
 
   async function saveRepertoires() {
-    await syncTable('repertoires', repertoires.value.map(r => ({ id: r.id, name: r.name })))
-    // Reconstruir la tabla puente con el orden actual.
-    const links = repertoires.value.flatMap(r =>
-      (r.songs || []).map((songId, i) => ({
-        repertoire_id: r.id, song_id: songId, position: i,
-      }))
-    )
+    const b = bid()
+    await syncTable('repertoires', b, repertoires.value.map(r => ({ id: r.id, name: r.name, band_id: b })))
+    // Reconstruir la tabla puente solo para los repertorios de esta banda.
     const repIds = repertoires.value.map(r => r.id)
-    const clear = supabase.from('repertoire_songs').delete()
-    await (repIds.length ? clear.not('repertoire_id', 'in', `(${repIds.join(',')})`) : clear.gte('repertoire_id', 0))
-    for (const r of repertoires.value) {
-      await supabase.from('repertoire_songs').delete().eq('repertoire_id', r.id)
+    if (repIds.length) {
+      await supabase.from('repertoire_songs').delete().in('repertoire_id', repIds)
     }
+    const links = repertoires.value.flatMap(r =>
+      (r.songs || []).map((songId, i) => ({ repertoire_id: r.id, song_id: songId, position: i }))
+    )
     if (links.length) {
       const { error } = await supabase.from('repertoire_songs').insert(links)
       if (error) console.error('Error guardando repertorios:', error)
     }
   }
 
-  // ---------- Realtime ----------
-  // Cualquier cambio remoto refresca el recurso afectado (reemplaza onValue).
-  loadSongs(); loadSongTypes(); loadActivities(); loadRepertoires()
+  // ---------- Realtime (re-suscrito por banda) ----------
+  function unsubscribe() {
+    channels.forEach(c => supabase.removeChannel(c))
+    channels = []
+  }
 
-  supabase.channel('songs-ch')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'songs' }, loadSongs)
-    .subscribe()
-  supabase.channel('song_types-ch')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'song_types' }, loadSongTypes)
-    .subscribe()
-  supabase.channel('activities-ch')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'activities' }, loadActivities)
-    .subscribe()
-  supabase.channel('repertoires-ch')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'repertoires' }, loadRepertoires)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'repertoire_songs' }, loadRepertoires)
-    .subscribe()
+  function subscribe() {
+    unsubscribe()
+    const b = bid(); if (!b) return
+    const filter = `band_id=eq.${b}`
+    channels.push(
+      supabase.channel(`songs-${b}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'songs', filter }, loadSongs).subscribe(),
+      supabase.channel(`song_types-${b}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'song_types', filter }, loadSongTypes).subscribe(),
+      supabase.channel(`activities-${b}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'activities', filter }, loadActivities).subscribe(),
+      supabase.channel(`repertoires-${b}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'repertoires', filter }, loadRepertoires)
+        // repertoire_songs no tiene band_id; RLS limita la visibilidad y recargamos.
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'repertoire_songs' }, loadRepertoires)
+        .subscribe(),
+    )
+  }
+
+  // Al cambiar de banda (o entrar a una), recargar y re-suscribir.
+  watch(() => band.currentBandId, () => { loadAll(); subscribe() }, { immediate: true })
 
   return { songs, activities, songTypes, repertoires, saveSongs, saveActivities, saveSongTypes, saveRepertoires }
 })

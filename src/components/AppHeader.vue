@@ -27,6 +27,7 @@ const pageTitle = computed(() => {
   if (path.startsWith('/repertorio')) return 'Repertorios'
   if (path.startsWith('/canciones') || path.startsWith('/cancion/')) return 'Canciones'
   if (path.startsWith('/tipos')) return 'Tipos'
+  if (path.startsWith('/banda')) return 'Banda'
   if (path.startsWith('/agregar')) return 'Canciones'
   return 'Jubal'
 })
