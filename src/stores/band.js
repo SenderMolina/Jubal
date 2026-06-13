@@ -68,10 +68,10 @@ export const useBandStore = defineStore('band', () => {
       const { data, error } = await supabase.rpc('redeem_invitation', { p_token: token })
       if (error) throw error
       const row = Array.isArray(data) ? data[0] : data
-      if (row?.band_id) {
+      if (row?.out_band_id) {
         await loadBands()
-        selectBand(row.band_id)
-        inviteResult.value = { ok: true, name: row.band_name, role: row.role }
+        selectBand(row.out_band_id)
+        inviteResult.value = { ok: true, name: row.out_band_name, role: row.out_role }
       }
     } catch (e) {
       inviteResult.value = { ok: false, message: e.message || 'No se pudo unir a la banda.' }

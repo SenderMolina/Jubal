@@ -42,8 +42,10 @@ create policy profiles_select_bandmates on public.profiles
   for select to authenticated using (public.shares_band_with(id));
 
 -- 3) Canjear una invitación (el invitado aún no es miembro → security definer)
-create or replace function public.redeem_invitation(p_token text)
-returns table(band_id uuid, band_name text, role public.band_role)
+-- Las columnas de salida usan prefijo out_ para no chocar con band_id/role (ambigüedad).
+drop function if exists public.redeem_invitation(text);
+create function public.redeem_invitation(p_token text)
+returns table(out_band_id uuid, out_band_name text, out_role public.band_role)
 language plpgsql security definer set search_path = public as $$
 declare inv public.invitations;
 begin
