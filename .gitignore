@@ -5,3 +5,7 @@ dist/
 .env.development
 .env.production
 # .env.example sí se puede commitear (no tiene credenciales reales)
+
+# Export de datos de Firebase usado para la migración (contiene datos reales)
+*-rtdb-export.json
+firebase-export.json

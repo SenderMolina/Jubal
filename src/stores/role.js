@@ -1,7 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { db } from '../firebase'
-import { ref as dbRef, get, set } from 'firebase/database'
+import { supabase } from '../supabase'
+
+async function getLeaderPassword() {
+  const { data } = await supabase
+    .from('app_config').select('value').eq('key', 'leaderPassword').maybeSingle()
+  return data?.value ?? null
+}
 
 export const useRoleStore = defineStore('role', () => {
   const currentRole = ref(sessionStorage.getItem('role') || null)
@@ -10,14 +15,13 @@ export const useRoleStore = defineStore('role', () => {
   const isCantante = computed(() => currentRole.value === 'cantante')
   const isMusico   = computed(() => currentRole.value === 'musico')
 
-  // Ensure default password exists on first run
-  get(dbRef(db, 'config/leaderPassword')).then(snap => {
-    if (!snap.val()) set(dbRef(db, 'config/leaderPassword'), 'musicman')
+  // Garantizar que exista la contraseña por defecto en el primer arranque.
+  getLeaderPassword().then(pwd => {
+    if (!pwd) supabase.from('app_config').upsert({ key: 'leaderPassword', value: 'musicman' })
   })
 
   async function checkPassword(input) {
-    const snap = await get(dbRef(db, 'config/leaderPassword'))
-    return input === snap.val()
+    return input === await getLeaderPassword()
   }
 
   function enterAs(role) {
