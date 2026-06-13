@@ -73,7 +73,7 @@ function longDate(s)  { return d(s).toLocaleDateString('es', { weekday: 'long', 
 .home-hero { margin-bottom: 22px; }
 .home-hero__hi { color: var(--text-mid); font-size: .95rem; }
 .home-hero__band {
-  font-family: 'DM Serif Display', serif; font-size: 2rem; line-height: 1.15;
+  font-family: 'Sono', sans-serif; font-weight: 700; font-size: 2rem; line-height: 1.15;
   color: var(--text); margin: 2px 0 8px;
 }
 .home-hero__role {

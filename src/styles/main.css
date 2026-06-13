@@ -25,7 +25,7 @@
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   min-height: 100vh;
   font-size: 15px;
 }
@@ -48,7 +48,7 @@ body {
   gap: 10px;
 }
 .app-header__title {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Sono', sans-serif; font-weight: 700;
   font-size: 1.7rem;
   font-weight: 700;
   color: var(--text);
@@ -105,7 +105,7 @@ header {
   gap: 6px;
   padding: 8px 16px;
   border-radius: 8px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
@@ -138,7 +138,7 @@ header {
   border-radius: 14px;
   background: var(--surface);
   color: var(--text);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -210,7 +210,7 @@ header {
   background: none;
   border: none;
   padding: 15px 4px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   font-size: 0.98rem;
   font-weight: 500;
   color: var(--text);
@@ -362,7 +362,7 @@ header {
 }
 .detail-hero__thumb svg { width: 34px; height: 34px; }
 .detail-hero__title {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Sono', sans-serif; font-weight: 700;
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--text);
@@ -500,7 +500,7 @@ header {
   background: none;
   border: none;
   padding: 4px 2px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-mid);
@@ -544,7 +544,7 @@ header {
   height: 24px;
 }
 .bottom-nav__label {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   font-size: 0.68rem;
   font-weight: 500;
   letter-spacing: 0.02em;
@@ -586,7 +586,7 @@ header {
 
 /* ── SECTION TITLES ── */
 .section-title {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Sono', sans-serif; font-weight: 700;
   font-size: 1.5rem;
   color: var(--text);
   margin-bottom: 4px;
@@ -637,7 +637,7 @@ header {
 .setlist-card:hover::before { opacity: 1; }
 
 .song-num {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Sono', sans-serif; font-weight: 700;
   font-size: 1.4rem;
   color: var(--accent);
   min-width: 30px;
@@ -672,11 +672,11 @@ header {
   cursor: pointer;
   font-size: 1rem;
   transition: all 0.15s;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   box-shadow: var(--shadow);
 }
 .back-btn:hover { border-color: var(--teal); color: var(--teal); }
-.song-view-title { font-family: 'DM Serif Display', serif; font-size: 2rem; line-height: 1.2; color: var(--text); }
+.song-view-title { font-family: 'Sono', sans-serif; font-weight: 700; font-size: 2rem; line-height: 1.2; color: var(--text); }
 .song-view-meta { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; display: flex; gap: 12px; flex-wrap: wrap; }
 .lyrics-block {
   background: var(--surface);
@@ -686,7 +686,7 @@ header {
   font-size: 1rem;
   line-height: 2;
   white-space: pre-wrap;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   box-shadow: var(--shadow);
 }
 /* Acordes y letra comparten fuente monoespaciada y tamaño: la alineación
@@ -703,7 +703,7 @@ header {
   padding: 24px 0 16px;
 }
 .songs-header__title {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Sono', sans-serif; font-weight: 700;
   font-size: 28px;
   font-weight: 700;
   line-height: 1.2;
@@ -716,7 +716,7 @@ header {
   margin-top: 4px;
 }
 .songs-header__count {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Sono', sans-serif; font-weight: 700;
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--accent);
@@ -752,7 +752,7 @@ header {
   font-size: 15px;
   background: var(--surface);
   color: var(--text);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
@@ -925,7 +925,7 @@ header {
   border: none;
   background: none;
   border-radius: 10px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   font-size: 0.9rem;
   cursor: pointer;
   transition: background 0.15s;
@@ -944,7 +944,7 @@ header {
   border-radius: 8px;
   padding: 10px 16px;
   color: var(--text);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   font-size: 0.9rem;
   outline: none;
   transition: border-color 0.15s;
@@ -990,7 +990,7 @@ header {
   background: var(--surface);
   color: var(--text-mid);
   transition: all 0.18s ease;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 .type-pill:hover { border-color: var(--accent); color: var(--accent); }
@@ -1090,7 +1090,7 @@ header {
   border-radius: 8px;
   padding: 10px 14px;
   color: var(--text);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   font-size: 0.9rem;
   outline: none;
   transition: border-color 0.15s;
@@ -1119,7 +1119,7 @@ header {
   border-radius: 0;
   padding: 8px 2px;
   color: var(--text);
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Sono', sans-serif; font-weight: 700;
   font-size: 1.6rem;
   font-weight: 400;
   outline: none;
@@ -1157,7 +1157,7 @@ header {
   background: none;
   border: none;
   cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   font-size: 0.82rem;
   font-weight: 500;
   color: var(--text-muted);
@@ -1190,7 +1190,7 @@ header {
   color: #fff;
   padding: 10px 28px;
   border-radius: 8px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   font-size: 0.95rem;
   font-weight: 600;
   border: none;
@@ -1294,7 +1294,7 @@ header {
   border-radius: 8px;
   padding: 8px 10px;
   color: var(--text);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   font-size: 0.85rem;
   outline: none;
   text-align: center;
@@ -1329,7 +1329,7 @@ header {
   from { transform: translateY(20px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
-.modal-title { font-family: 'DM Serif Display', serif; font-size: 1.3rem; margin-bottom: 6px; color: var(--text); }
+.modal-title { font-family: 'Sono', sans-serif; font-weight: 700; font-size: 1.3rem; margin-bottom: 6px; color: var(--text); }
 .modal-sub   { font-size: 0.83rem; color: var(--text-muted); margin-bottom: 20px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
@@ -1340,7 +1340,7 @@ header {
 /* ── CALENDAR ── */
 .calendar-wrapper { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
 .calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.calendar-month-label { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--text); text-transform: capitalize; }
+.calendar-month-label { font-family: 'Sono', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--text); text-transform: capitalize; }
 .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
 .calendar-day-header { text-align: center; font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; padding: 6px 0; }
 .calendar-day { text-align: center; padding: 8px 4px; border-radius: 8px; font-size: 0.85rem; color: var(--text-mid); position: relative; cursor: default; }
@@ -1489,7 +1489,7 @@ header {
 }
 
 .repertorio-name-input {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Sono', sans-serif; font-weight: 700;
   font-size: 1.4rem;
   font-weight: 700;
   color: var(--text);
@@ -1506,7 +1506,7 @@ header {
 }
 
 .repertorio-song-num {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Sono', sans-serif; font-weight: 700;
   font-size: 1.1rem;
   color: var(--accent);
   min-width: 24px;
@@ -1567,7 +1567,7 @@ header {
   background: var(--surface);
   cursor: pointer;
   transition: all 0.18s ease;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
 }
 .repertorio-import-btn:hover {
   border-color: var(--accent);
@@ -1628,7 +1628,7 @@ header {
 }
 .activity-detail-info { flex: 1; }
 .activity-detail-title {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Sono', sans-serif; font-weight: 700;
   font-size: 1.6rem;
   color: var(--text);
   line-height: 1.2;
@@ -1645,7 +1645,7 @@ header {
   border-radius: 10px;
   background: transparent;
   color: var(--text-muted);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
@@ -1678,7 +1678,7 @@ header {
   margin-bottom: 14px;
 }
 .tiempo-name {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Sono', sans-serif; font-weight: 700;
   font-size: 1.15rem;
   color: var(--text);
 }
@@ -1699,7 +1699,7 @@ header {
   border-radius: 7px;
   background: transparent;
   color: var(--text-muted);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
@@ -1880,7 +1880,7 @@ header {
   border: none;
   background: transparent;
   border-radius: 7px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sono', sans-serif;
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--text-muted);
