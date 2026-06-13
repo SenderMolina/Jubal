@@ -119,7 +119,7 @@ async function signOut() {
   box-shadow: var(--shadow);
   padding: 26px 22px 22px;
 }
-.bands-box .role-logo { height: 120px; margin-bottom: 4px; }
+.bands-box .role-logo { width: min(240px, 75%); height: auto; margin-bottom: 8px; }
 .bands-greeting { color: var(--text-mid); font-size: 14px; margin: 2px 0 16px; }
 .bands-title { font-size: 1rem; color: var(--text-mid); text-align: left; margin-bottom: 12px; font-weight: 600; }
 

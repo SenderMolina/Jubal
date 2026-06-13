@@ -111,7 +111,7 @@ function traducir(msg = '') {
   box-shadow: var(--shadow);
   padding: 28px 24px 24px;
 }
-.auth-box .role-logo { height: 132px; margin-bottom: 8px; }
+.auth-box .role-logo { width: min(260px, 80%); height: auto; margin-bottom: 8px; }
 
 .auth-google {
   display: flex; align-items: center; justify-content: center; gap: 10px;
