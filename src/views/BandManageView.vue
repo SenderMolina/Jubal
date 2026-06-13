@@ -63,6 +63,12 @@
         </div>
       </div>
       <p v-else class="bm-empty">Aún no hay invitaciones activas.</p>
+
+      <h2 class="bm-heading">Configuración</h2>
+      <RouterLink class="bm-link" to="/tipos">
+        <span>Tipos de canción</span>
+        <span class="bm-link__arrow">›</span>
+      </RouterLink>
     </template>
   </div>
 </template>
@@ -190,4 +196,12 @@ onMounted(refresh)
 .bm-invite__uses { font-size: 12px; color: var(--text-muted, #888); }
 .bm-invite__actions { display: flex; gap: 8px; }
 .bm-empty { color: var(--text-muted, #888); font-size: 14px; }
+
+.bm-link {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; text-decoration: none; color: var(--text); font-weight: 600;
+}
+.bm-link:hover { border-color: var(--accent); color: var(--accent); }
+.bm-link__arrow { color: var(--text-muted); font-size: 1.4rem; line-height: 1; }
 </style>

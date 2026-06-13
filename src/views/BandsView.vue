@@ -111,42 +111,52 @@ async function signOut() {
 </script>
 
 <style scoped>
-.bands-box { width: min(380px, 92vw); }
-.bands-greeting { color: var(--text-muted, #aaa); font-size: 14px; margin: 4px 0 14px; }
-.bands-title { font-size: 18px; margin-bottom: 12px; }
+.bands-box {
+  width: min(400px, 92vw);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 26px 22px 22px;
+}
+.bands-box .role-logo { height: 120px; margin-bottom: 4px; }
+.bands-greeting { color: var(--text-mid); font-size: 14px; margin: 2px 0 16px; }
+.bands-title { font-size: 1rem; color: var(--text-mid); text-align: left; margin-bottom: 12px; font-weight: 600; }
 
 .bands-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
 .band-card {
   display: flex; align-items: center; justify-content: space-between;
-  width: 100%; padding: 14px 16px; cursor: pointer;
-  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
-  border-radius: 12px; color: inherit; text-align: left;
+  width: 100%; padding: 15px 16px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text); text-align: left;
+  box-shadow: var(--shadow); transition: all .15s;
 }
-.band-card:hover { background: rgba(255,255,255,.09); }
+.band-card:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: var(--shadow-hover); }
 .band-card__name { font-weight: 600; font-size: 15px; }
 .band-card__role {
-  font-size: 12px; padding: 3px 10px; border-radius: 999px;
-  background: rgba(255,255,255,.1); color: var(--text-muted, #ccc);
+  font-size: 12px; padding: 3px 11px; border-radius: 999px;
+  background: var(--surface2); color: var(--text-mid); font-weight: 600;
 }
-.band-card__role.role-leader { background: var(--accent, #c8a04b); color: #1a1a1a; }
+.band-card__role.role-leader { background: var(--accent); color: #fff; }
 
-.bands-empty { color: var(--text-muted, #888); font-size: 14px; margin: 8px 0 18px; }
+.bands-empty { color: var(--text-muted); font-size: 14px; margin: 8px 0 18px; }
 
 .bands-create { margin-bottom: 6px; }
-.bands-create__btn { width: 100%; padding: 12px; }
+.bands-create__btn { width: 100%; justify-content: center; padding: 12px; }
 .bands-create input {
   width: 100%; padding: 11px 12px; margin-bottom: 8px; border-radius: 10px;
-  border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04);
-  color: inherit; font-size: 15px;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text); font-size: 15px; outline: none;
 }
+.bands-create input:focus { border-color: var(--teal); }
 .bands-create__actions { display: flex; gap: 8px; }
-.bands-create__actions .btn { flex: 1; }
+.bands-create__actions .btn { flex: 1; justify-content: center; }
 
 .auth-msg { margin-top: 14px; font-size: 13px; }
-.auth-msg--error { color: #ff6b6b; }
+.auth-msg--error { color: var(--red); }
 
 .role-signout {
   margin-top: 22px; background: none; border: none; cursor: pointer;
-  color: var(--text-muted, #888); font-size: 13px; text-decoration: underline;
+  color: var(--text-muted); font-size: 13px; text-decoration: underline;
 }
 </style>

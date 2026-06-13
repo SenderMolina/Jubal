@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
+import HomeView              from '../views/HomeView.vue'
 import ActividadesView       from '../views/ActividadesView.vue'
 import ActividadDetailView   from '../views/ActividadDetailView.vue'
 import CancionesView         from '../views/CancionesView.vue'
@@ -10,7 +11,8 @@ import RepertorioDetailView  from '../views/RepertorioDetailView.vue'
 import BandManageView        from '../views/BandManageView.vue'
 
 const routes = [
-  { path: '/',                component: ActividadesView },
+  { path: '/',                component: HomeView },
+  { path: '/actividades',     component: ActividadesView },
   { path: '/actividad/:id',   component: ActividadDetailView },
   { path: '/repertorio',      component: RepertorioView },
   { path: '/repertorio/:id',  component: RepertorioDetailView },

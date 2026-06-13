@@ -103,41 +103,52 @@ function traducir(msg = '') {
 </script>
 
 <style scoped>
-.auth-box { width: min(360px, 90vw); }
+.auth-box {
+  width: min(380px, 92vw);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px 24px 24px;
+}
+.auth-box .role-logo { height: 132px; margin-bottom: 8px; }
 
 .auth-google {
   display: flex; align-items: center; justify-content: center; gap: 10px;
-  width: 100%; padding: 12px; border-radius: 12px;
-  background: #fff; color: #1f1f1f; font-weight: 600;
-  border: none; cursor: pointer;
+  width: 100%; padding: 12px; border-radius: 10px;
+  background: var(--surface); color: var(--text); font-weight: 600; font-size: .95rem;
+  border: 1px solid var(--border); cursor: pointer; transition: all .15s;
 }
+.auth-google:hover { border-color: var(--teal); box-shadow: var(--shadow); }
 .auth-google:disabled { opacity: .6; cursor: default; }
 
 .auth-divider {
   display: flex; align-items: center; gap: 12px;
-  color: var(--text-muted, #888); margin: 18px 0; font-size: 13px;
+  color: var(--text-muted); margin: 18px 0; font-size: 13px;
 }
 .auth-divider::before, .auth-divider::after {
-  content: ''; flex: 1; height: 1px; background: rgba(255,255,255,.12);
+  content: ''; flex: 1; height: 1px; background: var(--border);
 }
 
-.auth-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+.auth-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
 .auth-tabs button {
-  flex: 1; padding: 8px; border: none; cursor: pointer;
-  background: rgba(255,255,255,.06); color: var(--text-muted, #aaa);
-  border-radius: 10px; font-weight: 600;
+  flex: 1; padding: 9px; border: 1px solid var(--border); cursor: pointer;
+  background: var(--surface2); color: var(--text-mid);
+  border-radius: 10px; font-weight: 600; font-size: .88rem; transition: all .15s;
 }
-.auth-tabs button.active { background: var(--accent, #c8a04b); color: #1a1a1a; }
+.auth-tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
-.auth-form { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.auth-form { display: flex; flex-direction: column; gap: 4px; text-align: left; }
+.form-label { font-size: .8rem; color: var(--text-mid); font-weight: 600; margin-top: 6px; }
 .auth-form input {
-  width: 100%; padding: 11px 12px; margin-bottom: 8px;
-  border-radius: 10px; border: 1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.04); color: inherit; font-size: 15px;
+  width: 100%; padding: 11px 12px; margin-bottom: 6px;
+  border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--text); font-size: 15px; outline: none;
 }
-.auth-form .btn-primary { width: 100%; padding: 12px; margin-top: 6px; }
+.auth-form input:focus { border-color: var(--teal); }
+.auth-form .btn-primary { width: 100%; justify-content: center; padding: 12px; margin-top: 10px; }
 
 .auth-msg { margin-top: 14px; font-size: 13px; }
-.auth-msg--error { color: #ff6b6b; }
-.auth-msg--info  { color: var(--accent, #c8a04b); }
+.auth-msg--error { color: var(--red); }
+.auth-msg--info  { color: var(--teal); }
 </style>

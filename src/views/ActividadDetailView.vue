@@ -419,6 +419,6 @@ async function handleDelete() {
   store.activities = store.activities.filter(a => a.id !== activity.value.id)
   store.saveActivities()
   showToast('Actividad eliminada')
-  router.push('/')
+  router.push('/actividades')
 }
 </script>
