@@ -67,22 +67,38 @@ let lastSent = 0
 function onScroll() {
   if (!live.isController || !scroller.value) return
   const now = Date.now()
-  if (now - lastSent < 80) return
+  if (now - lastSent < 60) return
   lastSent = now
   const el = scroller.value
   const max = el.scrollHeight - el.clientHeight
   live.setRatio(max > 0 ? el.scrollTop / max : 0)
 }
 
-// El seguidor aplica el scroll recibido.
+// El seguidor se desliza suavemente hacia la última posición recibida (interpolación),
+// para que se vea fluido aunque los mensajes lleguen cada ~60ms.
+let targetRatio = 0
+let rafId = null
 watch(() => live.state.ratio, (r) => {
-  if (live.isController || !live.following || !scroller.value) return
-  const el = scroller.value
-  const max = el.scrollHeight - el.clientHeight
-  el.scrollTop = r * max
+  if (live.isController || !live.following) return
+  targetRatio = r
+  if (!rafId) rafId = requestAnimationFrame(animate)
 })
+function animate() {
+  rafId = null
+  const el = scroller.value
+  if (live.isController || !live.following || !el) return
+  const max = el.scrollHeight - el.clientHeight
+  const target = targetRatio * max
+  const diff = target - el.scrollTop
+  if (Math.abs(diff) < 0.5) { el.scrollTop = target; return }
+  el.scrollTop += diff * 0.25            // se acerca 25% por frame (~ease)
+  rafId = requestAnimationFrame(animate)
+}
 // Al cambiar de canción, arriba del todo.
-watch(() => live.state.songId, () => { if (scroller.value) scroller.value.scrollTop = 0 })
+watch(() => live.state.songId, () => {
+  targetRatio = 0
+  if (scroller.value) scroller.value.scrollTop = 0
+})
 
 // El controlador arranca con la primera canción disponible.
 watch(() => store.songs.length, (n) => {
@@ -90,7 +106,10 @@ watch(() => store.songs.length, (n) => {
 }, { immediate: true })
 
 onMounted(() => live.connect())
-onBeforeUnmount(() => live.disconnect())
+onBeforeUnmount(() => {
+  if (rafId) cancelAnimationFrame(rafId)
+  live.disconnect()
+})
 </script>
 
 <style scoped>
