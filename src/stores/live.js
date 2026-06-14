@@ -1,67 +1,83 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { supabase } from '../supabase'
 import { useBandStore } from './band'
 import { useAuthStore } from './auth'
 
-// POC de sesión en vivo (solo Broadcast, sin tabla todavía).
-// El líder controla canción + scroll; los seguidores se sincronizan.
+// Sesión en vivo por secciones. El controlador (líder) escribe los índices
+// (canción/sección) en la tabla; los demás los siguen vía Realtime.
 export const useLiveStore = defineStore('live', () => {
   const band = useBandStore()
   const auth = useAuthStore()
 
-  // Estado compartido: qué canción y posición de scroll (proporción 0–1).
-  const state     = ref({ songId: null, ratio: 0, controllerId: null })
-  const following = ref(true)   // el seguidor puede soltarse (scroll libre)
-  const connected = ref(false)
-
+  const session = ref(null)   // fila live_sessions activa, o null
   let channel = null
-  let heartbeat = null
 
-  const isController = computed(() => band.isLeader)
+  const isActive     = computed(() => !!session.value)
+  const isController = computed(() => session.value?.controller_id === auth.user?.id)
+  const currentSongId = computed(() =>
+    session.value?.song_ids?.[session.value.current_song_index] ?? null)
 
-  function connect() {
-    disconnect()
+  async function loadActive() {
+    const b = band.currentBandId
+    if (!b) { session.value = null; return }
+    const { data } = await supabase
+      .from('live_sessions').select('*')
+      .eq('band_id', b).eq('is_active', true).maybeSingle()
+    session.value = data || null
+  }
+
+  function subscribe() {
+    unsubscribe()
     const b = band.currentBandId
     if (!b) return
-    channel = supabase.channel(`live-${b}`, { config: { broadcast: { self: false } } })
+    channel = supabase.channel(`live-${b}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'live_sessions', filter: `band_id=eq.${b}` },
+        loadActive)
+      .subscribe()
+    loadActive()
+  }
+  function unsubscribe() { if (channel) { supabase.removeChannel(channel); channel = null } }
 
-    channel.on('broadcast', { event: 'state' }, ({ payload }) => {
-      if (isController.value) return            // el líder no se sigue a sí mismo
-      if (following.value) state.value = payload // sigue canción + scroll
-      else state.value.songId = payload.songId   // suelto: sigue solo la canción
-    })
-
-    // Un seguidor que entra pide el estado actual; el líder responde.
-    channel.on('broadcast', { event: 'hello' }, () => { if (isController.value) push() })
-
-    channel.subscribe((status) => {
-      if (status !== 'SUBSCRIBED') return
-      connected.value = true
-      if (isController.value) heartbeat = setInterval(push, 2000) // late-join
-      else channel.send({ type: 'broadcast', event: 'hello', payload: {} })
-    })
+  // ---------- Controlador ----------
+  async function start({ source, activityId = null, tiempoId = null, songIds }) {
+    const b = band.currentBandId
+    await supabase.from('live_sessions').update({ is_active: false })
+      .eq('band_id', b).eq('is_active', true)            // cerrar previa si la hubiera
+    const { data, error } = await supabase.from('live_sessions').insert({
+      band_id: b, source, activity_id: activityId, tiempo_id: tiempoId,
+      song_ids: songIds, current_song_index: 0, current_section_index: 0,
+      is_playing: true, controller_id: auth.user.id, is_active: true,
+    }).select().single()
+    if (error) throw error
+    session.value = data
+    return data
   }
 
-  function disconnect() {
-    if (heartbeat) { clearInterval(heartbeat); heartbeat = null }
-    if (channel) { supabase.removeChannel(channel); channel = null }
-    connected.value = false
+  async function patch(fields) {
+    if (!session.value) return
+    const { data } = await supabase.from('live_sessions')
+      .update({ ...fields, updated_at: new Date().toISOString() })
+      .eq('id', session.value.id).select().single()
+    if (data) session.value = data
+  }
+  const setSong    = (i) => patch({ current_song_index: i, current_section_index: 0 })
+  const setSection = (i) => patch({ current_section_index: i })
+  const togglePlay = ()  => patch({ is_playing: !session.value?.is_playing })
+
+  async function end() {
+    if (session.value) {
+      await supabase.from('live_sessions')
+        .update({ is_active: false, is_playing: false }).eq('id', session.value.id)
+    }
+    session.value = null
   }
 
-  // ---- Controlador ----
-  function setSong(id) { state.value = { ...state.value, songId: id, ratio: 0 }; push() }
-  function setRatio(r) { state.value.ratio = r; push() }
-  function push() {
-    if (!channel || !isController.value) return
-    channel.send({ type: 'broadcast', event: 'state', payload: {
-      songId: state.value.songId, ratio: state.value.ratio, controllerId: auth.user?.id,
-    }})
+  watch(() => band.currentBandId, subscribe, { immediate: true })
+
+  return {
+    session, isActive, isController, currentSongId,
+    start, setSong, setSection, togglePlay, end, loadActive,
   }
-
-  // ---- Seguidor ----
-  function detach()   { following.value = false }
-  function reattach() { following.value = true }
-
-  return { state, following, connected, isController, connect, disconnect, setSong, setRatio, detach, reattach }
 })

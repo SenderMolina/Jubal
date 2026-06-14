@@ -63,6 +63,13 @@
               >
                 <div class="tiempo-header">
                   <h2 class="tiempo-name">{{ tiempo.name }}</h2>
+                  <button
+                    v-if="roleStore.isLeader && tiempo.songs?.length"
+                    class="dots-btn"
+                    style="color: var(--red); font-weight: 700; width: auto; padding: 4px 10px; font-size: .8rem;"
+                    aria-label="Iniciar en vivo"
+                    @click.stop="startLive(tiempo)"
+                  >▶ En vivo</button>
                   <button class="dots-btn dots-btn--danger" aria-label="Eliminar tiempo" @click.stop="deleteTiempo(tiempo.id)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <polyline points="3 6 5 6 21 6"/>
@@ -233,6 +240,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useRoleStore } from '../stores/role'
+import { useLiveStore } from '../stores/live'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import draggable from 'vuedraggable'
@@ -243,6 +251,15 @@ const route     = useRoute()
 const router    = useRouter()
 const store     = useAppStore()
 const roleStore = useRoleStore()
+const live      = useLiveStore()
+
+async function startLive(tiempo) {
+  if (!tiempo.songs?.length) return
+  try {
+    await live.start({ source: 'tiempo', activityId: activity.value.id, tiempoId: tiempo.id, songIds: tiempo.songs })
+    router.push('/live')
+  } catch (e) { console.error('No se pudo iniciar la sesión en vivo:', e) }
+}
 const { showToast } = useToast()
 const { confirm }   = useConfirm()
 

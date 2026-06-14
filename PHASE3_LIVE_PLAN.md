@@ -1,111 +1,99 @@
-# Fase 3 — Live Session (plan)
+# Fase 3 — Live Session por secciones (plan)
 
-Sesión en vivo donde un **encargado (líder)** controla qué canción/sección se ve, y
-**todos los miembros conectados** siguen en tiempo real: coristas ven la letra grande
-(estilo Spotify), músicos ven letra + acordes (estándar actual).
+Sesión en vivo donde un **encargado** va **avanzando por secciones** de la canción
+(Intro, Verso, Coro…) y la sección actual se muestra en pantalla a toda la banda.
+Coristas ven la letra estilo Spotify; músicos ven letra + acordes.
 
-## 0. Qué ya tenemos a favor
-- **Supabase Realtime** (Postgres Changes + Broadcast + Presence) — ya en uso.
-- **Roles por banda** (`leader`/`musician`/`singer`) con RLS.
-- **`activities.tiempos`** = `[{ id, name, songs:[songId] }]` → ya es el "setlist por secciones".
-- **`SongView`** ya parsea acordes/letra (`renderedLines`, `chordRegex`) y **oculta acordes
-  para coristas**; además soporta embeds por rol (`embedCantante`/`embedMusico`).
+## 0. Decisiones (según refinamiento del usuario)
+- **Progresión por SECCIONES**, no por scroll de píxeles. El encargado "sube" secciones
+  y cada una aparece en pantalla.
+- **Coristas** → letra de la sección actual, estilo Spotify (grande, resaltada).
+- **Músicos** → sección actual con acordes (render estándar).
+- **Entradas al live (NO desde el menú de inicio):**
+  1. Desde una **actividad → un tiempo**: el setlist = las canciones de ese tiempo
+     (todas se van a tocar). Se avanza canción por canción y sección por sección.
+  2. Desde el **detalle de una canción** (SongView): sesión de esa sola canción.
+- Quitar el botón genérico "En vivo" del POC en Actividades.
 
-## 1. Concepto y flujo
+## 1. Lo que YA existe a favor
+- El parser de letras ([SongView.vue](src/views/SongView.vue)) ya detecta secciones por
+  `[Nombre]` **y un tiempo opcional** `[Coro 1:10]` → `secs`. Reutilizable para partir la
+  canción en secciones (y, a futuro, auto-avance por tiempo).
+- `activities.tiempos` = `[{ id, name, songs:[songId] }]` → el tiempo ya ES el setlist.
+- Roles por banda + RLS + Realtime.
+
+## 2. Modelo de progresión
+
+Una canción se parte en **secciones**: cada `[Nombre]` inicia una sección que agrupa sus
+líneas hasta el siguiente `[...]`. Estado en vivo = **qué canción y qué sección**:
 
 ```
-Líder abre una actividad → "▶ Iniciar en vivo"
-   └─ crea live_session (canción/sección inicial)
-Resto de miembros → ven banner "🔴 En vivo — Unirse"
-   └─ entran a la vista en vivo, sincronizada por rol
-Líder navega canción/sección y hace scroll
-   └─ todos siguen en tiempo real
-Líder "■ Terminar" → la sesión se cierra para todos
+setlist = [songId, …]          (canciones del tiempo, o [una canción])
+current_song_index             (índice en el setlist)
+current_section_index          (índice de sección dentro de la canción)
 ```
 
-## 2. Estrategia de sincronización (clave)
+El encargado avanza: **▶ siguiente sección**; si es la última, pasa a la siguiente canción.
+También **◀ anterior**. (Navegación de canción dentro del setlist disponible.)
 
-Híbrido, para latencia baja sin saturar la base:
+## 3. Sincronización (más simple que el scroll)
 
-| Qué | Frecuencia | Canal | Por qué |
-|-----|-----------|-------|---------|
-| Canción / sección / play-pause actual | baja | **tabla `live_sessions`** (Postgres Changes) | Persistente → quien entra tarde se sincroniza solo |
-| Posición de scroll / línea actual | alta | **Broadcast** (efímero) | No escribe en la base en cada tick; barato y rápido |
-| Quién está conectado | — | **Presence** | Mostrar "5 en vivo" + avatares |
-
-> El scroll se transmite como **proporción 0–1** (`scrollTop/scrollHeight`), no en píxeles,
-> para que cuadre entre celulares con distinto tamaño de letra/pantalla.
-
-## 3. Modelo de datos
+Avanzar de sección es **poco frecuente** → todo va en la tabla `live_sessions`
+(**Postgres Changes**). Sin broadcast de alta frecuencia. Beneficios: persistente,
+re-sync instantáneo para quien entra tarde, aguanta cortes de red.
 
 ```sql
 create table live_sessions (
-  id              uuid primary key default gen_random_uuid(),
-  band_id         uuid not null references bands(id) on delete cascade,
-  activity_id     bigint,                 -- opcional: sesión basada en una actividad
-  controller_id   uuid references auth.users(id),
-  current_song_id   bigint,
-  current_tiempo_id bigint,               -- sección/tiempo actual del setlist
-  is_playing      boolean not null default false,
-  is_active       boolean not null default true,
-  started_at      timestamptz not null default now(),
-  updated_at      timestamptz not null default now()
+  id            uuid primary key default gen_random_uuid(),
+  band_id       uuid not null references bands(id) on delete cascade,
+  source        text not null,            -- 'tiempo' | 'song'
+  activity_id   bigint,                   -- si viene de una actividad
+  tiempo_id     bigint,                   -- el tiempo (setlist)
+  song_ids      bigint[] not null,        -- snapshot del setlist
+  current_song_index    int not null default 0,
+  current_section_index int not null default 0,
+  controller_id uuid references auth.users(id),
+  is_active     boolean not null default true,
+  started_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
 );
-
--- Una sola sesión activa por banda
-create unique index one_active_session_per_band
-  on live_sessions(band_id) where is_active;
+create unique index one_active_session_per_band on live_sessions(band_id) where is_active;
 ```
 
-RLS:
-- `SELECT`: `is_band_member(band_id)` (todos los miembros ven/siguen la sesión).
-- `INSERT/UPDATE/DELETE`: `is_band_leader(band_id)` (solo el líder controla).
-- Añadir `live_sessions` a la publicación `supabase_realtime`.
+RLS: `SELECT` = `is_band_member(band_id)`; escritura = `is_band_leader(band_id)`.
+Añadir a la publicación `supabase_realtime`.
 
-## 4. Reutilización de código (refactor previo)
+## 4. Vistas
 
-Extraer de `SongView` un componente **`SongContent.vue`** que reciba `:song` y
-`:hideChords` y renderice `renderedLines`/embeds. Así lo usan **igual** `SongView`
-(detalle normal) y `LiveView` (en vivo), sin duplicar el parseo de acordes.
+Extraer de `SongView` un **`SongContent.vue`** (parseo en secciones + render por rol),
+reutilizado por SongView y la vista en vivo.
 
-## 5. Piezas de cliente
+- **Controlador (líder)**: sección actual + **◀ / ▶ sección**, indicador "Coro · 3/7",
+  nombre de la canción y "siguiente", botón **■ Terminar**.
+- **Músico**: sección actual con acordes; opcional ver la siguiente atenuada.
+- **Corista**: sección actual en grande, estilo Spotify (resaltada/centrada).
 
-- **`stores/live.js`**: estado de la sesión + suscripciones.
-  - State: `session` (fila activa), `presence` (conectados), `isController`, `following` (scroll sincronizado on/off).
-  - Acciones líder: `start(activityId?)`, `end()`, `setSong(id)`, `setTiempo(id)`, `togglePlay()`, `broadcastScroll(ratio)`.
-  - Acciones miembro: `join()`, `leave()`, `applyScroll(ratio)`, `detach()/reattach()`.
-  - Suscribe: Postgres Changes de `live_sessions` (su banda) + canal Broadcast `live:<band_id>` + Presence.
-- **`views/LiveView.vue`** (ruta `/live`): adapta por rol.
-  - Líder → panel de control (canción anterior/siguiente, secciones del setlist, play/pausa, "terminar") + su scroll manda.
-  - Músico → `SongContent` con acordes, auto-scroll siguiendo al líder (con botón "🔓 scroll libre").
-  - Corista → letra grande sin acordes, sección actual resaltada, auto-scroll.
-- **`components/LiveBanner.vue`**: barra "🔴 En vivo — Unirse" en el shell de la app cuando hay sesión activa en la banda y no estás dentro. (Se alimenta de la suscripción a `live_sessions`.)
-- **Presence**: lista/contador de quién está en vivo en el panel del líder.
+## 5. Entradas (UX)
+- **ActividadDetailView** → en cada **tiempo**, botón **"▶ Iniciar en vivo"**
+  (setlist = `tiempo.songs`).
+- **SongView** → botón **"▶ En vivo"** (setlist = `[esa canción]`).
+- **Banner "🔴 En vivo — Unirse"** en el shell cuando hay sesión activa en la banda.
+- Quitar el botón "En vivo" del POC en Actividades.
 
-## 6. Detalles de UX
-- **Entrar tarde**: al unirse, se lee la fila `live_sessions` → salta a la canción/sección actual y luego sigue los broadcasts.
-- **Reconexión**: al reconectar, re-leer la fila para resincronizar.
-- **Scroll libre**: el seguidor puede soltarse para mirar otra parte; botón "Volver a sincronizar" para re-enganchar.
-- **Solo el líder transmite scroll**: los seguidores ignoran mensajes que no vengan de `controller_id`.
+## 6. Auto-avance por tiempo (opcional, fase posterior)
+Como `[Coro 1:10]` ya da un tiempo por sección, se puede ofrecer un modo
+**"reproducir"**: un timer que avanza solo según esos tiempos. v1 = **avance manual**
+del encargado (fiable y como funciona una alabanza real); el timed se suma encima.
 
-## 7. Fases de implementación
-- **3A — Estado de sesión**: tabla `live_sessions` + RLS + realtime; `stores/live.js` con `start/end/setSong/setTiempo`; `LiveBanner`. (Sin scroll sync aún: cambiar de canción/sección ya sincroniza a todos.)
-- **3B — Vista en vivo por rol**: extraer `SongContent`; `LiveView` que sigue `current_song_id`/`current_tiempo_id`; panel de control del líder.
-- **3C — Scroll estilo Spotify**: Broadcast de scroll (proporción) + auto-scroll en seguidores + "scroll libre"; vista corista con sección resaltada.
-- **3D — Presencia y pulido**: Presence ("quién está en vivo"), play/pausa, transiciones, manejo de reconexión.
+## 7. Fases
+- **3A — Estado real**: tabla `live_sessions` + RLS + realtime; `stores/live.js`
+  (start desde tiempo/canción, next/prev sección y canción, end); **banner** automático.
+- **3B — Vista por secciones**: extraer `SongContent`; vista en vivo (control + músico
+  + corista) mostrando la sección actual; entradas desde Actividad/tiempo y SongView.
+- **3C — Pulido corista (Spotify)**: resaltado/centrado de la sección, transiciones.
+- **3D — Extras**: presencia ("quién está en vivo"), auto-avance por tiempo, reconexión.
 
-## 8. Alcance / expectativas (importante)
-- **"Estilo Spotify" v1 = scroll suave dirigido por el líder + sección resaltada**, NO karaoke
-  palabra-por-palabra. El resaltado por línea con tiempos (tipo LRC) exigiría **cronometrar
-  cada canción** — gran esfuerzo de contenido; queda para una fase futura.
-- **Controlador = líder** en v1. "Pasar el control" a otro miembro → futuro.
-- **Una sesión activa por banda** (índice único). Suficiente para un equipo.
-
-## 9. Costo / rendimiento
-- Broadcast no toca la base → barato. Throttle del scroll (~5–10 msg/s).
-- Conexiones concurrentes de Realtime holgadas para una banda (decenas) en el plan actual.
-
-## 10. Prototipo sugerido (de-risk)
-Antes de construir toda la pantalla: un POC mínimo de **3A+3C** — líder moviendo
-canción/scroll y un seguidor actualizándose — para validar latencia y la sincronización
-de scroll por proporción en dos celulares distintos.
+## 8. Alcance v1
+- Controlador = líder; una sesión activa por banda.
+- Avance **manual** por secciones (timed = opcional, fase posterior).
+- "Estilo Spotify" = sección actual grande/resaltada (no karaoke palabra-por-palabra).

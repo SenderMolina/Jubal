@@ -188,6 +188,7 @@ import { ref, computed, nextTick, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useRoleStore } from '../stores/role'
+import { useLiveStore } from '../stores/live'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import { parseDuration, formatDuration } from '../utils/duration'
@@ -197,6 +198,7 @@ const route     = useRoute()
 const router    = useRouter()
 const store     = useAppStore()
 const roleStore = useRoleStore()
+const live      = useLiveStore()
 const { showToast } = useToast()
 const { confirm }   = useConfirm()
 
@@ -240,10 +242,19 @@ function openMenu() {
   sheet.value?.open({
     title: song.value?.title,
     actions: [
+      { label: '▶ Iniciar en vivo', onSelect: startLive },
       { label: 'Editar canción', icon: 'edit', onSelect: startEdit },
       { label: 'Eliminar canción', icon: 'trash', danger: true, onSelect: deleteSong },
     ],
   })
+}
+
+async function startLive() {
+  if (!song.value) return
+  try {
+    await live.start({ source: 'song', songIds: [song.value.id] })
+    router.push('/live')
+  } catch (e) { showToast('No se pudo iniciar la sesión en vivo') }
 }
 
 async function deleteSong() {

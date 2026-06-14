@@ -10,6 +10,7 @@
       <RouterView />
     </main>
     <AppNav v-if="!hideNav" />
+    <LiveBanner />
     <Toast />
     <ConfirmModal />
   </template>
@@ -25,6 +26,7 @@ import LoginView    from './views/LoginView.vue'
 import BandsView    from './views/BandsView.vue'
 import AppHeader    from './components/AppHeader.vue'
 import AppNav       from './components/AppNav.vue'
+import LiveBanner   from './components/LiveBanner.vue'
 import Toast        from './components/Toast.vue'
 import ConfirmModal from './components/ConfirmModal.vue'
 

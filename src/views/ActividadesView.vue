@@ -17,9 +17,6 @@
         </template>
         <template v-else>📅 Pasadas</template>
       </button>
-      <button class="btn-pill" style="border-color: var(--red); color: var(--red);" @click="router.push('/live')">
-        <span class="btn-pill__icon">🔴</span> En vivo
-      </button>
       <button v-if="roleStore.isLeader" class="btn-pill btn-pill--primary" @click="modal?.open()">
         <span class="btn-pill__icon">+</span> Agregar
       </button>
