@@ -164,31 +164,31 @@ onMounted(refresh)
 
 .bm-member, .bm-invite {
   display: flex; align-items: center; gap: 12px; padding: 12px 14px;
-  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
+  background: var(--surface); border: 1px solid var(--border);
   border-radius: 12px;
 }
 .bm-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
 .bm-avatar--ph {
   display: flex; align-items: center; justify-content: center;
-  background: var(--accent, #c8a04b); color: #1a1a1a; font-weight: 700;
+  background: var(--accent); color: #fff; font-weight: 700;
 }
 .bm-member__info { flex: 1; min-width: 0; }
-.bm-member__name { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px; }
-.bm-member__email { font-size: 12px; color: var(--text-muted, #888); overflow: hidden; text-overflow: ellipsis; }
+.bm-member__name { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px; color: var(--text); }
+.bm-member__email { font-size: 12px; color: var(--text-mid); overflow: hidden; text-overflow: ellipsis; }
 .bm-owner {
   font-size: 10px; text-transform: uppercase; letter-spacing: .04em;
-  background: rgba(255,255,255,.12); padding: 2px 6px; border-radius: 6px; color: var(--text-muted, #ccc);
+  background: var(--surface2); padding: 2px 6px; border-radius: 6px; color: var(--text-mid);
 }
 
 .bm-role-select {
-  padding: 7px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,.15);
-  background: rgba(255,255,255,.06); color: inherit; font-size: 13px;
+  padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: 13px;
 }
 .band-card__role {
   font-size: 12px; padding: 3px 10px; border-radius: 999px;
-  background: rgba(255,255,255,.1); color: var(--text-muted, #ccc);
+  background: var(--surface2); color: var(--text-mid);
 }
-.band-card__role.role-leader { background: var(--accent, #c8a04b); color: #1a1a1a; }
+.band-card__role.role-leader { background: var(--accent-soft); color: var(--accent); }
 
 .bm-create { margin-bottom: 14px; }
 .bm-create__row { display: flex; gap: 8px; margin-top: 6px; }

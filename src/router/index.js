@@ -1,5 +1,4 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import HomeView              from '../views/HomeView.vue'
 import ActividadesView       from '../views/ActividadesView.vue'
 import ActividadDetailView   from '../views/ActividadDetailView.vue'
 import CancionesView         from '../views/CancionesView.vue'
@@ -9,9 +8,11 @@ import SongView              from '../views/SongView.vue'
 import RepertorioView        from '../views/RepertorioView.vue'
 import RepertorioDetailView  from '../views/RepertorioDetailView.vue'
 import BandManageView        from '../views/BandManageView.vue'
+import LiveView              from '../views/LiveView.vue'
+import ProfileView           from '../views/ProfileView.vue'
 
 const routes = [
-  { path: '/',                component: HomeView },
+  { path: '/',                redirect: '/actividades' },
   { path: '/actividades',     component: ActividadesView },
   { path: '/actividad/:id',   component: ActividadDetailView },
   { path: '/repertorio',      component: RepertorioView },
@@ -20,6 +21,8 @@ const routes = [
   { path: '/agregar',         component: AgregarView },
   { path: '/tipos',           component: TiposView },
   { path: '/banda',           component: BandManageView },
+  { path: '/live',            component: LiveView },
+  { path: '/perfil',          component: ProfileView },
   { path: '/cancion/:id',     component: SongView },
 ]
 

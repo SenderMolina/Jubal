@@ -4,35 +4,29 @@
       <h1 class="app-header__title">{{ pageTitle }}</h1>
     </div>
 
-    <button class="app-header__user" @click="openMenu" aria-label="Cuenta">
+    <RouterLink class="app-header__user" to="/perfil" aria-label="Perfil">
       <img v-if="avatarUrl" :src="avatarUrl" class="app-header__avatar" alt="">
       <span v-else class="app-header__avatar app-header__avatar--ph">{{ initial }}</span>
-    </button>
-
-    <ActionSheet ref="sheet" />
+    </RouterLink>
   </header>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useBandStore } from '../stores/band'
-import ActionSheet from './ActionSheet.vue'
 
 const route = useRoute()
 const auth = useAuthStore()
-const band = useBandStore()
-const sheet = ref(null)
 
 const pageTitle = computed(() => {
   const path = route.path
-  if (path === '/') return band.currentBand?.name || 'Inicio'
   if (path.startsWith('/actividades') || path.startsWith('/actividad/')) return 'Actividades'
   if (path.startsWith('/repertorio')) return 'Repertorios'
   if (path.startsWith('/canciones') || path.startsWith('/cancion/')) return 'Canciones'
   if (path.startsWith('/tipos')) return 'Tipos'
   if (path.startsWith('/banda')) return 'Banda'
+  if (path.startsWith('/perfil')) return 'Perfil'
   if (path.startsWith('/agregar')) return 'Canciones'
   return 'Jubal'
 })
@@ -42,21 +36,6 @@ const initial = computed(() => {
   const n = auth.user?.user_metadata?.full_name || auth.user?.email || '?'
   return n.charAt(0).toUpperCase()
 })
-
-function openMenu() {
-  sheet.value?.open({
-    title: band.currentBand?.name || 'Cuenta',
-    actions: [
-      { label: 'Cambiar de banda', onSelect: () => band.changeRole() },
-      { label: 'Cerrar sesión', danger: true, onSelect: signOut },
-    ],
-  })
-}
-
-async function signOut() {
-  band.reset()
-  await auth.signOut()
-}
 </script>
 
 <style scoped>

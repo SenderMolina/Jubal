@@ -1,23 +1,34 @@
 :root {
-  --bg: #F5F7FA;
-  --surface: #FFFFFF;
-  --surface2: #EEF1F5;
-  --border: #E0E4EA;
-  --accent: #FF6B6B;
-  --accent2: #E85555;
-  --accent-soft: rgba(255,107,107,0.1);
-  --teal: #00BCD4;
-  --teal-soft: rgba(0,188,212,0.1);
-  --text: #1E2A38;
-  --text-muted: #8C95A1;
-  --text-mid: #5A6577;
-  --green: #4CAF50;
-  --green-soft: rgba(76,175,80,0.1);
-  --red: #E53935;
-  --red-soft: rgba(229,57,53,0.08);
-  --radius: 14px;
-  --shadow: 0 2px 8px rgba(30,42,56,0.06);
-  --shadow-hover: 0 4px 16px rgba(30,42,56,0.1);
+  /* Claro y minimalista — estilo Notion / Linear / Spotify Light */
+  --bg: #F7F6F3;            /* fondo global (no blanco puro) */
+  --surface: #FFFFFF;       /* tarjetas */
+  --surface2: #F0F2F5;      /* superficies secundarias */
+  --border: #E4E7EC;        /* divisores y bordes */
+  /* Color principal de interacción — azul */
+  --accent: #219EBC;
+  --accent2: #1B86A0;
+  --accent-soft: #EAF8FB;   /* fondo suave de badges/fechas/píldoras */
+  /* Mismo azul para resaltados (un solo color de interacción) */
+  --teal: #219EBC;
+  --teal-soft: #EAF8FB;
+  /* Color de acción — naranja, uso < 5% (Play, eventos importantes, CTA) */
+  --action: #FB8500;
+  --action2: #E07700;
+  /* Gradiente sutil del header de Actividades */
+  --header-grad: linear-gradient(135deg, #DDF5FA 0%, #F4EEFF 100%);
+  --gold: #219EBC;
+  --gold-deep: #219EBC;
+  --gold-soft: #EAF8FB;
+  --text: #1C2430;          /* texto principal */
+  --text-mid: #667085;      /* texto secundario */
+  --text-muted: #98A2B3;    /* terciario / inactivo / placeholders */
+  --green: #2E9E6B;
+  --green-soft: rgba(46,158,107,0.10);
+  --red: #E5484D;           /* solo acciones destructivas (eliminar, salir) */
+  --red-soft: rgba(229,72,77,0.10);
+  --radius: 20px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.05);
+  --shadow-hover: 0 4px 12px rgba(0,0,0,0.06);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -25,7 +36,8 @@
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
+  letter-spacing: 0.01em;
   min-height: 100vh;
   font-size: 15px;
 }
@@ -48,7 +60,7 @@ body {
   gap: 10px;
 }
 .app-header__title {
-  font-family: 'Nunito', sans-serif; font-weight: 700;
+  font-family: 'Montserrat', sans-serif; font-weight: 700;
   font-size: 1.7rem;
   font-weight: 700;
   color: var(--text);
@@ -95,7 +107,7 @@ header {
   border-radius: 20px;
   background: var(--teal-soft);
   color: var(--teal);
-  border: 1px solid rgba(0,188,212,0.25);
+  border: 1px solid rgba(33,158,188,0.28);
 }
 
 /* ── BUTTONS ── */
@@ -105,7 +117,7 @@ header {
   gap: 6px;
   padding: 8px 16px;
   border-radius: 8px;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
@@ -113,11 +125,11 @@ header {
   transition: all 0.18s ease;
 }
 .btn-primary { background: var(--accent); color: #FFFFFF; }
-.btn-primary:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,107,107,0.3); }
+.btn-primary:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: var(--shadow-hover); }
 .btn-ghost { background: transparent; color: var(--text-mid); border: 1px solid var(--border); }
 .btn-ghost:hover { border-color: var(--teal); color: var(--teal); }
-.btn-danger { background: var(--red-soft); color: var(--red); border: 1px solid rgba(229,57,53,0.15); }
-.btn-danger:hover { background: rgba(229,57,53,0.15); }
+.btn-danger { background: var(--red-soft); color: var(--red); border: 1px solid rgba(229,72,77,0.15); }
+.btn-danger:hover { background: rgba(229,72,77,0.15); }
 .btn-sm { padding: 5px 10px; font-size: 0.78rem; border-radius: 6px; }
 
 /* ── PAGE ACTIONS (botones píldora bajo el header) ── */
@@ -138,7 +150,7 @@ header {
   border-radius: 14px;
   background: var(--surface);
   color: var(--text);
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -148,7 +160,7 @@ header {
 }
 .btn-pill:hover { box-shadow: var(--shadow-hover); transform: translateY(-1px); border-color: var(--teal); }
 .btn-pill--primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn-pill--primary:hover { background: var(--accent2); border-color: var(--accent2); box-shadow: 0 4px 12px rgba(255,107,107,0.3); }
+.btn-pill--primary:hover { background: var(--accent2); border-color: var(--accent2); box-shadow: var(--shadow-hover); }
 .btn-pill__icon { font-size: 1.25rem; line-height: 1; font-weight: 500; }
 .btn-pill--active { border-color: var(--accent); color: var(--accent); }
 .btn-pill__clear {
@@ -171,7 +183,7 @@ header {
 .sheet-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(20, 28, 38, 0.45);
+  background: rgba(0,0,0,0.66);
   z-index: 600;
   display: flex;
   align-items: flex-end;
@@ -210,7 +222,7 @@ header {
   background: none;
   border: none;
   padding: 15px 4px;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 0.98rem;
   font-weight: 500;
   color: var(--text);
@@ -350,19 +362,19 @@ header {
   padding: 4px 16px 18px;
 }
 .detail-hero__thumb {
-  width: 72px;
-  height: 72px;
-  border-radius: 18px;
-  background: var(--teal-soft);
-  color: var(--teal);
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  color: var(--accent);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
-.detail-hero__thumb svg { width: 34px; height: 34px; }
+.detail-hero__thumb svg { width: 20px; height: 20px; }
 .detail-hero__title {
-  font-family: 'Nunito', sans-serif; font-weight: 700;
+  font-family: 'Montserrat', sans-serif; font-weight: 700;
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--text);
@@ -374,17 +386,18 @@ header {
 /* ── FILAS DE CANCIÓN (setlist músico) ── */
 .tiempo-section { margin-top: 14px; }
 .tiempo-section__label {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--teal);
-  margin-bottom: 4px;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 5px 14px;
+  border-radius: 999px;
+  margin-bottom: 8px;
 }
-.tiempo-section__label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 .song-row {
   display: flex;
   align-items: center;
@@ -500,7 +513,7 @@ header {
   background: none;
   border: none;
   padding: 4px 2px;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-mid);
@@ -522,7 +535,7 @@ header {
   border-top: 1px solid var(--border);
   padding: 6px 0 env(safe-area-inset-bottom, 8px);
   z-index: 100;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+  box-shadow: none;
 }
 .bottom-nav__item {
   display: flex;
@@ -544,7 +557,7 @@ header {
   height: 24px;
 }
 .bottom-nav__label {
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 0.68rem;
   font-weight: 500;
   letter-spacing: 0.02em;
@@ -576,7 +589,7 @@ header {
 .tab.active {
   background: var(--accent-soft);
   color: var(--accent);
-  border-color: rgba(255,107,107,0.2);
+  border-color: rgba(33,158,188,0.45);
   font-weight: 600;
 }
 
@@ -586,7 +599,7 @@ header {
 
 /* ── SECTION TITLES ── */
 .section-title {
-  font-family: 'Nunito', sans-serif; font-weight: 700;
+  font-family: 'Montserrat', sans-serif; font-weight: 700;
   font-size: 1.5rem;
   color: var(--text);
   margin-bottom: 4px;
@@ -637,7 +650,7 @@ header {
 .setlist-card:hover::before { opacity: 1; }
 
 .song-num {
-  font-family: 'Nunito', sans-serif; font-weight: 700;
+  font-family: 'Montserrat', sans-serif; font-weight: 700;
   font-size: 1.4rem;
   color: var(--accent);
   min-width: 30px;
@@ -657,8 +670,8 @@ header {
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-.tag-key { background: var(--accent-soft); color: var(--accent); }
-.tag-bpm { background: var(--teal-soft); color: var(--teal); }
+.tag-key { background: var(--accent-soft); color: var(--accent); border: none; }
+.tag-bpm { background: var(--surface2); color: var(--text-mid); border: none; }
 .tag-type { background: var(--surface2); color: var(--text-mid); border: 1px solid var(--border); font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; }
 
 /* ── SONG VIEW ── */
@@ -672,11 +685,11 @@ header {
   cursor: pointer;
   font-size: 1rem;
   transition: all 0.15s;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   box-shadow: var(--shadow);
 }
 .back-btn:hover { border-color: var(--teal); color: var(--teal); }
-.song-view-title { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 2rem; line-height: 1.2; color: var(--text); }
+.song-view-title { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 2rem; line-height: 1.2; color: var(--text); }
 .song-view-meta { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; display: flex; gap: 12px; flex-wrap: wrap; }
 .lyrics-block {
   background: var(--surface);
@@ -686,14 +699,15 @@ header {
   font-size: 1rem;
   line-height: 2;
   white-space: pre-wrap;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   box-shadow: var(--shadow);
 }
 /* Acordes y letra comparten fuente monoespaciada y tamaño: la alineación
    por espacios (formato cifraclub) solo funciona si cada carácter mide igual. */
-.chord-line { color: var(--accent); font-weight: 700; font-size: 0.85rem; line-height: 1.6; font-family: ui-monospace, 'Roboto Mono', Menlo, Consolas, monospace; }
-.lyric-line { color: var(--text); line-height: 1.8; margin-bottom: 6px; font-size: 0.85rem; font-family: ui-monospace, 'Roboto Mono', Menlo, Consolas, monospace; }
-.section-label { color: var(--teal); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 20px; margin-bottom: 4px; }
+.chord-line { color: var(--accent); font-weight: 600; font-size: 0.85rem; line-height: 1.7; font-family: ui-monospace, 'Roboto Mono', Menlo, Consolas, monospace; }
+.lyric-line { color: var(--text); line-height: 2; margin-bottom: 8px; font-size: 0.85rem; font-family: ui-monospace, 'Roboto Mono', Menlo, Consolas, monospace; }
+.section-label { display: flex; align-items: center; gap: 8px; color: var(--accent); font-size: 0.75rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-top: 24px; margin-bottom: 8px; }
+.section-label::before { content: '●'; font-size: 0.6rem; line-height: 1; }
 
 /* ── SONGS HEADER ── */
 .songs-header {
@@ -703,7 +717,7 @@ header {
   padding: 24px 0 16px;
 }
 .songs-header__title {
-  font-family: 'Nunito', sans-serif; font-weight: 700;
+  font-family: 'Montserrat', sans-serif; font-weight: 700;
   font-size: 28px;
   font-weight: 700;
   line-height: 1.2;
@@ -716,7 +730,7 @@ header {
   margin-top: 4px;
 }
 .songs-header__count {
-  font-family: 'Nunito', sans-serif; font-weight: 700;
+  font-family: 'Montserrat', sans-serif; font-weight: 700;
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--accent);
@@ -752,7 +766,7 @@ header {
   font-size: 15px;
   background: var(--surface);
   color: var(--text);
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
@@ -760,7 +774,7 @@ header {
 .search-box__input::placeholder { color: var(--text-muted); }
 .search-box__input:focus {
   border-color: var(--accent);
-  box-shadow: 0 2px 12px rgba(255,107,107,0.12);
+  box-shadow: var(--shadow);
 }
 
 /* ── SONGS GRID ── */
@@ -835,8 +849,8 @@ header {
   color: var(--accent);
 }
 .song-card__tag--bpm {
-  background: var(--teal-soft);
-  color: var(--teal);
+  background: var(--surface2);
+  color: var(--text-mid);
 }
 .song-card__tag--type {
   background: var(--surface2);
@@ -844,7 +858,7 @@ header {
   border: 1px solid var(--border);
 }
 .song-card__chevron {
-  color: #9ca3af;
+  color: var(--text-muted);
   font-size: 24px;
   font-weight: 300;
   flex-shrink: 0;
@@ -925,7 +939,7 @@ header {
   border: none;
   background: none;
   border-radius: 10px;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 0.9rem;
   cursor: pointer;
   transition: background 0.15s;
@@ -944,7 +958,7 @@ header {
   border-radius: 8px;
   padding: 10px 16px;
   color: var(--text);
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 0.9rem;
   outline: none;
   transition: border-color 0.15s;
@@ -990,11 +1004,11 @@ header {
   background: var(--surface);
   color: var(--text-mid);
   transition: all 0.18s ease;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 .type-pill:hover { border-color: var(--accent); color: var(--accent); }
-.type-pill.active { background: var(--accent); color: white; border-color: var(--accent); font-weight: 600; box-shadow: 0 4px 12px rgba(255,107,107,0.25); }
+.type-pill.active { background: var(--accent); color: white; border-color: var(--accent); font-weight: 600; box-shadow: var(--shadow-hover); }
 .type-pill--clear {
   background: none;
   border: none;
@@ -1090,7 +1104,7 @@ header {
   border-radius: 8px;
   padding: 10px 14px;
   color: var(--text);
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 0.9rem;
   outline: none;
   transition: border-color 0.15s;
@@ -1119,7 +1133,7 @@ header {
   border-radius: 0;
   padding: 8px 2px;
   color: var(--text);
-  font-family: 'Nunito', sans-serif; font-weight: 700;
+  font-family: 'Montserrat', sans-serif; font-weight: 700;
   font-size: 1.6rem;
   font-weight: 400;
   outline: none;
@@ -1157,7 +1171,7 @@ header {
   background: none;
   border: none;
   cursor: pointer;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 0.82rem;
   font-weight: 500;
   color: var(--text-muted);
@@ -1190,15 +1204,15 @@ header {
   color: #fff;
   padding: 10px 28px;
   border-radius: 8px;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 0.95rem;
   font-weight: 600;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(255,107,107,0.3);
+  box-shadow: var(--shadow-hover);
   transition: all 0.18s ease;
 }
-.sf-save-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(255,107,107,0.4); }
+.sf-save-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-hover); }
 .sf-save-btn-sm { padding: 6px 18px; font-size: 0.85rem; }
 
 @media (max-width: 600px) {
@@ -1229,7 +1243,7 @@ header {
 /* ── FIREBASE NOTICE ── */
 .firebase-notice {
   background: var(--teal-soft);
-  border: 1px solid rgba(0,188,212,0.2);
+  border: 1px solid rgba(33,158,188,0.28);
   border-radius: var(--radius);
   padding: 14px 18px;
   font-size: 0.82rem;
@@ -1294,7 +1308,7 @@ header {
   border-radius: 8px;
   padding: 8px 10px;
   color: var(--text);
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 0.85rem;
   outline: none;
   text-align: center;
@@ -1329,7 +1343,7 @@ header {
   from { transform: translateY(20px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
-.modal-title { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 1.3rem; margin-bottom: 6px; color: var(--text); }
+.modal-title { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.3rem; margin-bottom: 6px; color: var(--text); }
 .modal-sub   { font-size: 0.83rem; color: var(--text-muted); margin-bottom: 20px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
@@ -1340,7 +1354,7 @@ header {
 /* ── CALENDAR ── */
 .calendar-wrapper { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
 .calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.calendar-month-label { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--text); text-transform: capitalize; }
+.calendar-month-label { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--text); text-transform: capitalize; }
 .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
 .calendar-day-header { text-align: center; font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; padding: 6px 0; }
 .calendar-day { text-align: center; padding: 8px 4px; border-radius: 8px; font-size: 0.85rem; color: var(--text-mid); position: relative; cursor: default; }
@@ -1489,7 +1503,7 @@ header {
 }
 
 .repertorio-name-input {
-  font-family: 'Nunito', sans-serif; font-weight: 700;
+  font-family: 'Montserrat', sans-serif; font-weight: 700;
   font-size: 1.4rem;
   font-weight: 700;
   color: var(--text);
@@ -1506,7 +1520,7 @@ header {
 }
 
 .repertorio-song-num {
-  font-family: 'Nunito', sans-serif; font-weight: 700;
+  font-family: 'Montserrat', sans-serif; font-weight: 700;
   font-size: 1.1rem;
   color: var(--accent);
   min-width: 24px;
@@ -1567,11 +1581,11 @@ header {
   background: var(--surface);
   cursor: pointer;
   transition: all 0.18s ease;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
 }
 .repertorio-import-btn:hover {
   border-color: var(--accent);
-  box-shadow: 0 2px 8px rgba(255,107,107,0.12);
+  box-shadow: var(--shadow);
 }
 .repertorio-import-btn__name {
   font-size: 0.85rem;
@@ -1628,7 +1642,7 @@ header {
 }
 .activity-detail-info { flex: 1; }
 .activity-detail-title {
-  font-family: 'Nunito', sans-serif; font-weight: 700;
+  font-family: 'Montserrat', sans-serif; font-weight: 700;
   font-size: 1.6rem;
   color: var(--text);
   line-height: 1.2;
@@ -1645,7 +1659,7 @@ header {
   border-radius: 10px;
   background: transparent;
   color: var(--text-muted);
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
@@ -1678,7 +1692,7 @@ header {
   margin-bottom: 14px;
 }
 .tiempo-name {
-  font-family: 'Nunito', sans-serif; font-weight: 700;
+  font-family: 'Montserrat', sans-serif; font-weight: 700;
   font-size: 1.15rem;
   color: var(--text);
 }
@@ -1699,7 +1713,7 @@ header {
   border-radius: 7px;
   background: transparent;
   color: var(--text-muted);
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
@@ -1829,7 +1843,7 @@ header {
 .library-active-indicator--active {
   color: var(--teal);
   background: var(--teal-soft);
-  border-color: rgba(0,188,212,0.25);
+  border-color: rgba(33,158,188,0.28);
 }
 .library-active-indicator--active strong { color: var(--text); }
 
@@ -1862,7 +1876,7 @@ header {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.library-assignment-badge--current { background: var(--teal-soft); color: var(--teal); border-color: rgba(0,188,212,0.25); }
+.library-assignment-badge--current { background: var(--teal-soft); color: var(--teal); border-color: rgba(33,158,188,0.28); }
 
 /* ── MOBILE TABS (editor) ── */
 .editor-mobile-tabs {
@@ -1880,7 +1894,7 @@ header {
   border: none;
   background: transparent;
   border-radius: 7px;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--text-muted);
@@ -2003,7 +2017,7 @@ header {
   padding: 8px 24px;
   border-radius: 999px;
   border: none;
-  background: var(--accent);
+  background: var(--action);
   color: #fff;
   font-family: inherit;
   font-weight: 600;
@@ -2012,7 +2026,7 @@ header {
   box-shadow: var(--shadow);
   -webkit-tap-highlight-color: transparent;
 }
-.song-play-btn:active { background: var(--accent2); }
+.song-play-btn:active { background: var(--action2); }
 .song-play-btn svg { width: 14px; height: 14px; }
 .song-nav-count { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
 

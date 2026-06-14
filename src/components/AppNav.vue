@@ -1,13 +1,5 @@
 <template>
   <nav class="bottom-nav">
-    <RouterLink class="bottom-nav__item" :class="{ active: isHome }" to="/">
-      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-        <polyline points="9 22 9 12 15 12 15 22"/>
-      </svg>
-      <span class="bottom-nav__label">Inicio</span>
-    </RouterLink>
-
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/actividades') }" to="/actividades">
       <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -48,18 +40,23 @@
         <span class="bottom-nav__label">Banda</span>
       </RouterLink>
     </template>
+
+    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/perfil') }" to="/perfil">
+      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+      <span class="bottom-nav__label">Perfil</span>
+    </RouterLink>
   </nav>
 </template>
 
 <script setup>
-import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useRoleStore } from '../stores/role'
 
 const route     = useRoute()
 const roleStore = useRoleStore()
-
-const isHome = computed(() => route.path === '/')
 
 function isActive(path) {
   if (path === '/actividades') {

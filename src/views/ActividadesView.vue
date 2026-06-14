@@ -1,5 +1,10 @@
 <template>
   <div>
+    <div class="acts-greeting">
+      <p class="acts-greeting__hi">Hola{{ firstName ? ', ' + firstName : '' }}</p>
+      <h2 class="acts-greeting__band">{{ band.currentBand?.name || 'Jubal' }}</h2>
+    </div>
+
     <div class="page-actions cal-anchor">
       <button
         class="btn-pill"
@@ -11,6 +16,9 @@
           <span class="btn-pill__clear" @click.stop="clearFilter" aria-label="Quitar filtro">✕</span>
         </template>
         <template v-else>📅 Pasadas</template>
+      </button>
+      <button class="btn-pill" style="border-color: var(--red); color: var(--red);" @click="router.push('/live')">
+        <span class="btn-pill__icon">🔴</span> En vivo
       </button>
       <button v-if="roleStore.isLeader" class="btn-pill btn-pill--primary" @click="modal?.open()">
         <span class="btn-pill__icon">+</span> Agregar
@@ -112,6 +120,7 @@
           <div class="activity-info">
             <div class="activity-title">{{ a.title }}</div>
             <div v-if="a.time" class="activity-time">{{ a.time }}</div>
+            <span v-if="statusChip(a.date)" class="act-chip" :class="'act-chip--' + statusChip(a.date).cls">{{ statusChip(a.date).label }}</span>
             <div v-if="a.tiempos?.length" class="activity-badges">
               <span class="activity-badge activity-badge--tiempos">{{ a.tiempos.length }} tiempo{{ a.tiempos.length !== 1 ? 's' : '' }}</span>
               <span class="activity-badge activity-badge--songs">{{ totalSongs(a) }} canción{{ totalSongs(a) !== 1 ? 'es' : '' }}</span>
@@ -134,6 +143,8 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useRoleStore } from '../stores/role'
+import { useBandStore } from '../stores/band'
+import { useAuthStore } from '../stores/auth'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import ActivityModal from '../components/ActivityModal.vue'
@@ -143,6 +154,13 @@ const router    = useRouter()
 const route     = useRoute()
 const store     = useAppStore()
 const roleStore = useRoleStore()
+const band      = useBandStore()
+const auth      = useAuthStore()
+
+const firstName = computed(() => {
+  const n = auth.user?.user_metadata?.full_name || ''
+  return n.split(' ')[0]
+})
 const modal     = ref(null)
 const sheet     = ref(null)
 const { showToast } = useToast()
@@ -193,8 +211,17 @@ function totalSongs(a) {
   return (a.tiempos || []).reduce((sum, t) => sum + (t.songs?.length || 0), 0)
 }
 
-const today = pad2(new Date())
-const next7  = pad2(new Date(Date.now() + 7 * 86400000))
+const today    = pad2(new Date())
+const tomorrow = pad2(new Date(Date.now() + 86400000))
+const next7     = pad2(new Date(Date.now() + 7 * 86400000))
+
+// Chip de estado temporal. "Hoy" ya se distingue en el badge de fecha, así que
+// solo etiquetamos lo que viene (mañana / dentro de la próxima semana).
+function statusChip(date) {
+  if (date === tomorrow) return { label: 'Mañana', cls: 'soon' }
+  if (date > today && date <= next7) return { label: 'Próxima semana', cls: 'week' }
+  return null
+}
 
 const upcoming = computed(() =>
   store.activities
@@ -270,3 +297,28 @@ const selectedDayActivities = computed(() =>
     .sort((a, b) => (a.time||'').localeCompare(b.time||''))
 )
 </script>
+
+<style scoped>
+.acts-greeting {
+  background: var(--header-grad);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  margin: 4px 0 20px;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.acts-greeting__hi { color: var(--text-mid); font-size: .95rem; font-weight: 500; }
+.acts-greeting__band {
+  font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.9rem;
+  line-height: 1.15; color: var(--text); margin: 4px 0 0;
+}
+
+.act-chip {
+  display: inline-block; font-size: .68rem; font-weight: 600;
+  padding: 2px 10px; border-radius: 999px; margin-top: 6px;
+}
+.act-chip--soon { background: var(--accent-soft); color: var(--accent); }
+.act-chip--week { background: var(--surface2); color: var(--text-mid); }
+</style>
