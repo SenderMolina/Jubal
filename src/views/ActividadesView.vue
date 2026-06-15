@@ -15,7 +15,10 @@
           {{ selectedDateLabel }}
           <span class="btn-pill__clear" @click.stop="clearFilter" aria-label="Quitar filtro">✕</span>
         </template>
-        <template v-else>📅 Pasadas</template>
+        <template v-else>
+          <svg class="btn-pill__cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Pasadas
+        </template>
       </button>
       <button v-if="roleStore.isLeader" class="btn-pill btn-pill--primary" @click="modal?.open()">
         <span class="btn-pill__icon">+</span> Agregar
@@ -84,50 +87,69 @@
     <!-- VISTA NORMAL (sin filtro) -->
     <template v-else>
       <div v-if="upcoming.length === 0" class="setlist-empty">
-        <div class="icon">📅</div>
+        <svg class="setlist-empty__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         <p>
-          No hay actividades próximas.
-          <template v-if="roleStore.isLeader"><br>Crea la primera con el botón de arriba.</template>
+          Nada en la agenda todavía.
+          <template v-if="roleStore.isLeader"><br>Crea la primera actividad con “Agregar”.</template>
         </p>
       </div>
 
-      <div v-else class="activities-dashboard">
+      <template v-else>
+        <!-- HERO: la próxima actividad, con cuenta regresiva -->
         <div
-          v-for="a in upcoming"
-          :key="a.id"
-          :class="['activity-card', a.date > next7 ? 'activity-card--later' : '', a.id === featuredId ? 'activity-card--featured' : '']"
-          @click="router.push('/actividad/' + a.id)"
+          class="next-hero"
+          role="link"
+          tabindex="0"
+          @click="router.push('/actividad/' + hero.id)"
+          @keyup.enter="router.push('/actividad/' + hero.id)"
         >
-          <div
-            class="activity-date-badge"
-            :class="{
-              'activity-date-badge--today': a.date === today,
-              'activity-date-badge--later': a.date > next7,
-              'activity-date-badge--featured': a.id === featuredId,
-            }"
-          >
-            <template v-if="a.date === today">
-              <div class="day-today">HOY</div>
-            </template>
-            <template v-else>
-              <div class="day">{{ getDay(a.date) }}</div>
-              <div class="month">{{ getMonth(a.date) }}</div>
-            </template>
+          <div class="next-hero__top">
+            <span class="next-hero__eyebrow">Próximo</span>
+            <span class="next-hero__count">{{ countdownLabel(hero.date) }}</span>
           </div>
-          <div class="activity-info">
-            <div class="activity-title">{{ a.title }}</div>
-            <div v-if="a.time" class="activity-time">{{ a.time }}</div>
-            <span v-if="statusChip(a.date)" class="act-chip" :class="'act-chip--' + statusChip(a.date).cls">{{ statusChip(a.date).label }}</span>
-            <div v-if="a.tiempos?.length" class="activity-badges">
-              <span class="activity-badge activity-badge--tiempos">{{ a.tiempos.length }} tiempo{{ a.tiempos.length !== 1 ? 's' : '' }}</span>
-              <span class="activity-badge activity-badge--songs">{{ totalSongs(a) }} canción{{ totalSongs(a) !== 1 ? 'es' : '' }}</span>
-            </div>
+          <div class="next-hero__title">{{ hero.title }}</div>
+          <div class="next-hero__when">
+            {{ heroDateLabel(hero.date) }}<template v-if="hero.time"> · {{ hero.time }}</template>
           </div>
-          <button v-if="roleStore.isLeader" class="dots-btn" aria-label="Opciones" @click.stop="openMenu(a)">
+          <div v-if="hero.tiempos?.length" class="next-hero__summary">
+            {{ hero.tiempos.length }} tiempo{{ hero.tiempos.length !== 1 ? 's' : '' }}
+            · {{ totalSongs(hero) }} canción{{ totalSongs(hero) !== 1 ? 'es' : '' }}
+          </div>
+          <button v-if="roleStore.isLeader" class="dots-btn next-hero__menu" aria-label="Opciones" @click.stop="openMenu(hero)">
             <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
           </button>
         </div>
-      </div>
+
+        <!-- AGENDA: el resto de lo que viene -->
+        <div v-if="agenda.length" class="activities-dashboard">
+          <div v-if="agendaThisWeek.length" class="activities-section-label">Esta semana</div>
+          <template v-for="(a, i) in agenda" :key="a.id">
+            <div v-if="i === laterStartIndex" class="activities-section-label activities-section-label--later">Más adelante</div>
+            <div class="activity-card" @click="router.push('/actividad/' + a.id)">
+              <div class="activity-date-badge" :class="{ 'activity-date-badge--today': a.date === today }">
+                <template v-if="a.date === today">
+                  <div class="day-today">HOY</div>
+                </template>
+                <template v-else>
+                  <div class="day">{{ getDay(a.date) }}</div>
+                  <div class="month">{{ getMonth(a.date) }}</div>
+                </template>
+              </div>
+              <div class="activity-info">
+                <div class="activity-title">{{ a.title }}</div>
+                <div v-if="a.time" class="activity-time">{{ a.time }}</div>
+                <div v-if="a.tiempos?.length" class="activity-badges">
+                  <span class="activity-badge activity-badge--tiempos">{{ a.tiempos.length }} tiempo{{ a.tiempos.length !== 1 ? 's' : '' }}</span>
+                  <span class="activity-badge activity-badge--songs">{{ totalSongs(a) }} canción{{ totalSongs(a) !== 1 ? 'es' : '' }}</span>
+                </div>
+              </div>
+              <button v-if="roleStore.isLeader" class="dots-btn" aria-label="Opciones" @click.stop="openMenu(a)">
+                <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+              </button>
+            </div>
+          </template>
+        </div>
+      </template>
     </template>
 
     <ActivityModal ref="modal" />
@@ -208,16 +230,26 @@ function totalSongs(a) {
   return (a.tiempos || []).reduce((sum, t) => sum + (t.songs?.length || 0), 0)
 }
 
-const today    = pad2(new Date())
-const tomorrow = pad2(new Date(Date.now() + 86400000))
-const next7     = pad2(new Date(Date.now() + 7 * 86400000))
+const today = pad2(new Date())
+const next7  = pad2(new Date(Date.now() + 7 * 86400000))
 
-// Chip de estado temporal. "Hoy" ya se distingue en el badge de fecha, así que
-// solo etiquetamos lo que viene (mañana / dentro de la próxima semana).
-function statusChip(date) {
-  if (date === tomorrow) return { label: 'Mañana', cls: 'soon' }
-  if (date > today && date <= next7) return { label: 'Próxima semana', cls: 'week' }
-  return null
+const weekdaysShort = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
+
+function daysUntil(date) {
+  const [y, m, d] = date.split('-').map(Number)
+  const target = new Date(y, m - 1, d)
+  const base = new Date(); base.setHours(0, 0, 0, 0)
+  return Math.round((target - base) / 86400000)
+}
+function countdownLabel(date) {
+  const n = daysUntil(date)
+  if (n <= 0) return 'Hoy'
+  if (n === 1) return 'Mañana'
+  return `En ${n} días`
+}
+function heroDateLabel(date) {
+  const [y, m, d] = date.split('-').map(Number)
+  return `${weekdaysShort[new Date(y, m - 1, d).getDay()]} ${d} ${monthNamesShort[m - 1]}`
 }
 
 const upcoming = computed(() =>
@@ -226,7 +258,11 @@ const upcoming = computed(() =>
     .sort((a, b) => a.date.localeCompare(b.date) || (a.time||'').localeCompare(b.time||''))
 )
 
-const featuredId = computed(() => upcoming.value[0]?.id)
+// La primera próxima va al hero; el resto se reparte en "esta semana" / "más adelante".
+const hero            = computed(() => upcoming.value[0])
+const agenda          = computed(() => upcoming.value.slice(1))
+const agendaThisWeek  = computed(() => agenda.value.filter(a => a.date <= next7))
+const laterStartIndex = computed(() => agenda.value.findIndex(a => a.date > next7))
 
 /* ── Calendario / filtro por fecha ── */
 const now          = new Date()
@@ -296,26 +332,56 @@ const selectedDayActivities = computed(() =>
 </script>
 
 <style scoped>
-.acts-greeting {
-  background: var(--header-grad);
-  border-radius: var(--radius);
-  padding: 28px 24px;
-  margin: 4px 0 20px;
-  min-height: 150px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.acts-greeting__hi { color: var(--text-mid); font-size: .95rem; font-weight: 500; }
+/* Saludo compacto: la fuerza visual se concentra en el hero, no aquí */
+.acts-greeting { padding: 10px 2px 2px; margin: 2px 0 14px; }
+.acts-greeting__hi { color: var(--text-mid); font-size: .9rem; font-weight: 500; }
 .acts-greeting__band {
-  font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.9rem;
-  line-height: 1.15; color: var(--text); margin: 4px 0 0;
+  font-weight: 700; font-size: 1.45rem;
+  line-height: 1.15; color: var(--text); margin: 2px 0 0;
 }
 
-.act-chip {
-  display: inline-block; font-size: .68rem; font-weight: 600;
-  padding: 2px 10px; border-radius: 999px; margin-top: 6px;
+.btn-pill__cal { width: 15px; height: 15px; display: block; }
+
+/* ── HERO: la próxima actividad (firma de la pantalla) ── */
+.next-hero {
+  position: relative;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--accent-soft) 0%, #FFF4E8 100%);
+  padding: 16px 18px 18px;
+  margin-bottom: 22px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform .18s ease, box-shadow .18s ease;
+  -webkit-tap-highlight-color: transparent;
 }
-.act-chip--soon { background: var(--accent-soft); color: var(--accent); }
-.act-chip--week { background: var(--surface2); color: var(--text-mid); }
+.next-hero:hover { transform: translateY(-1px); box-shadow: var(--shadow-hover); }
+.next-hero:active { transform: scale(.995); }
+.next-hero:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.next-hero__top { display: flex; align-items: center; margin-bottom: 9px; }
+.next-hero__eyebrow {
+  font-size: .68rem; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--text-mid);
+}
+.next-hero__count {
+  margin-left: auto;
+  background: var(--action); color: #fff;
+  font-size: .7rem; font-weight: 700;
+  padding: 3px 11px; border-radius: 999px;
+}
+.next-hero__title {
+  font-size: 1.4rem; font-weight: 700; line-height: 1.15;
+  color: var(--text); padding-right: 30px;
+}
+.next-hero__when { font-size: .88rem; font-weight: 600; color: var(--text-mid); margin-top: 5px; }
+.next-hero__summary { font-size: .8rem; color: var(--text-muted); margin-top: 6px; }
+.next-hero__menu { position: absolute; top: 10px; right: 8px; }
+
+/* Icono del estado vacío como SVG (a juego con la nav), reemplaza el emoji */
+.setlist-empty__svg { width: 40px; height: 40px; color: var(--text-muted); opacity: .6; margin: 0 auto 12px; display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  .next-hero { transition: none; }
+  .next-hero:hover, .next-hero:active { transform: none; }
+}
 </style>

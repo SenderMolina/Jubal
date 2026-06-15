@@ -61,6 +61,22 @@ const songs    = computed(() => live.session?.song_ids || [])
 const songIndex = computed(() => live.session?.current_song_index ?? 0)
 const nextLabel = computed(() => sections.value[secIndex.value + 1]?.label || null)
 
+// Momento (en seg, desde el inicio) en que entra cada sección. Los marcadores
+// [Sección m:ss] indican cuánto DURA cada parte (igual que el reproductor), así
+// que el inicio de cada una es la suma acumulada de las anteriores. Sin
+// marcadores, se reparte la duración total de la canción a partes iguales.
+const sectionTimes = computed(() => {
+  const durs = sections.value.map(s => s.secs)
+  if (durs.some(x => x != null)) {
+    let t = 0
+    return durs.map(d => { const start = t; t += (d || 0); return start })
+  }
+  const dur = song.value?.duration
+  if (!dur || sections.value.length < 2) return durs
+  const per = dur / sections.value.length
+  return sections.value.map((_, i) => Math.round(i * per))
+})
+
 // ---------- Reloj del controlador (avance por tiempo) ----------
 let anchor = { at: Date.now(), base: 0 }   // base = segundos transcurridos en la canción
 let timer = null
@@ -72,7 +88,7 @@ function tick() {
   if (!live.isController || !live.session?.is_playing) return
   const e = elapsed()
   let target = -1
-  sections.value.forEach((s, i) => { if (s.secs != null && s.secs <= e) target = i })
+  sectionTimes.value.forEach((secs, i) => { if (secs != null && secs <= e) target = i })
   if (target > live.session.current_section_index) live.setSection(target)
 }
 
@@ -86,7 +102,7 @@ function prev() {
   else if (songIndex.value > 0) live.setSong(songIndex.value - 1)
 }
 function goSection(i) {
-  anchor = { at: Date.now(), base: sections.value[i]?.secs ?? anchor.base }
+  anchor = { at: Date.now(), base: sectionTimes.value[i] ?? anchor.base }
   live.setSection(i)
 }
 function togglePlay() {
@@ -102,7 +118,7 @@ watch(() => live.currentSongId, () => { anchor = { at: Date.now(), base: 0 } })
 onMounted(() => {
   // Si el controlador entra con la sesión en marcha, anclar a la sección actual.
   if (live.isController && live.session?.is_playing) {
-    anchor = { at: Date.now(), base: sections.value[secIndex.value]?.secs ?? 0 }
+    anchor = { at: Date.now(), base: sectionTimes.value[secIndex.value] ?? 0 }
   }
   timer = setInterval(tick, 300)
 })

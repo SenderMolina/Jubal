@@ -10,11 +10,15 @@
       </div>
 
       <div class="search-box" style="margin-top:12px">
-        <span class="search-box__icon">🔍</span>
+        <span class="search-box__icon">
+          <svg class="search-box__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </span>
         <input
           class="search-box__input"
           type="text"
-          placeholder="Buscar canción, tono o BPM…"
+          placeholder="Buscar por nombre, tono o tempo…"
           v-model="query"
         >
       </div>
@@ -39,29 +43,38 @@
         </button>
       </div>
 
-      <div v-if="filteredSongs.length === 0" class="songs-empty">
-        <span class="songs-empty__icon">🎵</span>
-        <p>Sin resultados</p>
+      <div v-if="sortedSongs.length === 0" class="songs-empty">
+        <svg class="songs-empty__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+        </svg>
+        <p>{{ store.songs.length ? 'Sin coincidencias' : 'Aún no hay canciones' }}</p>
+        <span v-if="!store.songs.length && roleStore.isLeader" class="songs-empty__hint">Toca “Agregar canción” para empezar el repertorio.</span>
       </div>
-      <div v-else class="songs-grid">
-        <div
-          v-for="(s, i) in sortedSongs"
+      <div v-else class="song-list">
+        <button
+          v-for="s in sortedSongs"
           :key="s.id"
-          :class="['song-card', i % 2 ? '' : 'song-card--alt']"
+          class="song-item"
           @click="router.push('/cancion/' + s.id)"
           @contextmenu.prevent="roleStore.isLeader && openContextMenu($event, s)"
         >
-          <div class="song-card__body">
-            <div class="song-card__title">{{ s.title }}</div>
-            <div v-if="s.author" class="song-card__author">{{ s.author }}</div>
-            <div class="song-card__meta">
-              <span v-if="s.key" class="song-card__tag song-card__tag--key">♪ {{ s.key }}</span>
-              <span v-if="s.bpm" class="song-card__tag song-card__tag--bpm">♩ {{ s.bpm }} bpm</span>
-              <span v-for="tl in typeLabels(s)" :key="tl" class="song-card__tag song-card__tag--type">{{ tl }}</span>
-            </div>
-          </div>
-          <span class="song-card__chevron">›</span>
-        </div>
+          <span class="song-item__badge" :class="{ 'song-item__badge--empty': !s.key }">
+            <template v-if="s.key">
+              <span class="song-item__key">{{ fmtKey(s.key) }}</span>
+              <span v-if="s.bpm" class="song-item__bpm">♩{{ s.bpm }}</span>
+            </template>
+            <svg v-else class="song-item__note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+            </svg>
+          </span>
+          <span class="song-item__main">
+            <span class="song-item__title">{{ s.title }}</span>
+            <span v-if="s.author || typeLabels(s).length" class="song-item__sub">
+              <template v-if="s.author">{{ s.author }}</template>
+              <template v-for="(tl, ti) in typeLabels(s)" :key="tl"><span v-if="s.author || ti" class="song-item__dot">·</span>{{ tl }}</template>
+            </span>
+          </span>
+        </button>
       </div>
 
       <!-- Context menu for delete -->
@@ -79,68 +92,90 @@
 
     <!-- ── Formulario nueva canción ── -->
     <template v-else>
-      <h1 class="section-title">Nueva canción</h1>
+      <div class="sf-head">
+        <h1 class="section-title">Nueva canción</h1>
+        <p class="sf-intro">Con el título basta para guardar. El tono y la letra ayudan a la banda; puedes completarlos después.</p>
+      </div>
 
-      <!-- Nombre -->
+      <!-- Título -->
       <div class="sf-block">
         <input
           class="sf-title-input"
+          :class="{ 'sf-title-input--error': titleError }"
           v-model="form.title"
           type="text"
-          placeholder="Nombre de la canción…"
+          placeholder="¿Cómo se llama la canción?"
           autofocus
+          @input="titleError = false"
         >
+        <div v-if="titleError" class="sf-error">Ponle un nombre para poder guardarla.</div>
       </div>
 
-      <!-- Letra y acordes -->
+      <!-- Tono: teclado de acordes (mismo lenguaje que la lista) -->
       <div class="sf-block">
-        <div class="sf-block-label">Letra y acordes</div>
-        <textarea class="sf-lyrics" v-model="form.lyrics" :placeholder="lyricsPlaceholder"></textarea>
-        <div class="form-hint">Acordes en su propia línea, letra debajo. Usa [Coro], [Verso], [Puente] para secciones.</div>
+        <div class="sf-block-label">Tono</div>
+        <div class="key-picker">
+          <button type="button" class="key-chip key-chip--none" :class="{ active: !form.key }" @click="form.key = ''">—</button>
+          <button
+            v-for="k in keys"
+            :key="k"
+            type="button"
+            class="key-chip"
+            :class="{ active: form.key === k }"
+            @click="form.key = k"
+          >{{ fmtKey(k) }}</button>
+        </div>
       </div>
 
-      <!-- Tono + Autor -->
-      <div class="sf-inline-row">
+      <!-- Autor -->
+      <div class="sf-block">
         <div class="sf-field">
-          <label class="sf-label">Tono (Key)</label>
-          <select class="form-select" v-model="form.key">
-            <option value="">— Sin especificar —</option>
-            <option v-for="k in keys" :key="k">{{ k }}</option>
-          </select>
-        </div>
-        <div class="sf-field">
-          <label class="sf-label">Autor / Artista</label>
-          <input class="form-input" v-model="form.author" type="text" placeholder="Ej: Marcos Witt" list="sf-authors">
+          <label class="sf-label" for="sf-author">Autor o artista</label>
+          <input id="sf-author" class="form-input" v-model="form.author" type="text" placeholder="Ej: Marcos Witt" list="sf-authors">
           <datalist id="sf-authors">
             <option v-for="a in authorSuggestions" :key="a" :value="a"></option>
           </datalist>
         </div>
       </div>
 
-      <!-- Detalles adicionales (colapsable) -->
-      <button class="sf-details-toggle" @click="showDetails = !showDetails">
-        {{ showDetails ? '▲' : '▶' }} Detalles adicionales
-      </button>
-      <div v-if="showDetails" class="sf-details">
-        <div class="sf-inline-row">
-          <div class="sf-field">
-            <label class="sf-label">Tempo (BPM)</label>
-            <input class="form-input" v-model.number="form.bpm" type="number" placeholder="Ej: 75" min="40" max="200">
-          </div>
-          <div class="sf-field">
-            <label class="sf-label">Tipos</label>
-            <div class="type-pills type-pills--form">
-              <button
-                v-for="t in store.songTypes"
-                :key="t.id"
-                type="button"
-                class="type-pill"
-                :class="{ active: form.types.includes(t.id) }"
-                @click="toggleFormType(t.id)"
-              >{{ t.name }}</button>
-            </div>
+      <!-- Duración + Tempo -->
+      <div class="sf-inline-row">
+        <div class="sf-field">
+          <label class="sf-label" for="sf-dur">Duración</label>
+          <div class="sf-bpm-wrap">
+            <input id="sf-dur" class="form-input sf-bpm-input" v-model="form.durationText" type="text" inputmode="numeric" placeholder="4:30">
+            <span class="sf-bpm-unit">m:ss</span>
           </div>
         </div>
+        <div class="sf-field">
+          <label class="sf-label" for="sf-bpm">Tempo</label>
+          <div class="sf-bpm-wrap">
+            <input id="sf-bpm" class="form-input sf-bpm-input" v-model.number="form.bpm" type="number" inputmode="numeric" placeholder="75" min="40" max="200">
+            <span class="sf-bpm-unit">BPM</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tipo -->
+      <div v-if="store.songTypes.length" class="sf-block">
+        <div class="sf-block-label">Tipo</div>
+        <div class="type-pills type-pills--form">
+          <button
+            v-for="t in store.songTypes"
+            :key="t.id"
+            type="button"
+            class="type-pill"
+            :class="{ active: form.types.includes(t.id) }"
+            @click="toggleFormType(t.id)"
+          >{{ t.name }}</button>
+        </div>
+      </div>
+
+      <!-- Letra y acordes -->
+      <div class="sf-block">
+        <div class="sf-block-label">Letra y acordes</div>
+        <textarea class="sf-lyrics" v-model="form.lyrics" :placeholder="lyricsPlaceholder"></textarea>
+        <div class="form-hint">Escribe los acordes en su propia línea y la letra debajo. Marca las partes con [Intro], [Verso], [Coro] o [Puente]. Para que avancen solas en vivo, ponle a cada una cuánto dura: [Coro 0:30] = el coro dura 30 segundos.</div>
       </div>
 
       <!-- Acciones -->
@@ -161,6 +196,7 @@ import { useAppStore } from '../stores/app'
 import { useRoleStore } from '../stores/role'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
+import { parseDuration } from '../utils/duration'
 
 const router    = useRouter()
 const store     = useAppStore()
@@ -170,9 +206,9 @@ const { confirm }   = useConfirm()
 
 const query       = ref('')
 const activeTypes = ref([])
-const showForm    = ref(false)
-const showDetails = ref(false)
-const ctxMenu     = ref({ visible: false, x: 0, y: 0, song: null })
+const showForm   = ref(false)
+const titleError = ref(false)
+const ctxMenu    = ref({ visible: false, x: 0, y: 0, song: null })
 const keys = ['A','A#/Bb','B','C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab']
 
 const lyricsPlaceholder = `[Intro]
@@ -193,6 +229,7 @@ const emptyForm = () => ({
   author: localStorage.getItem('lastSongAuthor') || '',
   key:    localStorage.getItem('lastSongKey')    || '',
   bpm:    null,
+  durationText: '',
   types:  [],
   lyrics: '',
 })
@@ -204,7 +241,7 @@ const authorSuggestions = computed(() =>
 
 function openForm() {
   form.value = emptyForm()
-  showDetails.value = false
+  titleError.value = false
   showForm.value = true
 }
 
@@ -212,12 +249,12 @@ function toggleForm() {
   showForm.value = !showForm.value
   if (!showForm.value) {
     form.value = emptyForm()
-    showDetails.value = false
+    titleError.value = false
   }
 }
 
 function _doSave() {
-  if (!form.value.title.trim()) { alert('El título es obligatorio.'); return false }
+  if (!form.value.title.trim()) { titleError.value = true; return false }
   if (form.value.key)    localStorage.setItem('lastSongKey',    form.value.key)
   if (form.value.author) localStorage.setItem('lastSongAuthor', form.value.author.trim())
   store.songs.push({
@@ -226,6 +263,7 @@ function _doSave() {
     author: form.value.author.trim(),
     key:    form.value.key,
     bpm:    form.value.bpm || null,
+    duration: parseDuration(form.value.durationText),
     types:  form.value.types.length ? form.value.types : [],
     lyrics: form.value.lyrics.trim() || '',
   })
@@ -237,14 +275,12 @@ function saveSong() {
   if (!_doSave()) return
   showToast('Canción guardada ✓')
   showForm.value = false
-  showDetails.value = false
   form.value = emptyForm()
 }
 
 function saveAndAnother() {
   if (!_doSave()) return
   showToast('Canción guardada ✓')
-  showDetails.value = false
   form.value = emptyForm()
 }
 
@@ -298,6 +334,11 @@ const sortedSongs = computed(() => {
 
 const isFiltering = computed(() => query.value.trim() !== '' || activeTypes.value.length > 0)
 
+// "A#/Bb" -> "A♯", "C" -> "C". El tono es el ancla visual de cada fila.
+function fmtKey(k) {
+  return (k.split('/')[0] || '').replace('#', '♯').replace('b', '♭')
+}
+
 function typeLabels(s) {
   const sTypes = getSongTypes(s)
   return sTypes.map(tid => store.songTypes.find(t => String(t.id) === tid)?.name).filter(Boolean)
@@ -324,3 +365,120 @@ async function deleteSongFromCtx() {
   showToast('Canción eliminada')
 }
 </script>
+
+<style scoped>
+/* Icono de búsqueda como SVG (a juego con la nav), reemplaza el emoji */
+.search-box__svg { width: 18px; height: 18px; display: block; }
+
+/* ── LISTA DE CANCIONES: cada fila anclada por su tono + tempo ── */
+.song-list { display: flex; flex-direction: column; padding-bottom: 24px; }
+
+.song-item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  font-family: var(--font);
+  padding: 9px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.song-item:not(:first-child) { border-top: 1px solid var(--border); }
+.song-item:active { background: var(--accent-soft); }
+.song-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* La firma: tono grande, tempo debajo — la huella musical de la canción */
+.song-item__badge {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.song-item__badge--empty { background: var(--surface2); color: var(--text-muted); }
+.song-item__key { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.01em; }
+.song-item__bpm { font-size: 0.56rem; font-weight: 700; margin-top: 2px; opacity: 0.75; }
+.song-item__note { width: 20px; height: 20px; }
+
+.song-item__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.song-item__title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.song-item__sub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.song-item__dot { margin: 0 5px; opacity: 0.6; }
+
+@media (hover: hover) {
+  .song-item:hover { background: var(--accent-soft); }
+}
+
+/* Estado vacío con icono SVG en vez de emoji */
+.songs-empty__svg { width: 40px; height: 40px; color: var(--text-muted); opacity: 0.7; margin: 0 auto 14px; display: block; }
+.songs-empty__hint { display: block; font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; }
+
+/* ── FORMULARIO: encabezado amable ── */
+.sf-head { margin-bottom: 18px; }
+.sf-intro { font-size: 0.85rem; color: var(--text-mid); margin-top: 6px; line-height: 1.45; max-width: 46ch; }
+.sf-title-input--error { border-bottom-color: var(--red); }
+.sf-error { color: var(--red); font-size: 0.78rem; margin-top: 6px; }
+
+/* ── FORMULARIO: teclado de tonos (la firma) ── */
+.key-picker { display: flex; flex-wrap: wrap; gap: 7px; }
+.key-chip {
+  min-width: 42px;
+  padding: 9px 8px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.key-chip:hover { border-color: var(--accent); color: var(--accent); }
+.key-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: var(--shadow-hover);
+}
+.key-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.key-chip--none { color: var(--text-muted); font-weight: 600; }
+.key-chip--none.active { background: var(--text-mid); border-color: var(--text-mid); color: #fff; }
+
+/* ── FORMULARIO: tempo con unidad ── */
+.sf-bpm-wrap { position: relative; }
+.sf-bpm-input { padding-right: 48px; }
+.sf-bpm-unit {
+  position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em;
+  color: var(--text-muted); pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .key-chip { transition: none; }
+}
+</style>

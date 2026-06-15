@@ -1,5 +1,6 @@
 // Parsea la letra en secciones a partir de los marcadores [Nombre] / [Nombre m:ss].
-// Cada sección: { label, secs (tiempo absoluto en seg o null), lines: [{type,text}] }
+// Cada sección: { label, secs (DURACIÓN de la sección en seg —cuánto permanece
+// antes de pasar a la siguiente— o null), lines: [{type,text}] }
 // type ∈ 'chord' | 'lyric' | 'spacer'.
 // Importante: la estructura de secciones es IDÉNTICA para todos los roles (incluye
 // acordes); ocultar acordes para coristas es responsabilidad del render, no del parseo,

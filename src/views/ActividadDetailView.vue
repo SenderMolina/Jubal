@@ -205,32 +205,44 @@
     <!-- ══════════ VISTA MÚSICO / CANTANTE ══════════ -->
     <template v-else>
       <div v-if="!activity?.tiempos?.length" class="setlist-empty" style="margin-top:16px">
-        <div class="icon">🎵</div>
+        <svg class="setlist-empty__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+        </svg>
         <p>El líder aún no ha armado el setlist para esta actividad.</p>
       </div>
 
-      <div v-for="tiempo in activity?.tiempos" :key="tiempo.id" class="tiempo-section">
-        <div class="tiempo-section__label">{{ tiempo.name }}</div>
-        <div v-if="!tiempo.songs?.length" class="tiempo-empty">Sin canciones.</div>
-        <div
-          v-for="songId in tiempo.songs"
-          :key="songId"
-          class="song-row"
-          @click="router.push('/cancion/' + songId + '?act=' + route.params.id)"
-        >
-          <div class="song-thumb">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 18V5l12-2v13"/>
-              <circle cx="6" cy="18" r="3"/>
-              <circle cx="18" cy="16" r="3"/>
-            </svg>
+      <!-- Orden del servicio: los tiempos como movimientos encadenados -->
+      <ol v-else class="orden">
+        <li v-for="tiempo in activity.tiempos" :key="tiempo.id" class="orden__movt">
+          <span class="orden__node" aria-hidden="true"></span>
+          <div class="orden__head">
+            <h2 class="orden__name">{{ tiempo.name }}</h2>
+            <span v-if="tiempo.songs?.length" class="orden__count">
+              {{ tiempo.songs.length }} canción{{ tiempo.songs.length !== 1 ? 'es' : '' }}
+            </span>
           </div>
-          <div class="song-row__info">
-            <div class="song-row__title">{{ songById(songId)?.title }}</div>
-            <div class="song-row__meta">{{ [songById(songId)?.author, songById(songId)?.key].filter(Boolean).join(' · ') }}</div>
-          </div>
-        </div>
-      </div>
+
+          <p v-if="!tiempo.songs?.length" class="orden__empty">Sin canciones.</p>
+          <ol v-else class="orden__songs">
+            <li
+              v-for="(songId, si) in tiempo.songs"
+              :key="songId"
+              class="orden__song"
+              role="link"
+              tabindex="0"
+              @click="router.push('/cancion/' + songId + '?act=' + route.params.id)"
+              @keyup.enter="router.push('/cancion/' + songId + '?act=' + route.params.id)"
+            >
+              <span class="orden__num">{{ si + 1 }}</span>
+              <span class="orden__song-main">
+                <span class="orden__song-title">{{ songById(songId)?.title || 'Canción eliminada' }}</span>
+                <span v-if="songById(songId)?.author" class="orden__song-author">{{ songById(songId).author }}</span>
+              </span>
+              <span v-if="songById(songId)?.key" class="orden__key">{{ fmtKey(songById(songId).key) }}</span>
+            </li>
+          </ol>
+        </li>
+      </ol>
     </template>
   </div>
 </template>
@@ -314,6 +326,11 @@ const formattedDate = computed(() => {
 })
 
 function songById(id) { return store.songs.find(s => s.id === id) }
+
+// "A#/Bb" -> "A♯". Mismo lenguaje visual del tono que en la lista de canciones.
+function fmtKey(k) {
+  return (k.split('/')[0] || '').replace('#', '♯').replace('b', '♭')
+}
 
 function tiempoSongObjects(tiempo) {
   return (tiempo.songs || []).map(id => songById(id)).filter(Boolean)
@@ -439,3 +456,87 @@ async function handleDelete() {
   router.push('/actividades')
 }
 </script>
+
+<style scoped>
+/* Estado vacío con icono SVG en vez de emoji */
+.setlist-empty__svg { width: 40px; height: 40px; color: var(--text-muted); opacity: .6; margin: 0 auto 12px; display: block; }
+
+/* ── ORDEN DEL SERVICIO: tiempos encadenados en un riel (la firma) ── */
+.orden { list-style: none; margin: 10px 0 0; padding: 0; padding-bottom: 24px; }
+
+.orden__movt { position: relative; padding-left: 24px; }
+.orden__movt + .orden__movt { margin-top: 18px; }
+/* El riel que une un movimiento con el siguiente */
+.orden__movt::before {
+  content: '';
+  position: absolute;
+  left: 4px; top: 7px; bottom: -18px;
+  width: 2px;
+  background: var(--border);
+}
+.orden__movt:last-child::before { display: none; }
+/* El nodo de cada tiempo, sentado sobre el riel */
+.orden__node {
+  position: absolute;
+  left: 0; top: 5px;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--bg);
+}
+
+.orden__head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 9px; }
+.orden__name { font-weight: 700; font-size: 1.05rem; color: var(--text); }
+.orden__count { font-size: .72rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+.orden__empty { font-size: .82rem; color: var(--text-muted); padding: 2px 2px 4px; }
+
+.orden__songs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.orden__song {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 6px;
+  border-radius: 10px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.orden__song + .orden__song { border-top: 1px solid var(--border); }
+.orden__song:active { background: var(--accent-soft); }
+.orden__song:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.orden__num {
+  flex-shrink: 0;
+  width: 18px;
+  text-align: center;
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.orden__song-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.orden__song-title {
+  font-size: .92rem; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.orden__song-author {
+  font-size: .76rem; color: var(--text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Mismo distintivo de tono que en la lista de canciones */
+.orden__key {
+  flex-shrink: 0;
+  min-width: 30px;
+  text-align: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: .8rem;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  padding: 4px 9px;
+  border-radius: 9px;
+}
+
+@media (hover: hover) {
+  .orden__song:hover { background: var(--accent-soft); }
+}
+</style>
