@@ -17,6 +17,7 @@ create table if not exists public.songs (
   author  text not null default '',
   key     text not null default '',
   bpm     integer,
+  duration integer,
   lyrics  text not null default '',
   created_at timestamptz not null default now()
 );

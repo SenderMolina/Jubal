@@ -11,6 +11,7 @@ export const useLiveStore = defineStore('live', () => {
   const auth = useAuthStore()
 
   const session = ref(null)   // fila live_sessions activa, o null
+  const participants = ref(0) // miembros en línea en el canal (presence)
   let channel = null
 
   const isActive     = computed(() => !!session.value)
@@ -31,14 +32,22 @@ export const useLiveStore = defineStore('live', () => {
     unsubscribe()
     const b = band.currentBandId
     if (!b) return
-    channel = supabase.channel(`live-${b}`)
+    channel = supabase.channel(`live-${b}`, { config: { presence: { key: auth.user?.id || 'anon' } } })
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'live_sessions', filter: `band_id=eq.${b}` },
         loadActive)
-      .subscribe()
+      .on('presence', { event: 'sync' }, () => {
+        participants.value = Object.keys(channel.presenceState()).length
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') channel.track({ at: Date.now() })
+      })
     loadActive()
   }
-  function unsubscribe() { if (channel) { supabase.removeChannel(channel); channel = null } }
+  function unsubscribe() {
+    if (channel) { supabase.removeChannel(channel); channel = null }
+    participants.value = 0
+  }
 
   // ---------- Controlador ----------
   async function start({ source, activityId = null, tiempoId = null, songIds }) {
@@ -48,7 +57,8 @@ export const useLiveStore = defineStore('live', () => {
     const { data, error } = await supabase.from('live_sessions').insert({
       band_id: b, source, activity_id: activityId, tiempo_id: tiempoId,
       song_ids: songIds, current_song_index: 0, current_section_index: 0,
-      is_playing: true, controller_id: auth.user.id, is_active: true,
+      // Arranca en espera: el líder da play cuando todos estén conectados.
+      is_playing: false, controller_id: auth.user.id, is_active: true,
     }).select().single()
     if (error) throw error
     session.value = data
@@ -77,7 +87,7 @@ export const useLiveStore = defineStore('live', () => {
   watch(() => band.currentBandId, subscribe, { immediate: true })
 
   return {
-    session, isActive, isController, currentSongId,
+    session, participants, isActive, isController, currentSongId,
     start, setSong, setSection, togglePlay, end, loadActive,
   }
 })

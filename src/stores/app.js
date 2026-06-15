@@ -72,7 +72,8 @@ export const useAppStore = defineStore('app', () => {
     const b = bid()
     return syncTable('songs', b, songs.value.map(s => ({
       id: s.id, title: s.title, author: s.author,
-      key: s.key, bpm: s.bpm ?? null, lyrics: s.lyrics ?? '', band_id: b,
+      key: s.key, bpm: s.bpm ?? null, duration: s.duration ?? null,
+      lyrics: s.lyrics ?? '', band_id: b,
     })))
   }
 

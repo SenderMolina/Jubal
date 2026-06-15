@@ -10,6 +10,15 @@
       <button class="live-exit" @click="$router.back()">Salir</button>
     </div>
 
+    <!-- Modo de espera: sesión activa pero el líder aún no da play -->
+    <div v-if="standby" class="live-standby" :class="{ 'live-standby--host': live.isController }">
+      <template v-if="live.isController">
+        <span>Cuando todos estén listos, toca ▶ para comenzar</span>
+        <span class="live-standby__count">{{ live.participants }} en línea</span>
+      </template>
+      <span v-else>En pausa · esperando al líder</span>
+    </div>
+
     <!-- Sin sesión -->
     <div v-if="!live.session" class="live-empty">
       <p>No hay una sesión en vivo activa.</p>
@@ -30,18 +39,32 @@
       <div v-if="nextLabel" class="live-next">Sigue: {{ nextLabel }}</div>
     </div>
 
-    <!-- Controles del encargado -->
-    <div v-if="live.isController && live.session" class="live-controls">
-      <button class="live-ctrl" @click="prev">◀</button>
-      <button class="live-ctrl live-ctrl--play" @click="togglePlay">{{ live.session.is_playing ? '⏸' : '▶' }}</button>
-      <button class="live-ctrl" @click="next">▶</button>
-      <button class="live-ctrl live-ctrl--end" @click="end">■ Terminar</button>
-    </div>
+    <!-- Consola del encargado: panel de secciones + transporte -->
+    <template v-if="live.isController && live.session">
+      <div v-if="sections.length" ref="secStrip" class="live-sections">
+        <button
+          v-for="(s, i) in sections"
+          :key="i"
+          class="live-sec-chip"
+          :class="{ active: i === secIndex }"
+          @click="goSection(i)"
+        >
+          <span class="live-sec-chip__n">{{ i + 1 }}</span>
+          <span class="live-sec-chip__lbl">{{ s.label || 'Parte' }}</span>
+        </button>
+      </div>
+      <div class="live-controls">
+        <button class="live-ctrl" @click="prev" aria-label="Sección anterior">◀</button>
+        <button class="live-ctrl live-ctrl--play" @click="togglePlay">{{ live.session.is_playing ? '⏸' : '▶' }}</button>
+        <button class="live-ctrl" @click="next" aria-label="Sección siguiente">▶</button>
+        <button class="live-ctrl live-ctrl--end" @click="end">■ Terminar</button>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLiveStore } from '../stores/live'
 import { useAppStore } from '../stores/app'
@@ -60,6 +83,17 @@ const section  = computed(() => sections.value[secIndex.value] || null)
 const songs    = computed(() => live.session?.song_ids || [])
 const songIndex = computed(() => live.session?.current_song_index ?? 0)
 const nextLabel = computed(() => sections.value[secIndex.value + 1]?.label || null)
+
+// Sesión activa pero sin reproducir: sala de espera / pausa del líder.
+const standby = computed(() => !!live.session && !live.session.is_playing)
+
+// Centrar la sección actual en la consola al avanzar.
+const secStrip = ref(null)
+watch(secIndex, async () => {
+  await nextTick()
+  secStrip.value?.querySelector('.live-sec-chip.active')
+    ?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+})
 
 // Momento (en seg, desde el inicio) en que entra cada sección. Los marcadores
 // [Sección m:ss] indican cuánto DURA cada parte (igual que el reproductor), así
@@ -157,9 +191,48 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
 
 .live-next { margin-top: 28px; color: var(--text-muted); font-size: .85rem; text-align: center; }
 
+/* Sala de espera / pausa */
+.live-standby {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 10px 16px; font-size: .85rem; font-weight: 600; text-align: center;
+  color: var(--text-mid); background: var(--surface2); border-bottom: 1px solid var(--border);
+}
+.live-standby--host { color: var(--accent); }
+.live-standby__count {
+  flex-shrink: 0; font-size: .72rem; font-weight: 700; color: var(--accent);
+  background: var(--accent-soft); padding: 2px 10px; border-radius: 999px;
+}
+
+/* Consola: tira de secciones para saltar manualmente */
+.live-sections {
+  display: flex; gap: 8px; overflow-x: auto; padding: 12px 16px 6px;
+  background: var(--surface); border-top: 1px solid var(--border);
+  scrollbar-width: none;
+}
+.live-sections::-webkit-scrollbar { display: none; }
+.live-sec-chip {
+  flex-shrink: 0; display: flex; align-items: center; gap: 7px;
+  padding: 8px 14px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--text-mid); font-family: var(--font); cursor: pointer;
+  -webkit-tap-highlight-color: transparent; transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.live-sec-chip__n { font-size: .7rem; font-weight: 800; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.live-sec-chip__lbl { font-size: .82rem; font-weight: 600; white-space: nowrap; }
+.live-sec-chip.active {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+  box-shadow: 0 2px 10px rgba(33,158,188,.35);
+}
+.live-sec-chip.active .live-sec-chip__n { color: rgba(255,255,255,.85); }
+.live-sec-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 .live-controls {
   display: flex; align-items: center; gap: 10px; padding: 14px 16px;
   background: var(--surface); border-top: 1px solid var(--border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-sec-chip { transition: none; }
 }
 .live-ctrl {
   flex: 1; padding: 14px; border-radius: 12px; border: 1px solid var(--border);
