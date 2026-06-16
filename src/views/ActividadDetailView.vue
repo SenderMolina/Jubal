@@ -63,6 +63,13 @@
               >
                 <div class="tiempo-header">
                   <h2 class="tiempo-name">{{ tiempo.name }}</h2>
+                  <input
+                    type="time"
+                    class="tiempo-time-input"
+                    :value="tiempo.time || ''"
+                    @click.stop
+                    @change="setTiempoTime(tiempo, $event.target.value)"
+                  >
                   <button
                     v-if="roleStore.isLeader && tiempo.songs?.length"
                     class="dots-btn"
@@ -217,6 +224,7 @@
           <span class="orden__node" aria-hidden="true"></span>
           <div class="orden__head">
             <h2 class="orden__name">{{ tiempo.name }}</h2>
+            <span v-if="tiempo.time" class="orden__time">{{ tiempo.time }}</span>
             <span v-if="tiempo.songs?.length" class="orden__count">
               {{ tiempo.songs.length }} canción{{ tiempo.songs.length !== 1 ? 'es' : '' }}
             </span>
@@ -416,6 +424,11 @@ function addSongToSelected(songId) {
   }
 }
 
+function setTiempoTime(tiempo, time) {
+  tiempo.time = time
+  save()
+}
+
 function removeSong(tiempo, songId) {
   tiempo.songs = tiempo.songs.filter(id => id !== songId)
   save()
@@ -488,6 +501,23 @@ async function handleDelete() {
 .orden__head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 9px; }
 .orden__name { font-weight: 700; font-size: 1.05rem; color: var(--text); }
 .orden__count { font-size: .72rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+.orden__time {
+  font-size: .76rem; font-weight: 700; color: var(--accent);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+
+/* Hora editable por tiempo (vista líder) */
+.tiempo-time-input {
+  margin-left: auto;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: .8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 .orden__empty { font-size: .82rem; color: var(--text-muted); padding: 2px 2px 4px; }
 
 .orden__songs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
