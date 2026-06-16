@@ -49,7 +49,7 @@
       <div>
 
               <!-- Estado vacío -->
-              <div v-if="!activity?.tiempos?.length && !creatingTiempo" class="setlist-zero-state">
+              <div v-if="!activity?.tiempos?.length && !tiempoForm" class="setlist-zero-state">
                 <p>Crea el primer tiempo para comenzar a armar el setlist.</p>
               </div>
 
@@ -62,22 +62,8 @@
                 @click.stop="selectedTiempoId = tiempo.id"
               >
                 <div class="tiempo-header">
-                  <h2 class="tiempo-name">{{ tiempo.name }}</h2>
-                  <div class="tiempo-time-range" @click.stop>
-                    <input
-                      type="time"
-                      class="tiempo-time-input"
-                      :value="tiempo.start || ''"
-                      @change="setTiempoField(tiempo, 'start', $event.target.value)"
-                    >
-                    <span class="tiempo-time-dash">–</span>
-                    <input
-                      type="time"
-                      class="tiempo-time-input"
-                      :value="tiempo.end || ''"
-                      @change="setTiempoField(tiempo, 'end', $event.target.value)"
-                    >
-                  </div>
+                  <h2 class="tiempo-name">{{ tiempoLabel(tiempo) || 'Sin nombre' }}</h2>
+                  <span v-if="tiempoDuration(tiempo)" class="tiempo-duration">{{ tiempoDuration(tiempo) }}</span>
                   <button
                     v-if="roleStore.isLeader && tiempo.songs?.length"
                     class="dots-btn"
@@ -85,6 +71,12 @@
                     aria-label="Iniciar en vivo"
                     @click.stop="startLive(tiempo)"
                   >▶ En vivo</button>
+                  <button class="dots-btn" aria-label="Editar tiempo" @click.stop="startEditTiempo(tiempo)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
                   <button class="dots-btn dots-btn--danger" aria-label="Eliminar tiempo" @click.stop="deleteTiempo(tiempo.id)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <polyline points="3 6 5 6 21 6"/>
@@ -92,6 +84,15 @@
                     </svg>
                   </button>
                 </div>
+
+                <!-- Editar este tiempo, en su lugar -->
+                <TiempoForm
+                  v-if="tiempoForm?.id === tiempo.id"
+                  :form="tiempoForm"
+                  @save="saveTiempoForm"
+                  @cancel="cancelTiempoForm"
+                  @click.stop
+                />
 
                 <div v-if="!tiempo.songs?.length" class="tiempo-empty">
                   Sin canciones aún.
@@ -125,21 +126,13 @@
                 </draggable>
               </div>
 
-              <!-- Creación inline de tiempo -->
-              <div v-if="creatingTiempo" class="tiempo-inline-create">
-                <input
-                  ref="createTiempoInput"
-                  class="form-input"
-                  v-model="newTiempoName"
-                  placeholder="Nombre del tiempo (ej: Adoración, Alabanza...)"
-                  @keydown.enter="confirmCreateTiempo"
-                  @keydown.escape="cancelCreateTiempo"
-                >
-                <div class="tiempo-inline-actions">
-                  <button class="btn btn-primary btn-sm" @click="confirmCreateTiempo">Crear</button>
-                  <button class="btn btn-ghost btn-sm" @click="cancelCreateTiempo">Cancelar</button>
-                </div>
-              </div>
+              <!-- Form de crear tiempo nuevo (al final) -->
+              <TiempoForm
+                v-if="tiempoForm && !tiempoForm.id"
+                :form="tiempoForm"
+                @save="saveTiempoForm"
+                @cancel="cancelTiempoForm"
+              />
 
               <!-- Importar repertorio -->
               <div v-if="store.repertoires.length && selectedTiempo" class="repertorio-import-section" @click.stop>
@@ -158,7 +151,7 @@
               </div>
 
               <!-- Footer: crear tiempo -->
-              <div v-if="!creatingTiempo" class="setlist-column-footer">
+              <div v-if="!tiempoForm" class="setlist-column-footer">
                 <button class="btn-create-tiempo" @click="startCreateTiempo">+ Crear tiempo</button>
               </div>
 
@@ -231,8 +224,8 @@
         <li v-for="tiempo in activity.tiempos" :key="tiempo.id" class="orden__movt">
           <span class="orden__node" aria-hidden="true"></span>
           <div class="orden__head">
-            <h2 class="orden__name">{{ tiempo.name }}</h2>
-            <span v-if="tiempo.start || tiempo.end" class="orden__time">{{ [tiempo.start, tiempo.end].filter(Boolean).join(' – ') }}</span>
+            <h2 class="orden__name">{{ tiempoLabel(tiempo) || tiempo.name }}</h2>
+            <span v-if="tiempoDuration(tiempo)" class="orden__time">{{ tiempoDuration(tiempo) }}</span>
             <span v-if="tiempo.songs?.length" class="orden__count">
               {{ tiempo.songs.length }} canción{{ tiempo.songs.length !== 1 ? 'es' : '' }}
             </span>
@@ -264,7 +257,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useRoleStore } from '../stores/role'
@@ -274,6 +267,7 @@ import { useConfirm } from '../composables/useConfirm'
 import draggable from 'vuedraggable'
 import ActivityModal from '../components/ActivityModal.vue'
 import ActionSheet from '../components/ActionSheet.vue'
+import TiempoForm from '../components/TiempoForm.vue'
 
 const route     = useRoute()
 const router    = useRouter()
@@ -293,10 +287,8 @@ const { confirm }   = useConfirm()
 
 const modal             = ref(null)
 const sheet             = ref(null)
-const newTiempoName     = ref('')
 const selectedTiempoId  = ref(null)
-const creatingTiempo    = ref(false)
-const createTiempoInput = ref(null)
+const tiempoForm        = ref(null)   // { id?, name, start, end } — null = cerrado
 const libraryOpen       = ref(false)
 const libraryQuery      = ref('')
 const libraryType       = ref('')
@@ -371,26 +363,62 @@ const filteredLibrary = computed(() => {
 
 function save() { store.saveActivities() }
 
+// "20:05" -> "8:05 pm"
+function fmtTime(t) {
+  if (!t) return ''
+  const [h, m] = t.split(':').map(Number)
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`
+}
+
+// Etiqueta del tiempo: "Nombre - De inicio a fin"
+function tiempoLabel(tiempo) {
+  const range = (tiempo.start || tiempo.end)
+    ? `De ${fmtTime(tiempo.start)} a ${fmtTime(tiempo.end)}`
+    : ''
+  return [tiempo.name, range].filter(Boolean).join(' - ')
+}
+
+// Duración entre inicio y fin (soporta cruce de medianoche)
+function tiempoDuration(tiempo) {
+  if (!tiempo.start || !tiempo.end) return ''
+  const [sh, sm] = tiempo.start.split(':').map(Number)
+  const [eh, em] = tiempo.end.split(':').map(Number)
+  let mins = (eh * 60 + em) - (sh * 60 + sm)
+  if (mins < 0) mins += 24 * 60
+  const h = Math.floor(mins / 60), m = mins % 60
+  return h ? (m ? `${h} h ${m} min` : `${h} h`) : `${m} min`
+}
+
 function startCreateTiempo() {
-  creatingTiempo.value = true
-  nextTick(() => createTiempoInput.value?.focus())
+  tiempoForm.value = { name: '', start: '', end: '' }
 }
 
-function confirmCreateTiempo() {
-  if (!newTiempoName.value.trim()) return
-  if (!activity.value.tiempos) activity.value.tiempos = []
-  const nuevo = { id: Date.now(), name: newTiempoName.value.trim(), songs: [] }
-  activity.value.tiempos.push(nuevo)
-  selectedTiempoId.value = nuevo.id
-  newTiempoName.value = ''
-  creatingTiempo.value = false
+function startEditTiempo(tiempo) {
+  tiempoForm.value = { id: tiempo.id, name: tiempo.name || '', start: tiempo.start || '', end: tiempo.end || '' }
+  selectedTiempoId.value = tiempo.id
+}
+
+function saveTiempoForm() {
+  const f = tiempoForm.value
+  if (!f.name.trim() && !f.start && !f.end) return   // algo debe tener
+  const data = { name: f.name.trim(), start: f.start, end: f.end }
+  if (f.id) {
+    const t = activity.value.tiempos.find(t => t.id === f.id)
+    if (t) Object.assign(t, data)
+    showToast('Tiempo actualizado')
+  } else {
+    if (!activity.value.tiempos) activity.value.tiempos = []
+    const nuevo = { id: Date.now(), songs: [], ...data }
+    activity.value.tiempos.push(nuevo)
+    selectedTiempoId.value = nuevo.id
+    showToast(`Tiempo "${tiempoLabel(nuevo)}" creado`)
+  }
+  tiempoForm.value = null
   save()
-  showToast(`Tiempo "${nuevo.name}" creado`)
 }
 
-function cancelCreateTiempo() {
-  newTiempoName.value = ''
-  creatingTiempo.value = false
+function cancelTiempoForm() {
+  tiempoForm.value = null
 }
 
 async function deleteTiempo(tiempoId) {
@@ -430,11 +458,6 @@ function addSongToSelected(songId) {
     save()
     showToast(`"${songById(songId)?.title}" agregada a ${selectedTiempo.value.name}`)
   }
-}
-
-function setTiempoField(tiempo, field, value) {
-  tiempo[field] = value
-  save()
 }
 
 function removeSong(tiempo, songId) {
@@ -514,19 +537,19 @@ async function handleDelete() {
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 
-/* Inicio–fin editable por tiempo (vista líder) */
-.tiempo-time-range { margin-left: auto; display: flex; align-items: center; gap: 4px; }
-.tiempo-time-dash { color: var(--text-muted); font-weight: 700; }
-.tiempo-time-input {
+/* Duración del tiempo (vista líder) */
+.tiempo-duration {
+  margin-left: auto;
   background: var(--accent-soft);
   color: var(--accent);
-  border: none;
   border-radius: 8px;
-  padding: 4px 8px;
-  font-size: .8rem;
+  padding: 4px 9px;
+  font-size: .78rem;
   font-weight: 700;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
+
 .orden__empty { font-size: .82rem; color: var(--text-muted); padding: 2px 2px 4px; }
 
 .orden__songs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
