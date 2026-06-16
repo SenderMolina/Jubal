@@ -62,26 +62,12 @@
                 @click.stop="selectedTiempoId = tiempo.id"
               >
                 <div class="tiempo-header">
-                  <h2 class="tiempo-name">{{ tiempoLabel(tiempo) || 'Sin nombre' }}</h2>
-                  <span v-if="tiempoDuration(tiempo)" class="tiempo-duration">{{ tiempoDuration(tiempo) }}</span>
-                  <button
-                    v-if="roleStore.isLeader && tiempo.songs?.length"
-                    class="dots-btn"
-                    style="color: var(--red); font-weight: 700; width: auto; padding: 4px 10px; font-size: .8rem;"
-                    aria-label="Iniciar en vivo"
-                    @click.stop="startLive(tiempo)"
-                  >▶ En vivo</button>
-                  <button class="dots-btn" aria-label="Editar tiempo" @click.stop="startEditTiempo(tiempo)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                  </button>
-                  <button class="dots-btn dots-btn--danger" aria-label="Eliminar tiempo" @click.stop="deleteTiempo(tiempo.id)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="3 6 5 6 21 6"/>
-                      <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                    </svg>
+                  <div class="tiempo-id">
+                    <h2 class="tiempo-name">{{ tiempoTitle(tiempo) }}</h2>
+                    <p v-if="tiempoMeta(tiempo)" class="tiempo-meta">{{ tiempoMeta(tiempo) }}</p>
+                  </div>
+                  <button class="tiempo-menu-btn" aria-label="Opciones del tiempo" @click.stop="openTiempoMenu(tiempo)">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
                   </button>
                 </div>
 
@@ -124,6 +110,16 @@
                     </div>
                   </template>
                 </draggable>
+
+                <!-- Acción primaria del tiempo -->
+                <button
+                  v-if="tiempo.songs?.length"
+                  class="tiempo-live-btn"
+                  @click.stop="startLive(tiempo)"
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+                  Iniciar en vivo
+                </button>
               </div>
 
               <!-- Form de crear tiempo nuevo (al final) -->
@@ -370,12 +366,43 @@ function fmtTime(t) {
   return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`
 }
 
-// Etiqueta del tiempo: "Nombre - De inicio a fin"
+// Etiqueta del tiempo: "Nombre - De inicio a fin" (vista músico)
 function tiempoLabel(tiempo) {
   const range = (tiempo.start || tiempo.end)
     ? `De ${fmtTime(tiempo.start)} a ${fmtTime(tiempo.end)}`
     : ''
   return [tiempo.name, range].filter(Boolean).join(' - ')
+}
+
+// Rango de reloj compacto: "8:25 – 8:50 am" (am/pm una vez si coinciden)
+function tiempoRange(tiempo) {
+  if (!tiempo.start && !tiempo.end) return ''
+  if (!tiempo.start || !tiempo.end) return fmtTime(tiempo.start || tiempo.end)
+  const samePeriod = (Number(tiempo.start.split(':')[0]) < 12) === (Number(tiempo.end.split(':')[0]) < 12)
+  const ini = samePeriod ? fmtTime(tiempo.start).replace(/ (am|pm)$/, '') : fmtTime(tiempo.start)
+  return `${ini} – ${fmtTime(tiempo.end)}`
+}
+
+// Título: el nombre, o el rango si no hay nombre
+function tiempoTitle(tiempo) {
+  return (tiempo.name && tiempo.name.trim()) || tiempoRange(tiempo) || 'Sin nombre'
+}
+
+// Línea callada de datos: rango · duración (sin repetir el rango si ya es el título)
+function tiempoMeta(tiempo) {
+  const hasName = !!(tiempo.name && tiempo.name.trim())
+  return [hasName ? tiempoRange(tiempo) : '', tiempoDuration(tiempo)].filter(Boolean).join(' · ')
+}
+
+function openTiempoMenu(tiempo) {
+  selectedTiempoId.value = tiempo.id
+  sheet.value?.open({
+    title: tiempoTitle(tiempo),
+    actions: [
+      { label: 'Editar tiempo', icon: 'edit', onSelect: () => startEditTiempo(tiempo) },
+      { label: 'Eliminar tiempo', icon: 'trash', danger: true, onSelect: () => deleteTiempo(tiempo.id) },
+    ],
+  })
 }
 
 // Duración entre inicio y fin (soporta cruce de medianoche)
@@ -537,18 +564,49 @@ async function handleDelete() {
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 
-/* Duración del tiempo (vista líder) */
-.tiempo-duration {
-  margin-left: auto;
-  background: var(--accent-soft);
-  color: var(--accent);
-  border-radius: 8px;
-  padding: 4px 9px;
+/* ── Bloque de tiempo (vista líder) ── */
+.tiempo-id { min-width: 0; flex: 1; }
+.tiempo-meta {
+  margin: 3px 0 0;
   font-size: .78rem;
-  font-weight: 700;
-  white-space: nowrap;
+  font-weight: 600;
+  color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+  letter-spacing: .01em;
 }
+/* Menú ⋯ — único punto de entrada a editar/eliminar */
+.tiempo-menu-btn {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  margin: -4px -6px 0 4px;
+  display: grid; place-items: center;
+  border: none; background: transparent;
+  color: var(--text-muted);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color .15s, background .15s;
+}
+.tiempo-menu-btn:hover { color: var(--text); background: var(--surface2); }
+.tiempo-menu-btn svg { width: 20px; height: 20px; }
+
+/* Acción primaria: una sola, clara, en acento (no rojo) */
+.tiempo-live-btn {
+  margin-top: 12px;
+  width: 100%;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px;
+  border: none;
+  border-radius: 12px;
+  background: var(--action);
+  color: #fff;
+  font-size: .9rem; font-weight: 700;
+  box-shadow: 0 2px 10px rgba(251,133,0,0.30);
+  cursor: pointer;
+  transition: background .15s, transform .05s;
+}
+.tiempo-live-btn svg { width: 15px; height: 15px; }
+.tiempo-live-btn:hover { background: var(--action2); }
+.tiempo-live-btn:active { transform: translateY(1px); }
 
 .orden__empty { font-size: .82rem; color: var(--text-muted); padding: 2px 2px 4px; }
 

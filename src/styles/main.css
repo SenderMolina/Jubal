@@ -1686,13 +1686,16 @@ header {
 .tiempo-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 .tiempo-name {
   font-family: var(--font); font-weight: 700;
-  font-size: 1.15rem;
+  font-size: 1.1rem;
+  line-height: 1.25;
   color: var(--text);
+  overflow-wrap: anywhere;
 }
 .tiempo-empty {
   text-align: center;
@@ -1808,15 +1811,28 @@ header {
 
 /* ── TIEMPO BLOCK (dentro del editor) ── */
 .tiempo-block {
-  border: 2px solid var(--border);
-  border-radius: 10px;
-  padding: 12px;
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 16px 16px 18px;
   margin-bottom: 10px;
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
+/* Riel de tiempo: aparece al seleccionar — eco del orden del servicio */
+.tiempo-block::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 14px; bottom: 14px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--teal);
+  opacity: 0;
+  transition: opacity .15s;
+}
 .tiempo-block:hover { border-color: var(--teal); }
-.tiempo-selected { border-color: var(--teal) !important; }
+.tiempo-selected { border-color: var(--teal); box-shadow: var(--shadow); }
+.tiempo-selected::before { opacity: 1; }
 .tiempo-selected .tiempo-name { color: var(--teal); }
 
 .compact-card {
