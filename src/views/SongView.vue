@@ -21,12 +21,9 @@
     </div>
 
     <!-- Header (modo edición) -->
-    <div v-else class="song-view-header">
-      <div style="flex:1">
-        <input class="form-input" v-model="form.title" placeholder="Título" style="font-size:1.1rem;font-weight:600;margin-bottom:6px">
-      </div>
-      <span class="sf-cancel-link" @click="cancelEdit">Cancelar</span>
-      <button class="sf-save-btn sf-save-btn-sm" @click="saveEdit">Guardar</button>
+    <div v-else>
+      <h1 class="section-title">Editar alabanza</h1>
+      <p class="section-subtitle">Modifica la información de la canción.</p>
     </div>
 
     <!-- Mini menú: navegación entre canciones + Play -->
@@ -48,81 +45,78 @@
 
     <ActionSheet ref="sheet" />
 
-    <!-- Edit form -->
+    <!-- Edit form (mismo formato que crear alabanza) -->
     <div v-if="editing">
-
-      <!-- Letra y acordes -->
-      <div class="sf-block">
-        <div class="sf-block-label">Letra y acordes</div>
-        <textarea class="sf-lyrics" v-model="form.lyrics"></textarea>
-        <div class="form-hint">Secciones: [Coro], [Verso]… Con tiempo opcional: [Intro 0:25], [Coro 1:10] — el autoscroll se pausa ahí ese tiempo.</div>
-      </div>
-
-      <!-- Presentación para coristas -->
-      <div class="sf-block">
-        <div class="sf-block-label">Presentación para coristas (Genially)</div>
-        <textarea class="sf-lyrics" v-model="form.embedCantante" placeholder="Código <iframe> o enlace de Genially. Se mostrará a los coristas en lugar de la letra."></textarea>
-      </div>
-
-      <!-- Presentación para músicos -->
-      <div class="sf-block">
-        <div class="sf-block-label">Presentación para músicos (Genially)</div>
-        <textarea class="sf-lyrics" v-model="form.embedMusico" placeholder="Código <iframe> o enlace de Genially. Se mostrará a los músicos en lugar de la letra y acordes."></textarea>
-      </div>
-
-      <!-- Tono + Autor -->
-      <div class="sf-inline-row">
-        <div class="sf-field">
-          <label class="sf-label">Tono (Key)</label>
-          <select class="form-select" v-model="form.key">
-            <option value="">— Sin especificar —</option>
-            <option v-for="k in keys" :key="k">{{ k }}</option>
-          </select>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Título <span class="req">*</span></label>
+          <input
+            ref="editTitleInput"
+            class="form-input"
+            :class="{ 'form-input--error': titleError }"
+            v-model="form.title"
+            type="text"
+            placeholder="Ej: Santo, Santo, Santo"
+            @input="titleError = ''"
+          >
+          <p v-if="titleError" class="form-error">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            {{ titleError }}
+          </p>
         </div>
-        <div class="sf-field">
-          <label class="sf-label">Autor / Artista</label>
-          <input class="form-input" v-model="form.author" placeholder="Ej: Marcos Witt" list="sf-authors-edit">
+        <div class="form-group">
+          <label class="form-label">Autor / Artista</label>
+          <input class="form-input" v-model="form.author" type="text" placeholder="Ej: Marcos Witt" list="sf-authors-edit">
           <datalist id="sf-authors-edit">
             <option v-for="a in authorSuggestions" :key="a" :value="a"></option>
           </datalist>
         </div>
       </div>
 
-      <!-- Detalles adicionales -->
-      <button class="sf-details-toggle" @click="showDetails = !showDetails">
-        {{ showDetails ? '▲' : '▶' }} Detalles adicionales
-      </button>
-      <div v-if="showDetails" class="sf-details">
-        <div class="sf-inline-row">
-          <div class="sf-field">
-            <label class="sf-label">Tempo (BPM)</label>
-            <input class="form-input" v-model.number="form.bpm" type="number" placeholder="Ej: 75" min="40" max="200">
-          </div>
-          <div class="sf-field">
-            <label class="sf-label">Duración (min:seg)</label>
-            <input class="form-input" v-model="form.durationText" type="text" inputmode="numeric" placeholder="Ej: 4:30">
-          </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Tono (Key)</label>
+          <select class="form-select" v-model="form.key">
+            <option value="">— Sin especificar —</option>
+            <option v-for="k in keys" :key="k">{{ k }}</option>
+          </select>
         </div>
-        <div class="sf-field" style="margin-top:10px">
-          <label class="sf-label">Tipos</label>
-          <div class="type-pills type-pills--form">
-            <button
-              v-for="t in store.songTypes"
-              :key="t.id"
-              type="button"
-              class="type-pill"
-              :class="{ active: form.types.includes(t.id) }"
-              @click="toggleFormType(t.id)"
-            >{{ t.name }}</button>
-          </div>
+        <div class="form-group">
+          <label class="form-label">Tempo (BPM)</label>
+          <input class="form-input" v-model.number="form.bpm" type="number" placeholder="Ej: 75" min="40" max="200">
         </div>
       </div>
 
-    </div>
+      <div class="form-group">
+        <label class="form-label">Duración (min:seg)</label>
+        <input class="form-input" v-model="form.durationText" type="text" inputmode="numeric" placeholder="Ej: 4:30">
+        <div class="form-hint">Se usa para el autoscroll de la letra en modo Play.</div>
+      </div>
 
-    <!-- View mode: presentación embebida (abre ya maximizada) -->
-    <div v-else-if="embedSrc" class="embed-block embed-block--full">
-      <iframe :src="embedSrc" frameborder="0" allow="fullscreen; autoplay; encrypted-media; picture-in-picture" loading="lazy"></iframe>
+      <div class="form-group">
+        <label class="form-label">Tipos</label>
+        <div class="type-pills type-pills--form">
+          <button
+            v-for="t in store.songTypes"
+            :key="t.id"
+            type="button"
+            class="type-pill"
+            :class="{ active: form.types.includes(t.id) }"
+            @click="toggleFormType(t.id)"
+          >{{ t.name }}</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Letra y acordes</label>
+        <textarea class="form-textarea" v-model="form.lyrics" :placeholder="lyricsPlaceholder"></textarea>
+        <div class="form-hint">Acordes inline: <code>[C]Sublime [G]gra[Am]cia</code> — el acorde se coloca sobre la sílaba (también funciona el acorde en su propia línea). Usa [Coro], [Verso]… para secciones; con tiempo opcional [Intro 0:25] el autoscroll se pausa ahí. A las coristas no se les muestran los acordes.</div>
+      </div>
+
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:8px;">
+        <button class="btn btn-ghost" @click="cancelEdit">Cancelar</button>
+        <button class="btn btn-primary" @click="saveEdit">Guardar cambios</button>
+      </div>
     </div>
 
     <!-- View mode: letra y acordes -->
@@ -130,6 +124,7 @@
       <template v-if="renderedLines.length">
         <template v-for="(line, i) in renderedLines" :key="i">
           <div v-if="line.type === 'spacer'" style="height:10px;"></div>
+          <ChordLine v-else-if="line.type === 'chordpro'" :pairs="line.pairs" :hide-chords="roleStore.isCantante" />
           <div v-else :class="line.type">{{ line.text }}</div>
         </template>
       </template>
@@ -159,6 +154,7 @@
         <div ref="playerBody" class="player-body">
           <template v-for="(line, i) in renderedLines" :key="i">
             <div v-if="line.type === 'spacer'" style="height:10px;"></div>
+            <ChordLine v-else-if="line.type === 'chordpro'" :pairs="line.pairs" :hide-chords="roleStore.isCantante" />
             <div v-else :class="line.type">{{ line.text }}</div>
           </template>
         </div>
@@ -192,7 +188,9 @@ import { useLiveStore } from '../stores/live'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import { parseDuration, formatDuration } from '../utils/duration'
+import { parseSections } from '../utils/sections'
 import ActionSheet from '../components/ActionSheet.vue'
+import ChordLine from '../components/ChordLine.vue'
 
 const route     = useRoute()
 const router    = useRouter()
@@ -206,37 +204,26 @@ const sheet       = ref(null)
 const editing     = ref(false)
 const form        = ref({})
 const showDetails = ref(false)
+const titleError  = ref('')
+const editTitleInput = ref(null)
+
+const lyricsPlaceholder = `[Intro]
+G  Em  C  D
+
+[Verso 1]
+[G]Cuán [Em]grande es Él
+[C]Su amor [D]sin fin
+
+[Coro]
+[G]Santo, [D]Santo, [Em]Santo[C]...`
 
 const keys = ['A','A#/Bb','B','C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab']
-
-const chordRegex = /^[A-G][#b]?(m|maj|min|sus|aug|dim|add|2|4|5|6|7|9|11|13|\/)?[A-G0-9#b]*(\s+[A-G][#b]?(m|maj|min|sus|aug|dim|add|2|4|5|6|7|9|11|13|\/)?[A-G0-9#b]*)*\s*$/
 
 const song = computed(() => store.songs.find(s => s.id === Number(route.params.id)))
 
 const authorSuggestions = computed(() =>
   [...new Set(store.songs.map(s => s.author).filter(Boolean))]
 )
-
-// Extrae solo la URL del código embebido (evita inyectar HTML crudo / XSS).
-// Acepta el <iframe> completo de Genially o un enlace pelado.
-function extractSrc(raw) {
-  const s = (raw || '').trim()
-  if (!s) return ''
-  const m = s.match(/src=["']([^"']+)["']/i)
-  if (m) return m[1]
-  if (/^https?:\/\//i.test(s)) return s
-  return ''
-}
-
-// Elige la presentación según el rol. El líder ve la de músico, y si no hay,
-// la de corista, para poder previsualizar.
-const embedSrc = computed(() => {
-  const s = song.value
-  if (!s) return ''
-  if (roleStore.isCantante) return extractSrc(s.embedCantante)
-  if (roleStore.isMusico)   return extractSrc(s.embedMusico)
-  return extractSrc(s.embedMusico) || extractSrc(s.embedCantante)
-})
 
 function openMenu() {
   sheet.value?.open({
@@ -269,7 +256,7 @@ async function deleteSong() {
 function startEdit() {
   const s = song.value
   const types = Array.isArray(s.types) ? [...s.types] : (s.type ? [s.type] : [])
-  form.value = { title: s.title, author: s.author || '', key: s.key || '', bpm: s.bpm || null, durationText: formatDuration(s.duration), types, lyrics: s.lyrics || '', embedCantante: s.embedCantante || '', embedMusico: s.embedMusico || '' }
+  form.value = { title: s.title, author: s.author || '', key: s.key || '', bpm: s.bpm || null, durationText: formatDuration(s.duration), types, lyrics: s.lyrics || '' }
   editing.value = true
 }
 
@@ -285,43 +272,33 @@ function cancelEdit() {
 }
 
 function saveEdit() {
-  if (!form.value.title.trim()) { alert('El título es obligatorio.'); return }
+  if (!form.value.title.trim()) { titleError.value = 'Ponle un título para guardar.'; editTitleInput.value?.focus(); return }
   const idx = store.songs.findIndex(s => s.id === Number(route.params.id))
   if (idx === -1) return
   const { durationText, ...fields } = form.value
-  store.songs[idx] = { ...store.songs[idx], ...fields, title: form.value.title.trim(), lyrics: form.value.lyrics.trim(), embedCantante: (form.value.embedCantante || '').trim(), embedMusico: (form.value.embedMusico || '').trim(), bpm: form.value.bpm || null, duration: parseDuration(durationText), types: form.value.types.length ? form.value.types : [] }
+  store.songs[idx] = { ...store.songs[idx], ...fields, title: form.value.title.trim(), lyrics: form.value.lyrics.trim(), bpm: form.value.bpm || null, duration: parseDuration(durationText), types: form.value.types.length ? form.value.types : [] }
   store.saveSongs()
   editing.value = false
   showDetails.value = false
   showToast('Canción actualizada ✓')
 }
 
+// Aplanado de parseSections() — mismo parser que la vista en vivo, para que
+// canción, vivo y reproductor rendericen idéntico. El ChordLine oculta los
+// acordes a coristas; las líneas de acordes sueltas (formato viejo) se filtran.
 const renderedLines = computed(() => {
-  if (!song.value?.lyrics) return []
   const hideChords = roleStore.isCantante
-  return song.value.lyrics.split('\n').reduce((acc, line) => {
-    if (!line.trim()) {
-      acc.push({ type: 'spacer' })
-      return acc
+  const out = []
+  for (const sec of parseSections(song.value?.lyrics)) {
+    if (sec.label) out.push({ type: 'section-label', text: sec.label, secs: sec.secs })
+    for (const l of sec.lines) {
+      if (l.type === 'spacer') out.push({ type: 'spacer' })
+      else if (l.type === 'chordpro') out.push({ type: 'chordpro', pairs: l.pairs })
+      else if (l.type === 'chord') { if (!hideChords) out.push({ type: 'chord-line', text: l.text }) }
+      else out.push({ type: 'lyric-line', text: l.text })
     }
-    // [Coro] o [Coro 1:10] — el tiempo es opcional (autoscroll) y no se muestra.
-    // Se acepta contenido después de la etiqueta, ej: "[Intro 0:29] C#m7 A/C#".
-    const section = line.trim().match(/^\[(.+?)(?:\s+(\d+):([0-5]?\d))?\]\s*(.*)$/)
-    if (section) {
-      acc.push({ type: 'section-label', text: section[1], secs: section[2] != null ? Number(section[2]) * 60 + Number(section[3]) : null })
-      const rest = section[4]
-      if (rest) {
-        if (chordRegex.test(rest)) { if (!hideChords) acc.push({ type: 'chord-line', text: rest }) }
-        else acc.push({ type: 'lyric-line', text: rest })
-      }
-      return acc
-    }
-    const isChord = chordRegex.test(line.trim())
-    if (hideChords && isChord) return acc
-    if (isChord) acc.push({ type: 'chord-line', text: line })
-    else acc.push({ type: 'lyric-line', text: line })
-    return acc
-  }, [])
+  }
+  return out
 })
 
 // ── Navegación entre canciones ──
@@ -351,7 +328,7 @@ function goTo(offset) {
 }
 
 // ── Reproductor con autoscroll ──
-const canPlay = computed(() => !embedSrc.value && renderedLines.value.length > 0)
+const canPlay = computed(() => renderedLines.value.length > 0)
 
 // Sin duración guardada se estima por la cantidad de líneas.
 const effectiveDuration = computed(() =>

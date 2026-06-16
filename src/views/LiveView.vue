@@ -29,7 +29,8 @@
       <div v-if="section" class="live-section">
         <div v-if="section.label" class="live-section__label">{{ section.label }}</div>
         <template v-for="(l, i) in section.lines" :key="i">
-          <div v-if="!(l.type === 'chord' && band.isCantante)"
+          <ChordLine v-if="l.type === 'chordpro'" class="live-chordpro" :pairs="l.pairs" :hide-chords="band.isCantante" />
+          <div v-else-if="!(l.type === 'chord' && band.isCantante)"
                :class="l.type === 'spacer' ? 'live-spacer' : (l.type === 'chord' ? 'live-chord' : 'live-lyric')">{{ l.text }}</div>
         </template>
       </div>
@@ -76,6 +77,7 @@ import { useLiveStore } from '../stores/live'
 import { useAppStore } from '../stores/app'
 import { useBandStore } from '../stores/band'
 import { parseSections } from '../utils/sections'
+import ChordLine from '../components/ChordLine.vue'
 
 const router = useRouter()
 const live  = useLiveStore()
@@ -194,6 +196,12 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
 .live-content--singer { padding: 32px 24px; display: flex; flex-direction: column; justify-content: center; }
 .live-content--singer .live-section__label { text-align: center; font-size: 1rem; }
 .live-content--singer .live-lyric { font-size: 1.7rem; line-height: 2.1; text-align: center; font-family: 'Nunito', sans-serif; font-weight: 600; }
+/* Acordes inline en vivo: legibles para músico; para corista, letra grande/centrada */
+.live-chordpro :deep(.cp-line) { font-size: 1rem; line-height: 1.6; }
+.live-content--singer .live-chordpro :deep(.cp-line--plain) {
+  font-size: 1.7rem; line-height: 2.1; text-align: center;
+  font-family: 'Nunito', sans-serif; font-weight: 600;
+}
 
 .live-next { margin-top: 28px; color: var(--text-muted); font-size: .85rem; text-align: center; }
 
@@ -227,7 +235,7 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
 .live-sec-chip__lbl { font-size: .82rem; font-weight: 600; white-space: nowrap; }
 .live-sec-chip.active {
   background: var(--accent); border-color: var(--accent); color: #fff;
-  box-shadow: 0 2px 10px rgba(33,158,188,.35);
+  box-shadow: 0 2px 10px rgba(var(--brand-rgb),.35);
 }
 .live-sec-chip.active .live-sec-chip__n { color: rgba(255,255,255,.85); }
 .live-sec-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -245,7 +253,7 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
   background: var(--surface2); color: var(--text); font-size: 1.1rem; cursor: pointer; font-weight: 700;
 }
 .live-ctrl--play { background: var(--accent); border-color: var(--accent); color: #fff; flex: 1.3; }
-.live-ctrl--end { flex: 1.6; font-size: .9rem; background: var(--red-soft); border-color: rgba(229,57,53,.2); color: var(--red); }
+.live-ctrl--end { flex: 1.6; font-size: .9rem; background: var(--red-soft); border-color: rgba(var(--danger-rgb),.2); color: var(--red); }
 
 .live-empty { color: var(--text-muted); text-align: center; margin-top: 40px; padding: 20px; }
 </style>

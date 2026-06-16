@@ -5,8 +5,20 @@
 
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">Título *</label>
-        <input class="form-input" v-model="form.title" type="text" placeholder="Ej: Santo, Santo, Santo">
+        <label class="form-label">Título <span class="req">*</span></label>
+        <input
+          ref="titleInput"
+          class="form-input"
+          :class="{ 'form-input--error': errors.title }"
+          v-model="form.title"
+          type="text"
+          placeholder="Ej: Santo, Santo, Santo"
+          @input="errors.title = ''"
+        >
+        <p v-if="errors.title" class="form-error">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          {{ errors.title }}
+        </p>
       </div>
       <div class="form-group">
         <label class="form-label">Autor / Artista</label>
@@ -28,13 +40,10 @@
       </div>
     </div>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Duración (min:seg)</label>
-        <input class="form-input" v-model="form.durationText" type="text" inputmode="numeric" placeholder="Ej: 4:30">
-        <div class="form-hint">Se usa para el autoscroll de la letra en modo Play.</div>
-      </div>
-      <div class="form-group"></div>
+    <div class="form-group">
+      <label class="form-label">Duración (min:seg)</label>
+      <input class="form-input" v-model="form.durationText" type="text" inputmode="numeric" placeholder="Ej: 4:30">
+      <div class="form-hint">Se usa para el autoscroll de la letra en modo Play.</div>
     </div>
 
     <div class="form-group">
@@ -54,19 +63,7 @@
     <div class="form-group">
       <label class="form-label">Letra y acordes</label>
       <textarea class="form-textarea" v-model="form.lyrics" :placeholder="lyricsPlaceholder"></textarea>
-      <div class="form-hint">Pon los acordes en una línea y la letra en la siguiente. Usa [Coro], [Verso], [Puente] para secciones. Opcional: dale tiempo a una sección, ej. [Intro 0:25] o [Coro 1:10] — el autoscroll se pausa ahí ese tiempo y luego continúa; el tiempo no se muestra en pantalla.</div>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Presentación para coristas (Genially)</label>
-      <textarea class="form-textarea" v-model="form.embedCantante" placeholder='Pega el código <iframe> de Genially o el enlace'></textarea>
-      <div class="form-hint">Se mostrará a los coristas en lugar de la letra.</div>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Presentación para músicos (Genially)</label>
-      <textarea class="form-textarea" v-model="form.embedMusico" placeholder='Pega el código <iframe> de Genially o el enlace'></textarea>
-      <div class="form-hint">Se mostrará a los músicos en lugar de la letra y los acordes.</div>
+      <div class="form-hint">Acordes inline: <code>[C]Sublime [G]gra[Am]cia</code> — el acorde se coloca sobre la sílaba (también funciona el acorde en su propia línea). Usa [Coro], [Verso]… para secciones; con tiempo opcional [Intro 0:25] el autoscroll se pausa ahí. A las coristas no se les muestran los acordes.</div>
     </div>
 
     <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:8px;">
@@ -77,7 +74,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useToast } from '../composables/useToast'
@@ -89,7 +86,11 @@ const { showToast } = useToast()
 
 const keys = ['A','A#/Bb','B','C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab']
 
-const emptyForm = () => ({ title: '', author: '', key: '', bpm: null, durationText: '', types: [], lyrics: '', embedCantante: '', embedMusico: '' })
+const titleInput = ref(null)
+const errors = ref({ title: '' })
+onMounted(() => titleInput.value?.focus())
+
+const emptyForm = () => ({ title: '', author: '', key: '', bpm: null, durationText: '', types: [], lyrics: '' })
 
 function toggleFormType(id) {
   const idx = form.value.types.indexOf(id)
@@ -102,17 +103,18 @@ const lyricsPlaceholder = `[Intro]
 G  Em  C  D
 
 [Verso 1]
-G              Em
-Cuán grande es Él
-C             D
-Su amor sin fin
+[G]Cuán [Em]grande es Él
+[C]Su amor [D]sin fin
 
 [Coro]
-G    D    Em   C
-Santo, Santo, Santo...`
+[G]Santo, [D]Santo, [Em]Santo[C]...`
 
 function save() {
-  if (!form.value.title.trim()) { alert('El título es obligatorio.'); return }
+  if (!form.value.title.trim()) {
+    errors.value.title = 'Ponle un título para guardar.'
+    titleInput.value?.focus()
+    return
+  }
 
   store.songs.push({
     id:     Date.now(),
@@ -123,8 +125,6 @@ function save() {
     duration: parseDuration(form.value.durationText),
     types:  form.value.types.length ? form.value.types : [],
     lyrics: form.value.lyrics.trim() || '',
-    embedCantante: form.value.embedCantante.trim() || '',
-    embedMusico:   form.value.embedMusico.trim() || '',
   })
   store.saveSongs()
   showToast('Alabanza guardada ✓')

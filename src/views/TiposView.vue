@@ -8,7 +8,7 @@
         placeholder="Nuevo tipo…"
         @keydown.enter="save"
       >
-      <button class="tipos-add__btn" @click="save" aria-label="Agregar tipo">+</button>
+      <button class="tipos-add__btn" :disabled="!newName.trim()" @click="save" aria-label="Agregar tipo">+</button>
     </div>
 
     <div v-if="store.songTypes.length === 0" class="activity-empty">No hay tipos. Agrega el primero arriba.</div>
@@ -41,7 +41,7 @@ function songCount(typeId) {
 }
 
 function save() {
-  if (!newName.value.trim()) { alert('El nombre es obligatorio.'); return }
+  if (!newName.value.trim()) return
   store.songTypes.push({ id: Date.now(), name: newName.value.trim() })
   store.saveSongTypes()
   newName.value = ''

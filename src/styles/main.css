@@ -1,32 +1,71 @@
 :root {
-  /* Claro y minimalista — estilo Notion / Linear / Spotify Light */
-  --bg: #F7F6F3;            /* fondo global (no blanco puro) */
-  --surface: #FFFFFF;       /* tarjetas */
-  --surface2: #F0F2F5;      /* superficies secundarias */
-  --border: #E4E7EC;        /* divisores y bordes */
-  /* Color principal de interacción — azul */
-  --accent: #219EBC;
-  --accent2: #1B86A0;
-  --accent-soft: #EAF8FB;   /* fondo suave de badges/fechas/píldoras */
-  /* Mismo azul para resaltados (un solo color de interacción) */
-  --teal: #219EBC;
-  --teal-soft: #EAF8FB;
-  /* Color de acción — naranja, uso < 5% (Play, eventos importantes, CTA) */
-  --action: #FB8500;
-  --action2: #E07700;
-  /* Gradiente sutil del header de Actividades */
+  /* ═══════════════════════════════════════════════════════════════
+     SISTEMA DE COLOR — dos capas. Estilo Notion / Linear / Spotify Light.
+       1) PRIMITIVAS  → la paleta cruda. Única fuente de verdad.
+       2) SEMÁNTICAS  → el rol de cada color. Los componentes usan SOLO
+                        estas (--accent, --text, --red…), nunca un hex suelto.
+     Para opacidades usa las triadas *-rgb:  rgba(var(--brand-rgb), .3)
+     ═══════════════════════════════════════════════════════════════ */
+
+  /* 1 ── PRIMITIVAS ─────────────────────────────────────────────── */
+  /* Neutros (un solo ramo, del papel al tinta) */
+  --c-white: #FFFFFF;
+  --c-paper: #F7F6F3;   /* fondo cálido, no blanco puro */
+  --c-cloud: #F0F2F5;   /* superficie secundaria */
+  --c-line:  #E4E7EC;   /* divisores y bordes */
+  --c-slate-400: #98A2B3;
+  --c-slate-600: #667085;
+  --c-ink: #1C2430;   --ink-rgb: 28,36,48;
+
+  /* Marca: par complementario deliberado — agua + ámbar */
+  --c-brand:        #219EBC;   --brand-rgb: 33,158,188;
+  --c-brand-strong: #1B86A0;
+  --c-brand-tint:   #EAF8FB;
+  --c-amber:        #FB8500;   --amber-rgb: 251,133,0;
+  --c-amber-strong: #E07700;
+  --c-amber-tint:   #FFF4E8;
+
+  /* Estado */
+  --c-success: #2E9E6B;   --success-rgb: 46,158,107;
+  --c-danger:  #E5484D;   --danger-rgb: 229,72,77;
+
+  /* 2 ── SEMÁNTICAS (úsalas en los componentes) ─────────────────── */
+  --bg: var(--c-paper);
+  --surface: var(--c-white);
+  --surface2: var(--c-cloud);
+  --border: var(--c-line);
+  --text: var(--c-ink);
+  --text-mid: var(--c-slate-600);
+  --text-muted: var(--c-slate-400);
+
+  /* Interacción primaria (azul-agua) — un único color de marca */
+  --accent: var(--c-brand);
+  --accent2: var(--c-brand-strong);
+  --accent-soft: var(--c-brand-tint);
+  /* Aliases heredados: mismo azul que --accent. No agregar usos nuevos. */
+  --teal: var(--c-brand);
+  --teal-soft: var(--c-brand-tint);
+
+  /* Acción / CTA (ámbar, uso < 5%: Play, en vivo, evento importante) */
+  --action: var(--c-amber);
+  --action2: var(--c-amber-strong);
+  --action-soft: var(--c-amber-tint);
+
+  /* Estado */
+  --green: var(--c-success);
+  --green-soft: rgba(var(--success-rgb), 0.10);
+  --red: var(--c-danger);          /* solo destructivo: eliminar, salir */
+  --red-soft: rgba(var(--danger-rgb), 0.10);
+
+  /* Efectos y superficies de sistema */
+  --focus-ring: rgba(var(--brand-rgb), 0.45);   /* anillos/bordes activos */
+  --scrim: rgba(var(--ink-rgb), 0.5);           /* fondo de overlays y sheets */
   --header-grad: linear-gradient(135deg, #DDF5FA 0%, #F4EEFF 100%);
-  --text: #1C2430;          /* texto principal */
-  --text-mid: #667085;      /* texto secundario */
-  --text-muted: #98A2B3;    /* terciario / inactivo / placeholders */
-  --green: #2E9E6B;
-  --green-soft: rgba(46,158,107,0.10);
-  --red: #E5484D;           /* solo acciones destructivas (eliminar, salir) */
-  --red-soft: rgba(229,72,77,0.10);
-  --radius: 20px;
   --shadow: 0 2px 8px rgba(0,0,0,0.05);
-  --font: 'Montserrat', sans-serif;
   --shadow-hover: 0 4px 12px rgba(0,0,0,0.06);
+
+  --radius: 20px;
+  --font: 'Montserrat', sans-serif;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -105,7 +144,7 @@ header {
   border-radius: 20px;
   background: var(--teal-soft);
   color: var(--teal);
-  border: 1px solid rgba(33,158,188,0.28);
+  border: 1px solid rgba(var(--brand-rgb),0.28);
 }
 
 /* ── BUTTONS ── */
@@ -122,8 +161,9 @@ header {
   border: none;
   transition: all 0.18s ease;
 }
+.btn:disabled { opacity: 0.45; cursor: default; transform: none; box-shadow: none; }
 .btn-primary { background: var(--accent); color: #FFFFFF; }
-.btn-primary:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: var(--shadow-hover); }
+.btn-primary:hover:not(:disabled) { background: var(--accent2); transform: translateY(-1px); box-shadow: var(--shadow-hover); }
 .btn-ghost { background: transparent; color: var(--text-mid); border: 1px solid var(--border); }
 .btn-ghost:hover { border-color: var(--teal); color: var(--teal); }
 .btn-danger { background: var(--red-soft); color: var(--red); border: 1px solid rgba(229,72,77,0.15); }
@@ -193,7 +233,7 @@ header {
   max-width: 480px;
   border-radius: 22px 22px 0 0;
   padding: 8px 22px calc(18px + env(safe-area-inset-bottom, 8px));
-  box-shadow: 0 -8px 30px rgba(30,42,56,0.18);
+  box-shadow: 0 -8px 30px rgba(var(--ink-rgb),0.18);
 }
 .sheet-handle {
   width: 42px;
@@ -279,7 +319,7 @@ header {
   font-size: 0.85rem;
   font-weight: 600;
   padding: 14px 16px;
-  box-shadow: 0 2px 12px rgba(232,85,85,0.3);
+  box-shadow: 0 2px 12px rgba(var(--danger-rgb),0.3);
 }
 .banner-enter-active, .banner-leave-active { transition: transform 0.25s ease, opacity 0.25s ease; }
 .banner-enter-from, .banner-leave-to { transform: translateY(-100%); opacity: 0; }
@@ -587,7 +627,7 @@ header {
 .tab.active {
   background: var(--accent-soft);
   color: var(--accent);
-  border-color: rgba(33,158,188,0.45);
+  border-color: var(--focus-ring);
   font-weight: 600;
 }
 
@@ -817,7 +857,7 @@ header {
 .song-card__title {
   font-size: 18px;
   font-weight: 600;
-  color: #111827;
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -893,7 +933,7 @@ header {
   background: var(--accent);
   color: white;
   border: none;
-  box-shadow: 0 8px 20px rgba(255, 107, 107, 0.3);
+  box-shadow: 0 8px 20px rgba(var(--brand-rgb), 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -906,7 +946,7 @@ header {
 }
 .fab-add-song:hover {
   transform: scale(1.08);
-  box-shadow: 0 10px 28px rgba(255, 107, 107, 0.4);
+  box-shadow: 0 10px 28px rgba(var(--brand-rgb), 0.4);
 }
 .fab-add-song:active {
   transform: scale(0.95);
@@ -987,7 +1027,7 @@ header {
   border-radius: 4px;
   background: var(--green-soft);
   color: var(--green);
-  border: 1px solid rgba(76,175,80,0.2);
+  border: 1px solid rgba(var(--success-rgb),0.2);
 }
 
 /* ── TYPE PILLS ── */
@@ -1042,7 +1082,8 @@ header {
   justify-content: center;
   transition: all 0.15s;
 }
-.tipos-add__btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+.tipos-add__btn:hover:not(:disabled) { background: var(--accent); color: white; border-color: var(--accent); }
+.tipos-add__btn:disabled { opacity: 0.4; cursor: default; }
 .tipos-list {
   display: flex;
   flex-direction: column;
@@ -1107,11 +1148,38 @@ header {
   outline: none;
   transition: border-color 0.15s;
 }
-.form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--teal); }
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--brand-rgb), 0.16);
+}
 .form-textarea { resize: vertical; min-height: 220px; line-height: 1.7; }
 .form-select option { background: var(--surface); }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .form-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; }
+
+/* Campo obligatorio: marca discreta en el label */
+.form-label .req { color: var(--accent); margin-left: 2px; }
+
+/* Estado de error — la forma señala, no regaña */
+.form-input--error,
+.form-input--error:focus {
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(var(--danger-rgb), 0.16);
+}
+.form-error {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.78rem; font-weight: 600; color: var(--red);
+  margin-top: 6px;
+}
+.form-error svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* Separador de grupo dentro de un formulario largo */
+.form-section { display: flex; align-items: center; gap: 12px; margin: 26px 0 16px; }
+.form-section__line { flex: 1; height: 1px; background: var(--border); }
+.form-section__text {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-muted);
+}
 
 /* ── SONG FORM (sf-) ── */
 .sf-block { margin-bottom: 24px; }
@@ -1234,30 +1302,10 @@ header {
   font-weight: 500;
   transition: transform 0.3s ease;
   z-index: 999;
-  box-shadow: 0 4px 20px rgba(76,175,80,0.2);
+  box-shadow: 0 4px 20px rgba(var(--success-rgb),0.2);
 }
 .success-toast.show { transform: translateX(-50%) translateY(0); }
 
-/* ── FIREBASE NOTICE ── */
-.firebase-notice {
-  background: var(--teal-soft);
-  border: 1px solid rgba(33,158,188,0.28);
-  border-radius: var(--radius);
-  padding: 14px 18px;
-  font-size: 0.82rem;
-  color: var(--text-mid);
-  margin-bottom: 24px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.firebase-notice .dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--teal);
-  flex-shrink: 0;
-  animation: pulse 2s infinite;
-}
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
@@ -1319,7 +1367,7 @@ header {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(30,42,56,0.5);
+  background: var(--scrim);
   z-index: 200;
   display: flex;
   align-items: center;
@@ -1335,7 +1383,7 @@ header {
   width: 100%;
   max-width: 480px;
   animation: slideUp 0.2s ease;
-  box-shadow: 0 8px 32px rgba(30,42,56,0.15);
+  box-shadow: 0 8px 32px rgba(var(--ink-rgb),0.15);
 }
 @keyframes slideUp {
   from { transform: translateY(20px); opacity: 0; }
@@ -1345,9 +1393,15 @@ header {
 .modal-sub   { font-size: 0.83rem; color: var(--text-muted); margin-bottom: 20px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
-/* ── DATE PICKER ── */
-.date-picker-wrap { margin-bottom: 24px; }
-.date-picker-input { max-width: 220px; cursor: pointer; }
+/* Accesibilidad: respeta a quien pide menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 /* ── CALENDAR ── */
 .calendar-wrapper { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
@@ -1857,7 +1911,7 @@ header {
 .library-active-indicator--active {
   color: var(--teal);
   background: var(--teal-soft);
-  border-color: rgba(33,158,188,0.28);
+  border-color: rgba(var(--brand-rgb),0.28);
 }
 .library-active-indicator--active strong { color: var(--text); }
 
@@ -1890,7 +1944,7 @@ header {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.library-assignment-badge--current { background: var(--teal-soft); color: var(--teal); border-color: rgba(33,158,188,0.28); }
+.library-assignment-badge--current { background: var(--teal-soft); color: var(--teal); border-color: rgba(var(--brand-rgb),0.28); }
 
 /* ── MOBILE TABS (editor) ── */
 .editor-mobile-tabs {
@@ -1930,39 +1984,6 @@ header {
 }
 
 /* Presentación embebida (Genially u otro iframe) */
-.embed-block {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: var(--surface2);
-}
-.embed-block iframe {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border: 0;
-}
-
-/* Embed "ya maximizado" (vista de canción): el iframe ocupa toda la pantalla
-   bajo el topbar desde el inicio — equivale a presionar el botón de ampliar
-   de Genially. El contenido interno se desplaza deslizando dentro del iframe. */
-.embed-block--full {
-  position: fixed;
-  top: 56px;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 90;
-  aspect-ratio: auto;
-  border: none;
-  border-radius: 0;
-  background: #fff;
-}
-
 /* ── TOPBAR DE CANCIÓN ── */
 .song-topbar-info {
   flex: 1;

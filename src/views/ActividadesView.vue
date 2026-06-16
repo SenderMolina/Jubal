@@ -347,7 +347,7 @@ const selectedDayActivities = computed(() =>
   position: relative;
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  background: linear-gradient(135deg, var(--accent-soft) 0%, #FFF4E8 100%);
+  background: linear-gradient(135deg, var(--accent-soft) 0%, var(--action-soft) 100%);
   padding: 16px 18px 18px;
   margin-bottom: 22px;
   cursor: pointer;

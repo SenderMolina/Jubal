@@ -17,17 +17,18 @@
       </label>
     </div>
     <div class="tiempo-inline-actions">
-      <button class="btn btn-primary btn-sm" @click="$emit('save')">{{ form.id ? 'Guardar' : 'Crear' }}</button>
+      <button class="btn btn-primary btn-sm" :disabled="!canSave" @click="$emit('save')">{{ form.id ? 'Guardar' : 'Crear' }}</button>
       <button class="btn btn-ghost btn-sm" @click="$emit('cancel')">Cancelar</button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-defineProps({ form: { type: Object, required: true } })
+import { ref, computed, onMounted } from 'vue'
+const props = defineProps({ form: { type: Object, required: true } })
 defineEmits(['save', 'cancel'])
 const nameInput = ref(null)
+const canSave = computed(() => !!(props.form.name.trim() || props.form.start || props.form.end))
 onMounted(() => nameInput.value?.focus())
 </script>
 

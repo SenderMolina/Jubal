@@ -8,6 +8,33 @@
 
 const chordRegex = /^[A-G][#b]?(m|maj|min|sus|aug|dim|add|2|4|5|6|7|9|11|13|\/)?[A-G0-9#b]*(\s+[A-G][#b]?(m|maj|min|sus|aug|dim|add|2|4|5|6|7|9|11|13|\/)?[A-G0-9#b]*)*\s*$/
 const sectionRegex = /^\[(.+?)(?:\s+(\d+):([0-5]?\d))?\]\s*(.*)$/
+// Un solo acorde dentro de un corchete inline: C, Cm7, F#sus4, A/C#, Gm7b5…
+// Restringido al vocabulario real de acordes para no confundir "Coro", "Verso", etc.
+const chordToken = /^[A-G][#b]?(?:m|maj|min|M|aug|dim|sus|add|\+|°|º)?[0-9]*(?:(?:add|sus|maj|b|#)[0-9]+)*(?:\/[A-G][#b]?)?$/
+
+// ChordPro inline: "[C]Sublime [G]gra[Am]cia" -> pares acorde/texto.
+// El texto previo a un acorde pertenece al par anterior; lo de antes del
+// primer acorde va con chord:'' (se renderiza sin acorde encima).
+export function splitChordPro(line) {
+  const pairs = []
+  const re = /\[([^\]]+)\]/g
+  let last = 0, m, chord = ''
+  while ((m = re.exec(line))) {
+    pairs.push({ chord, text: line.slice(last, m.index) })
+    chord = m[1].trim()
+    last = re.lastIndex
+  }
+  pairs.push({ chord, text: line.slice(last) })
+  // Quitar el par inicial vacío (cuando la línea empieza con un acorde).
+  return pairs.filter((p, i) => !(i === 0 && !p.chord && !p.text))
+}
+
+function hasInlineChords(line) {
+  const re = /\[([^\]]+)\]/g
+  let m
+  while ((m = re.exec(line))) if (chordToken.test(m[1].trim())) return true
+  return false
+}
 
 export function parseSections(lyrics) {
   if (!lyrics) return []
@@ -20,13 +47,15 @@ export function parseSections(lyrics) {
   }
   const pushLine = (raw) => {
     if (!raw.trim()) { ensure().lines.push({ type: 'spacer' }); return }
+    if (hasInlineChords(raw)) { ensure().lines.push({ type: 'chordpro', pairs: splitChordPro(raw) }); return }
     const isChord = chordRegex.test(raw.trim())
     ensure().lines.push({ type: isChord ? 'chord' : 'lyric', text: raw })
   }
 
   for (const line of lyrics.split('\n')) {
     const m = line.trim().match(sectionRegex)
-    if (m) {
+    // "[C]Sublime" matchea sectionRegex pero su etiqueta es un acorde -> no es sección.
+    if (m && !chordToken.test(m[1].trim())) {
       current = {
         label: m[1],
         secs: m[2] != null ? Number(m[2]) * 60 + Number(m[3]) : null,
