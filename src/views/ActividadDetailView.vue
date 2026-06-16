@@ -63,13 +63,21 @@
               >
                 <div class="tiempo-header">
                   <h2 class="tiempo-name">{{ tiempo.name }}</h2>
-                  <input
-                    type="time"
-                    class="tiempo-time-input"
-                    :value="tiempo.time || ''"
-                    @click.stop
-                    @change="setTiempoTime(tiempo, $event.target.value)"
-                  >
+                  <div class="tiempo-time-range" @click.stop>
+                    <input
+                      type="time"
+                      class="tiempo-time-input"
+                      :value="tiempo.start || ''"
+                      @change="setTiempoField(tiempo, 'start', $event.target.value)"
+                    >
+                    <span class="tiempo-time-dash">–</span>
+                    <input
+                      type="time"
+                      class="tiempo-time-input"
+                      :value="tiempo.end || ''"
+                      @change="setTiempoField(tiempo, 'end', $event.target.value)"
+                    >
+                  </div>
                   <button
                     v-if="roleStore.isLeader && tiempo.songs?.length"
                     class="dots-btn"
@@ -224,7 +232,7 @@
           <span class="orden__node" aria-hidden="true"></span>
           <div class="orden__head">
             <h2 class="orden__name">{{ tiempo.name }}</h2>
-            <span v-if="tiempo.time" class="orden__time">{{ tiempo.time }}</span>
+            <span v-if="tiempo.start || tiempo.end" class="orden__time">{{ [tiempo.start, tiempo.end].filter(Boolean).join(' – ') }}</span>
             <span v-if="tiempo.songs?.length" class="orden__count">
               {{ tiempo.songs.length }} canción{{ tiempo.songs.length !== 1 ? 'es' : '' }}
             </span>
@@ -424,8 +432,8 @@ function addSongToSelected(songId) {
   }
 }
 
-function setTiempoTime(tiempo, time) {
-  tiempo.time = time
+function setTiempoField(tiempo, field, value) {
+  tiempo[field] = value
   save()
 }
 
@@ -506,9 +514,10 @@ async function handleDelete() {
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 
-/* Hora editable por tiempo (vista líder) */
+/* Inicio–fin editable por tiempo (vista líder) */
+.tiempo-time-range { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+.tiempo-time-dash { color: var(--text-muted); font-weight: 700; }
 .tiempo-time-input {
-  margin-left: auto;
   background: var(--accent-soft);
   color: var(--accent);
   border: none;
