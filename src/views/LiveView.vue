@@ -33,6 +33,12 @@
                :class="l.type === 'spacer' ? 'live-spacer' : (l.type === 'chord' ? 'live-chord' : 'live-lyric')">{{ l.text }}</div>
         </template>
       </div>
+      <p v-else-if="live.currentSongId && !song" class="live-empty">
+        Esta canción no está en tu banda. Pídele al líder que inicie la sesión desde la misma banda del repertorio.
+      </p>
+      <p v-else-if="song && !sections.length" class="live-empty">
+        “{{ song.title }}” todavía no tiene letra cargada.
+      </p>
       <p v-else class="live-empty">Esperando contenido…</p>
 
       <!-- Siguiente sección (pista para todos) -->
