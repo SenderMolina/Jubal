@@ -1,19 +1,23 @@
 <template>
-  <!-- Mientras se restaura la sesión guardada, evitamos parpadeos -->
-  <div v-if="!authStore.ready" class="role-screen"></div>
-  <LoginView v-else-if="!authStore.isAuthenticated" />
-  <div v-else-if="!bandStore.ready" class="role-screen"></div>
-  <BandsView v-else-if="!bandStore.currentBand" />
+  <ConfigError v-if="!supabaseConfigured" />
   <template v-else>
-    <AppHeader v-if="!isFullscreen" />
-    <main class="page active" :class="{ 'page--no-nav': hideNav }">
-      <RouterView />
-    </main>
-    <AppNav v-if="!hideNav" />
-    <LiveBanner />
-    <Toast />
-    <ConfirmModal />
+    <!-- Mientras se restaura la sesión guardada, evitamos parpadeos -->
+    <div v-if="!authStore.ready" class="role-screen"></div>
+    <LoginView v-else-if="!authStore.isAuthenticated" />
+    <div v-else-if="!bandStore.ready" class="role-screen"></div>
+    <BandsView v-else-if="!bandStore.currentBand" />
+    <template v-else>
+      <AppHeader v-if="!isFullscreen" />
+      <main class="page active" :class="{ 'page--no-nav': hideNav }">
+        <RouterView />
+      </main>
+      <AppNav v-if="!hideNav" />
+      <LiveBanner />
+      <Toast />
+      <ConfirmModal />
+    </template>
   </template>
+  <OfflineBanner />
 </template>
 
 <script setup>
@@ -21,6 +25,7 @@ import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { useBandStore } from './stores/band'
+import { supabaseConfigured } from './supabase'
 import { useToast } from './composables/useToast'
 import LoginView    from './views/LoginView.vue'
 import BandsView    from './views/BandsView.vue'
@@ -29,6 +34,8 @@ import AppNav       from './components/AppNav.vue'
 import LiveBanner   from './components/LiveBanner.vue'
 import Toast        from './components/Toast.vue'
 import ConfirmModal from './components/ConfirmModal.vue'
+import OfflineBanner from './components/OfflineBanner.vue'
+import ConfigError  from './components/ConfigError.vue'
 
 const authStore = useAuthStore()
 const bandStore = useBandStore()
