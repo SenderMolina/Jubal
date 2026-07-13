@@ -27,6 +27,7 @@ const pageTitle = computed(() => {
   if (path.startsWith('/tipos')) return 'Tipos'
   if (path.startsWith('/banda')) return 'Banda'
   if (path.startsWith('/perfil')) return 'Perfil'
+  if (path.startsWith('/entrenar') || path.startsWith('/skill/')) return 'Entrenar'
   if (path.startsWith('/agregar')) return 'Canciones'
   return 'Jubal'
 })

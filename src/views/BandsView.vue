@@ -7,6 +7,12 @@
         Hola, {{ auth.user.user_metadata?.full_name || auth.user.email }}
       </p>
 
+      <h2 class="bands-title">Práctica personal</h2>
+      <button class="band-card practice-card" @click="practice">
+        <span class="band-card__name">Practicar</span>
+        <span class="practice-card__desc">Skills · rutina · metrónomo</span>
+      </button>
+
       <h2 class="bands-title">Mis bandas</h2>
 
       <!-- Lista de bandas -->
@@ -54,10 +60,12 @@
 
 <script setup>
 import { ref, computed, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { useBandStore } from '../stores/band'
 import { useAuthStore } from '../stores/auth'
 import logo from '../assets/jubal_logo.png'
 
+const router = useRouter()
 const band = useBandStore()
 const auth = useAuthStore()
 
@@ -77,6 +85,12 @@ function roleLabel(r) {
 
 function enter(id) {
   band.selectBand(id)
+  router.push('/actividades')
+}
+
+function practice() {
+  band.enterPersonal()
+  router.push('/entrenar')
 }
 
 async function startCreate() {
@@ -97,6 +111,7 @@ async function create() {
   error.value = ''
   try {
     await band.createBand(newName.value)   // crea, recarga y entra a la banda
+    router.push('/actividades')
   } catch (e) {
     error.value = e.message || 'No se pudo crear la banda.'
   } finally {
@@ -140,6 +155,9 @@ async function signOut() {
 .band-card__role.role-leader { background: var(--accent); color: #fff; }
 
 .bands-empty { color: var(--text-muted); font-size: 14px; margin: 8px 0 18px; }
+
+.practice-card { margin-bottom: 20px; border-color: var(--accent); }
+.practice-card__desc { font-size: 12px; color: var(--text-muted); }
 
 .bands-create { margin-bottom: 6px; }
 .bands-create__btn { width: 100%; justify-content: center; padding: 12px; }

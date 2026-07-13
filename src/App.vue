@@ -5,7 +5,7 @@
     <div v-if="!authStore.ready" class="role-screen"></div>
     <LoginView v-else-if="!authStore.isAuthenticated" />
     <div v-else-if="!bandStore.ready" class="role-screen"></div>
-    <BandsView v-else-if="!bandStore.currentBand" />
+    <BandsView v-else-if="!bandStore.currentBand && !bandStore.personalMode" />
     <template v-else>
       <AppHeader v-if="!isFullscreen" />
       <main class="page active" :class="{ 'page--no-nav': hideNav }">
@@ -25,6 +25,7 @@ import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { useBandStore } from './stores/band'
+import { usePracticeStore } from './stores/practice'
 import { supabaseConfigured } from './supabase'
 import { useToast } from './composables/useToast'
 import LoginView    from './views/LoginView.vue'
@@ -39,6 +40,7 @@ import ConfigError  from './components/ConfigError.vue'
 
 const authStore = useAuthStore()
 const bandStore = useBandStore()
+const practiceStore = usePracticeStore()
 const route = useRoute()
 const { showToast } = useToast()
 
@@ -53,6 +55,7 @@ watch(() => authStore.isAuthenticated, (authed) => {
     if (!bandStore.ready) bandStore.init()
   } else {
     bandStore.reset()
+    practiceStore.reset()
   }
 }, { immediate: true })
 

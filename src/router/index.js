@@ -10,9 +10,11 @@ import RepertorioDetailView  from '../views/RepertorioDetailView.vue'
 import BandManageView        from '../views/BandManageView.vue'
 import LiveView              from '../views/LiveView.vue'
 import ProfileView           from '../views/ProfileView.vue'
+import EntrenarView          from '../views/EntrenarView.vue'
+import SkillDetailView       from '../views/SkillDetailView.vue'
 
 const routes = [
-  { path: '/',                redirect: '/actividades' },
+  { path: '/',                redirect: () => sessionStorage.getItem('personalMode') === '1' ? '/entrenar' : '/actividades' },
   { path: '/actividades',     component: ActividadesView },
   { path: '/actividad/:id',   component: ActividadDetailView },
   { path: '/repertorio',      component: RepertorioView },
@@ -23,6 +25,8 @@ const routes = [
   { path: '/banda',           component: BandManageView },
   { path: '/live',            component: LiveView },
   { path: '/perfil',          component: ProfileView },
+  { path: '/entrenar',        component: EntrenarView },
+  { path: '/skill/:id',       component: SkillDetailView },
   { path: '/cancion/:id',     component: SongView },
 ]
 

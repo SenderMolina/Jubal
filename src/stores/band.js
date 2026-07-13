@@ -9,6 +9,7 @@ import { useAuthStore } from './auth'
 export const useBandStore = defineStore('band', () => {
   const bands         = ref([])   // [{ id, name, owner_id, role }]
   const currentBandId = ref(sessionStorage.getItem('bandId') || null)
+  const personalMode  = ref(sessionStorage.getItem('personalMode') === '1')
   const ready         = ref(false)
   const pendingInvite = ref(localStorage.getItem('pendingInvite') || null)
   const inviteResult  = ref(null) // { ok, name?, role?, message? }
@@ -54,6 +55,16 @@ export const useBandStore = defineStore('band', () => {
   function selectBand(id) {
     currentBandId.value = id
     sessionStorage.setItem('bandId', id)
+    personalMode.value = false
+    sessionStorage.removeItem('personalMode')
+  }
+
+  // Modo práctica personal: sin banda activa, espacio del músico.
+  function enterPersonal() {
+    currentBandId.value = null
+    sessionStorage.removeItem('bandId')
+    personalMode.value = true
+    sessionStorage.setItem('personalMode', '1')
   }
 
   function clearPending() {
@@ -130,10 +141,12 @@ export const useBandStore = defineStore('band', () => {
     return `${window.location.origin}${window.location.pathname}#/join/${token}`
   }
 
-  // "Cambiar de banda": vuelve a la pantalla de selección.
+  // "Cambiar de banda": vuelve al menú principal.
   function changeRole() {
     currentBandId.value = null
     sessionStorage.removeItem('bandId')
+    personalMode.value = false
+    sessionStorage.removeItem('personalMode')
   }
 
   // Limpiar todo al cerrar sesión.
@@ -145,6 +158,7 @@ export const useBandStore = defineStore('band', () => {
 
   return {
     bands, currentBandId, currentBand, ready, pendingInvite, inviteResult,
+    personalMode, enterPersonal,
     myRole, isLeader, isMusico, isCantante,
     loadBands, init, createBand, selectBand, redeemPending, changeRole, reset,
     loadMembers, updateMemberRole, removeMember,

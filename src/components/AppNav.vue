@@ -1,5 +1,26 @@
 <template>
-  <nav class="bottom-nav">
+  <!-- Modo práctica personal -->
+  <nav v-if="band.personalMode" class="bottom-nav">
+    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/entrenar') }" to="/entrenar">
+      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 18V5l12-2v13"/>
+        <circle cx="6" cy="18" r="3"/>
+        <circle cx="18" cy="16" r="3"/>
+      </svg>
+      <span class="bottom-nav__label">Entrenar</span>
+    </RouterLink>
+
+    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/perfil') }" to="/perfil">
+      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+      <span class="bottom-nav__label">Perfil</span>
+    </RouterLink>
+  </nav>
+
+  <!-- Modo banda -->
+  <nav v-else class="bottom-nav">
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/actividades') }" to="/actividades">
       <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -54,9 +75,11 @@
 <script setup>
 import { useRoute } from 'vue-router'
 import { useRoleStore } from '../stores/role'
+import { useBandStore } from '../stores/band'
 
 const route     = useRoute()
 const roleStore = useRoleStore()
+const band      = useBandStore()
 
 function isActive(path) {
   if (path === '/actividades') {
