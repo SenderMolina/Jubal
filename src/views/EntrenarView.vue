@@ -45,7 +45,7 @@
             {{ [it.planned_minutes && `${it.planned_minutes} min`, it.target_bpm && `${it.target_bpm} bpm`].filter(Boolean).join(' · ') }}
           </span>
         </div>
-        <button class="rutina-hoy__play" aria-label="Practicar" @click="metronome.open(it.skill, it.target_bpm)">
+        <button class="rutina-hoy__play" aria-label="Practicar" @click="practice(it)">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
         </button>
       </div>
@@ -81,11 +81,13 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { usePracticeStore } from '../stores/practice'
 import { useToast } from '../composables/useToast'
 import { useMetronome } from '../composables/useMetronome'
 import { TYPE_LABELS, skillProgress } from '../utils/skills'
 
+const router = useRouter()
 const store = usePracticeStore()
 const metronome = useMetronome()
 const { showToast } = useToast()
@@ -117,6 +119,11 @@ function metaLabel(s) {
   if (s.parts.length) return `${s.parts.filter(p => p.progress >= 100).length}/${s.parts.length} partes`
   if (s.target_bpm) return `${s.current_bpm || 0} / ${s.target_bpm} bpm`
   return ''
+}
+
+function practice(it) {
+  metronome.open(it.skill, it.target_bpm)
+  router.push('/metronomo')
 }
 
 async function startCreate() {

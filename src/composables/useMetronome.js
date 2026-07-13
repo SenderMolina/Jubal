@@ -10,7 +10,6 @@ const MAX_BPM = 300
 const LOOKAHEAD_S = 0.1   // cuánto audio agendar por adelantado
 const TICK_MS = 25        // frecuencia del alimentador
 
-const isOpen         = ref(false)
 const isRunning      = ref(false)
 const bpm            = ref(100)
 const beatsPerBar    = ref(4)
@@ -106,8 +105,8 @@ function resetElapsed() {
   elapsedSeconds.value = 0
 }
 
-// Abrir el panel, opcionalmente con una skill en práctica y un tempo de
-// trabajo (p. ej. el planeado en la rutina).
+// Preparar el metrónomo antes de navegar a /metronomo: opcionalmente con una
+// skill en práctica y un tempo de trabajo (p. ej. el planeado en la rutina).
 function open(s = null, workBpm = null) {
   skill.value = s
   if (workBpm) {
@@ -117,19 +116,18 @@ function open(s = null, workBpm = null) {
     setBpm(s.current_bpm || Math.round(s.target_bpm * 0.7))
   }
   resetElapsed()
-  isOpen.value = true
 }
 
+// Limpiar al salir de la vista.
 function close() {
   stop()
   resetElapsed()
   skill.value = null
-  isOpen.value = false
 }
 
 export function useMetronome() {
   return {
-    isOpen, isRunning, bpm, beatsPerBar, currentBeat, elapsedSeconds, skill,
+    isRunning, bpm, beatsPerBar, currentBeat, elapsedSeconds, skill,
     open, close, start, stop, toggle, setBpm, tap, resetElapsed,
   }
 }

@@ -15,6 +15,7 @@ import EntrenarView          from '../views/EntrenarView.vue'
 import SkillDetailView       from '../views/SkillDetailView.vue'
 import EstadisticasView      from '../views/EstadisticasView.vue'
 import RoutineView           from '../views/RoutineView.vue'
+import MetronomoView         from '../views/MetronomoView.vue'
 
 const routes = [
   { path: '/',                redirect: '/perfil' },
@@ -32,6 +33,7 @@ const routes = [
   { path: '/skill/:id',       component: SkillDetailView },
   { path: '/estadisticas',    component: EstadisticasView },
   { path: '/rutina',          component: RoutineView },
+  { path: '/metronomo',       component: MetronomoView },
   { path: '/cancion/:id',     component: SongView },
 ]
 
@@ -44,7 +46,7 @@ const router = createRouter({
 // (cubre /actividades, /actividad/:id, /canciones, /cancion/:id, etc.)
 const BAND_PREFIXES = ['/actividad', '/repertorio', '/cancion', '/agregar', '/tipos', '/banda', '/live']
 // Las rutas personales activan el modo personal (ej. recarga o re-login directo en /entrenar).
-const PERSONAL_PREFIXES = ['/entrenar', '/skill', '/estadisticas', '/rutina']
+const PERSONAL_PREFIXES = ['/entrenar', '/skill', '/estadisticas', '/rutina', '/metronomo']
 
 router.beforeEach((to) => {
   if (BAND_PREFIXES.some(p => to.path.startsWith(p)) && !sessionStorage.getItem('bandId')) {

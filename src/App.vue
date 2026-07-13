@@ -12,7 +12,6 @@
       </main>
       <AppNav v-if="!hideNav" />
       <LiveBanner />
-      <MetronomePanel />
       <Toast />
       <ConfirmModal />
     </template>
@@ -32,7 +31,6 @@ import LoginView    from './views/LoginView.vue'
 import AppHeader    from './components/AppHeader.vue'
 import AppNav       from './components/AppNav.vue'
 import LiveBanner   from './components/LiveBanner.vue'
-import MetronomePanel from './components/MetronomePanel.vue'
 import Toast        from './components/Toast.vue'
 import ConfirmModal from './components/ConfirmModal.vue'
 import OfflineBanner from './components/OfflineBanner.vue'

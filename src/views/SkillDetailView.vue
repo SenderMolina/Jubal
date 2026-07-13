@@ -1,7 +1,7 @@
 <template>
   <div v-if="skill" class="skill-detail">
     <!-- Practicar -->
-    <button class="btn btn-primary skill-practice" @click="metronome.open(skill)">
+    <button class="btn btn-primary skill-practice" @click="practice">
       <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M8 5v14l11-7z"/></svg>
       Practicar
     </button>
@@ -86,7 +86,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePracticeStore } from '../stores/practice'
 import { useToast } from '../composables/useToast'
@@ -105,6 +105,11 @@ const { confirm } = useConfirm()
 const skill    = computed(() => store.skills.find(s => s.id === route.params.id))
 const sessions = ref([])
 const newPart  = ref('')
+
+function practice() {
+  metronome.open(skill.value)
+  router.push('/metronomo')
+}
 
 function setStatus(st) {
   store.updateSkill(skill.value.id, { status: st })
@@ -145,11 +150,6 @@ onMounted(async () => {
   if (!store.ready) await store.loadSkills()
   if (!skill.value) { router.replace('/entrenar'); return }
   sessions.value = await store.loadSessions(skill.value.id)
-})
-
-// Refrescar el historial al cerrar el metrónomo (pudo guardar una sesión)
-watch(metronome.isOpen, async (open) => {
-  if (!open && skill.value) sessions.value = await store.loadSessions(skill.value.id)
 })
 </script>
 

@@ -10,13 +10,13 @@
       <span class="bottom-nav__label">Entrenar</span>
     </RouterLink>
 
-    <button class="bottom-nav__item" @click="metronome.open()">
+    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/metronomo') }" to="/metronomo">
       <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 3L5 20h14L12 3z"/>
         <line x1="12" y1="14" x2="17" y2="6"/>
       </svg>
       <span class="bottom-nav__label">Metrónomo</span>
-    </button>
+    </RouterLink>
 
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/estadisticas') }" to="/estadisticas">
       <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -93,12 +93,10 @@
 import { useRoute } from 'vue-router'
 import { useRoleStore } from '../stores/role'
 import { useBandStore } from '../stores/band'
-import { useMetronome } from '../composables/useMetronome'
 
 const route     = useRoute()
 const roleStore = useRoleStore()
 const band      = useBandStore()
-const metronome = useMetronome()
 
 function isActive(path) {
   if (path === '/actividades') {
@@ -108,6 +106,3 @@ function isActive(path) {
 }
 </script>
 
-<style scoped>
-button.bottom-nav__item { background: none; border: none; cursor: pointer; font: inherit; }
-</style>
