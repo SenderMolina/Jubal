@@ -85,6 +85,16 @@ export const usePracticeStore = defineStore('practice', () => {
     return data || []
   }
 
+  // Todas las sesiones del usuario (para estadísticas)
+  async function loadAllSessions() {
+    const { data, error } = await supabase
+      .from('practice_sessions')
+      .select('skill_id, bpm, duration_seconds, practiced_at')
+      .order('practiced_at', { ascending: false })
+    if (error) { console.error('Error cargando sesiones:', error); return [] }
+    return data || []
+  }
+
   // Guarda una sesión y actualiza el bpm de la skill; si alcanzó la meta,
   // la marca como dominada.
   async function logSession({ skill_id, part_id = null, bpm = null, duration_seconds }) {
@@ -111,7 +121,7 @@ export const usePracticeStore = defineStore('practice', () => {
     skills, ready,
     loadSkills, createSkill, updateSkill, deleteSkill,
     addPart, updatePart, deletePart,
-    loadSessions, logSession,
+    loadSessions, loadAllSessions, logSession,
     reset,
   }
 })

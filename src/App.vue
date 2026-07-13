@@ -5,7 +5,6 @@
     <div v-if="!authStore.ready" class="role-screen"></div>
     <LoginView v-else-if="!authStore.isAuthenticated" />
     <div v-else-if="!bandStore.ready" class="role-screen"></div>
-    <BandsView v-else-if="!bandStore.currentBand && !bandStore.personalMode" />
     <template v-else>
       <AppHeader v-if="!isFullscreen" />
       <main class="page active" :class="{ 'page--no-nav': hideNav }">
@@ -13,6 +12,7 @@
       </main>
       <AppNav v-if="!hideNav" />
       <LiveBanner />
+      <MetronomePanel />
       <Toast />
       <ConfirmModal />
     </template>
@@ -29,10 +29,10 @@ import { usePracticeStore } from './stores/practice'
 import { supabaseConfigured } from './supabase'
 import { useToast } from './composables/useToast'
 import LoginView    from './views/LoginView.vue'
-import BandsView    from './views/BandsView.vue'
 import AppHeader    from './components/AppHeader.vue'
 import AppNav       from './components/AppNav.vue'
 import LiveBanner   from './components/LiveBanner.vue'
+import MetronomePanel from './components/MetronomePanel.vue'
 import Toast        from './components/Toast.vue'
 import ConfirmModal from './components/ConfirmModal.vue'
 import OfflineBanner from './components/OfflineBanner.vue'
@@ -44,9 +44,10 @@ const practiceStore = usePracticeStore()
 const route = useRoute()
 const { showToast } = useToast()
 
-// Avisar al unirse a una banda por invitación.
+// Avisar del resultado de una invitación (unido o inválida/expirada).
 watch(() => bandStore.inviteResult, (r) => {
-  if (r?.ok) showToast(`Te uniste a ${r.name}`)
+  if (!r) return
+  showToast(r.ok ? `Te uniste a ${r.name}` : r.message)
 })
 
 // Cargar bandas (y canjear invitación pendiente) al autenticarse; limpiar al salir.

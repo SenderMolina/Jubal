@@ -126,19 +126,72 @@ opcional — para datos personales ni hace falta realtime, basta fetch).
 Nav: añadir "Entrenar" al tab bar; el switch Personal/Banda ya existe
 conceptualmente con la banda activa (banda activa = null → modo personal).
 
-## 5. Orden de implementación
+## 5. Roadmap (actualizado 13 jul 2026)
 
-1. **SQL** (`phase4_skills.sql`): tablas + RLS + `user_id` en songs/repertoires.
-2. **Store + SkillsView + SkillDetailView**: CRUD de skills y partes con progreso.
-3. **Metrónomo**: composable + panel, guardado de sesiones, auto-mastered.
-4. **Rutina**: RoutineView.
-5. **Repertorio personal**: filtro Personal/Banda en vistas existentes.
+### Hecho ✅
+
+1. **SQL** — tablas + RLS aplicadas en Supabase (`skills`, `skill_parts`,
+   `practice_sessions`, `routines`, `routine_items`). Ojo: `songs.id` es bigint.
+2. **Skills CRUD** — `stores/practice.js`, EntrenarView (lista por estado),
+   SkillDetailView (partes, tempo, historial).
+3. **Metrónomo** — `useMetronome.js` (Web Audio, lookahead) + MetronomePanel
+   (bottom-sheet global); guarda sesiones, tap tempo, auto-mastered.
+4. **Navegación estilo Facebook** — login aterriza en `/perfil`; drawer
+   izquierdo (Práctica / Estadística / Mis bandas / crear banda); bottom nav
+   por sección; BandsView eliminado. `/estadisticas` con números básicos.
+
+### Pendiente (en orden)
+
+**A. Commit del bloque actual** — ~20 archivos sin versionar. Un commit:
+"Fase 4: espacio personal (skills, metrónomo, drawer, estadística)".
+Incluye el fix del guard (ruta personal activa `personalMode`; arregla el
+edge de re-login sin nav) y correr los **advisors de Supabase** sobre las
+tablas nuevas (chequeo gratis de RLS/perf).
+
+**B. Rutina (funcionalidad 2 y 4)**
+- Una sola rutina por usuario, get-or-create al entrar (YAGNI múltiples,
+  aunque la tabla lo permita).
+- `/rutina` + RoutineView: chips de días (D-S), items con skill + minutos +
+  tempo de trabajo; reordenar con ↑/↓ (sin drag & drop). Sin hora de inicio
+  en la UI: solo serviría con recordatorios, que están fuera de alcance
+  (la columna queda en la tabla).
+- EntrenarView: card **"Rutina de hoy"** arriba si hoy está en `days`:
+  items con ▶ que abre el metrónomo con esa skill al tempo del item;
+  link "Editar" → `/rutina`. Sin tab nuevo en el nav.
+- **Wake lock** mientras el metrónomo corre: al apagarse la pantalla el
+  navegador suspende el AudioContext y el metrónomo se muere a media
+  práctica; es el escenario principal, no pulido.
+
+**C. Repertorio personal (funcionalidad 1)** — el más invasivo:
+- SQL 4b: `user_id uuid default auth.uid()` en `songs`, `song_types`,
+  `repertoires` + policies `band_id is null and user_id = auth.uid()`.
+- `stores/app.js`: en modo personal cargar con `.is('band_id', null)`
+  (RLS acota por usuario) y guardar sin `band_id`. Ojo: el `watch` de
+  recarga observa solo `currentBandId` — debe observar también
+  `personalMode` (al venir del perfil la banda ya era null y no dispara).
+  En personal, saltarse el realtime (canales filtrados por banda; para
+  datos de un solo usuario no aporta).
+- `role.js`: en modo personal `isLeader = true` (dueño de su espacio).
+- Nav personal gana **Canciones**; Perfil sale del nav (queda en header y
+  drawer) para no pasar de 4-5 items.
+- Opcional: al crear skill tipo `song`, select para ligar `song_id`.
+
+**D. Estadística v2**
+- Barras de minutos/día (últimos 14 días) en SVG/divs, sin librerías.
+- Racha de días practicados y top skills por tiempo.
+
+**E. Pulido**
+- Practicar una **parte** específica: ▶ por parte → metrónomo con `part_id`
+  (el schema ya lo guarda).
+- Todas las partes al 100% → sugerir marcar dominada (toast).
 
 Cada paso es usable por sí solo; se puede parar en cualquiera.
 
 ## Fuera de alcance (por ahora)
 
-- Gráficas de progreso (el historial en lista cubre "registro de avances";
-  gráfica cuando haya datos que la ameriten).
+- Múltiples rutinas, drag & drop para ordenar, hora de inicio en la UI.
 - Recordatorios/notificaciones de rutina (la PWA ya existe; push es otra fase).
 - Compartir skills entre miembros de banda.
+- **Sesiones offline**: si no hay señal, el guardado a Supabase falla y la
+  sesión se pierde (toast de error). Encolar en localStorage es complejidad
+  que no entra aún — hueco conocido.

@@ -1,5 +1,11 @@
 <template>
   <div v-if="skill" class="skill-detail">
+    <!-- Practicar -->
+    <button class="btn btn-primary skill-practice" @click="metronome.open(skill)">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M8 5v14l11-7z"/></svg>
+      Practicar
+    </button>
+
     <!-- Estado -->
     <div class="skill-status">
       <button
@@ -80,12 +86,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePracticeStore } from '../stores/practice'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
+import { useMetronome } from '../composables/useMetronome'
 import { STATUS_LABELS } from '../utils/skills'
+
+const metronome = useMetronome()
 
 const route  = useRoute()
 const router = useRouter()
@@ -137,10 +146,17 @@ onMounted(async () => {
   if (!skill.value) { router.replace('/entrenar'); return }
   sessions.value = await store.loadSessions(skill.value.id)
 })
+
+// Refrescar el historial al cerrar el metrónomo (pudo guardar una sesión)
+watch(metronome.isOpen, async (open) => {
+  if (!open && skill.value) sessions.value = await store.loadSessions(skill.value.id)
+})
 </script>
 
 <style scoped>
 .skill-detail { padding: 12px 16px 40px; display: flex; flex-direction: column; gap: 18px; }
+
+.skill-practice { justify-content: center; padding: 13px; gap: 8px; font-size: 15px; }
 
 .skill-status { display: flex; gap: 8px; }
 .skill-status__chip {

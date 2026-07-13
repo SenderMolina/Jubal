@@ -26,6 +26,7 @@ create table if not exists public.skills (
   created_at  timestamptz not null default now()
 );
 create index if not exists skills_user_idx on public.skills(user_id);
+create index if not exists skills_song_idx on public.skills(song_id);
 
 -- Partes de una skill (secciones de una canción por aprender)
 create table if not exists public.skill_parts (
@@ -49,6 +50,7 @@ create table if not exists public.practice_sessions (
 );
 create index if not exists practice_sessions_user_idx  on public.practice_sessions(user_id);
 create index if not exists practice_sessions_skill_idx on public.practice_sessions(skill_id);
+create index if not exists practice_sessions_part_idx  on public.practice_sessions(part_id);
 
 -- Rutina personal de ensayo
 create table if not exists public.routines (
@@ -69,6 +71,7 @@ create table if not exists public.routine_items (
   position        int not null default 0
 );
 create index if not exists routine_items_routine_idx on public.routine_items(routine_id);
+create index if not exists routine_items_skill_idx   on public.routine_items(skill_id);
 
 -- RLS: cada quien lo suyo
 alter table public.skills            enable row level security;
@@ -79,25 +82,25 @@ alter table public.routine_items     enable row level security;
 
 drop policy if exists skills_own on public.skills;
 create policy skills_own on public.skills for all to authenticated
-  using (user_id = auth.uid()) with check (user_id = auth.uid());
+  using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 
 drop policy if exists skill_parts_own on public.skill_parts;
 create policy skill_parts_own on public.skill_parts for all to authenticated
-  using (exists (select 1 from public.skills s where s.id = skill_id and s.user_id = auth.uid()))
-  with check (exists (select 1 from public.skills s where s.id = skill_id and s.user_id = auth.uid()));
+  using (exists (select 1 from public.skills s where s.id = skill_id and s.user_id = (select auth.uid())))
+  with check (exists (select 1 from public.skills s where s.id = skill_id and s.user_id = (select auth.uid())));
 
 drop policy if exists practice_sessions_own on public.practice_sessions;
 create policy practice_sessions_own on public.practice_sessions for all to authenticated
-  using (user_id = auth.uid()) with check (user_id = auth.uid());
+  using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 
 drop policy if exists routines_own on public.routines;
 create policy routines_own on public.routines for all to authenticated
-  using (user_id = auth.uid()) with check (user_id = auth.uid());
+  using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 
 drop policy if exists routine_items_own on public.routine_items;
 create policy routine_items_own on public.routine_items for all to authenticated
-  using (exists (select 1 from public.routines r where r.id = routine_id and r.user_id = auth.uid()))
-  with check (exists (select 1 from public.routines r where r.id = routine_id and r.user_id = auth.uid()));
+  using (exists (select 1 from public.routines r where r.id = routine_id and r.user_id = (select auth.uid())))
+  with check (exists (select 1 from public.routines r where r.id = routine_id and r.user_id = (select auth.uid())));
 
 -- =====================================================================
 -- Pendiente (paso 5 del plan): repertorio personal
