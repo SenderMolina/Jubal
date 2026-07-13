@@ -5,8 +5,9 @@ import { supabase } from '../supabase'
 // Store del espacio personal: skills, partes y sesiones de práctica.
 // Todo va acotado al usuario por RLS (user_id = auth.uid()), sin filtros extra.
 export const usePracticeStore = defineStore('practice', () => {
-  const skills = ref([])   // [{ ...skill, parts: [...] }]
-  const ready  = ref(false)
+  const skills  = ref([])   // [{ ...skill, parts: [...] }]
+  const ready   = ref(false)
+  const routine = ref(null) // { id, days: [0..6], items: [...] } — una sola por usuario
 
   async function loadSkills() {
     const { data, error } = await supabase
@@ -112,16 +113,83 @@ export const usePracticeStore = defineStore('practice', () => {
     }
   }
 
+  // ---------- Rutina (get-or-create, una por usuario) ----------
+  async function loadRoutine() {
+    if (routine.value) return
+    const { data, error } = await supabase
+      .from('routines')
+      .select('*, items:routine_items(*)')
+      .limit(1)
+    if (error) { console.error('Error cargando rutina:', error); return }
+    if (data?.length) {
+      routine.value = {
+        ...data[0],
+        items: (data[0].items || []).sort((a, b) => a.position - b.position),
+      }
+    } else {
+      const { data: created, error: e } = await supabase
+        .from('routines').insert({}).select().single()
+      if (e) { console.error('Error creando rutina:', e); return }
+      routine.value = { ...created, items: [] }
+    }
+  }
+
+  async function updateRoutineDays(days) {
+    const { error } = await supabase
+      .from('routines').update({ days }).eq('id', routine.value.id)
+    if (error) throw error
+    routine.value.days = days
+  }
+
+  async function addRoutineItem({ skill_id, planned_minutes = null, target_bpm = null }) {
+    const { data, error } = await supabase
+      .from('routine_items')
+      .insert({
+        routine_id: routine.value.id,
+        skill_id, planned_minutes, target_bpm,
+        position: routine.value.items.length,
+      })
+      .select().single()
+    if (error) throw error
+    routine.value.items.push(data)
+  }
+
+  async function updateRoutineItem(id, patch) {
+    const { error } = await supabase.from('routine_items').update(patch).eq('id', id)
+    if (error) throw error
+    const it = routine.value.items.find(x => x.id === id)
+    if (it) Object.assign(it, patch)
+  }
+
+  async function removeRoutineItem(id) {
+    const { error } = await supabase.from('routine_items').delete().eq('id', id)
+    if (error) throw error
+    routine.value.items = routine.value.items.filter(x => x.id !== id)
+  }
+
+  async function moveRoutineItem(id, dir) {
+    const items = routine.value.items
+    const i = items.findIndex(x => x.id === id)
+    const j = i + dir
+    if (i < 0 || j < 0 || j >= items.length) return
+    ;[items[i], items[j]] = [items[j], items[i]]
+    await Promise.all(items.map((it, idx) =>
+      it.position !== idx ? updateRoutineItem(it.id, { position: idx }) : null))
+  }
+
   function reset() {
     skills.value = []
     ready.value = false
+    routine.value = null
   }
 
   return {
-    skills, ready,
+    skills, ready, routine,
     loadSkills, createSkill, updateSkill, deleteSkill,
     addPart, updatePart, deletePart,
     loadSessions, loadAllSessions, logSession,
+    loadRoutine, updateRoutineDays, addRoutineItem, updateRoutineItem,
+    removeRoutineItem, moveRoutineItem,
     reset,
   }
 })

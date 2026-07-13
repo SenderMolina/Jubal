@@ -25,6 +25,7 @@ let beatCount = 0
 let accumulatedMs = 0
 let runStartMs = 0
 let taps = []
+let wakeLock = null
 
 function clampBpm(v) {
   return Math.min(MAX_BPM, Math.max(MIN_BPM, Math.round(v)))
@@ -69,6 +70,11 @@ async function start() {
   runStartMs = Date.now()
   isRunning.value = true
   timer = setInterval(tick, TICK_MS)
+  // Pantalla encendida mientras suena: al apagarse, el navegador suspende el
+  // AudioContext y el metrónomo muere a media práctica.
+  // ponytail: sin re-adquirir en visibilitychange; si cambia de app, se
+  // recupera en el próximo play.
+  try { wakeLock = await navigator.wakeLock?.request('screen') } catch { /* no soportado */ }
 }
 
 function stop() {
@@ -78,6 +84,8 @@ function stop() {
   elapsedSeconds.value = Math.floor(accumulatedMs / 1000)
   isRunning.value = false
   currentBeat.value = -1
+  wakeLock?.release().catch(() => {})
+  wakeLock = null
 }
 
 function toggle() {
@@ -98,10 +106,13 @@ function resetElapsed() {
   elapsedSeconds.value = 0
 }
 
-// Abrir el panel, opcionalmente con una skill en práctica.
-function open(s = null) {
+// Abrir el panel, opcionalmente con una skill en práctica y un tempo de
+// trabajo (p. ej. el planeado en la rutina).
+function open(s = null, workBpm = null) {
   skill.value = s
-  if (s?.current_bpm || s?.target_bpm) {
+  if (workBpm) {
+    setBpm(workBpm)
+  } else if (s?.current_bpm || s?.target_bpm) {
     // Arrancar en el bpm alcanzado, o algo por debajo de la meta
     setBpm(s.current_bpm || Math.round(s.target_bpm * 0.7))
   }

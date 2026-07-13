@@ -14,6 +14,7 @@ import ProfileView           from '../views/ProfileView.vue'
 import EntrenarView          from '../views/EntrenarView.vue'
 import SkillDetailView       from '../views/SkillDetailView.vue'
 import EstadisticasView      from '../views/EstadisticasView.vue'
+import RoutineView           from '../views/RoutineView.vue'
 
 const routes = [
   { path: '/',                redirect: '/perfil' },
@@ -30,6 +31,7 @@ const routes = [
   { path: '/entrenar',        component: EntrenarView },
   { path: '/skill/:id',       component: SkillDetailView },
   { path: '/estadisticas',    component: EstadisticasView },
+  { path: '/rutina',          component: RoutineView },
   { path: '/cancion/:id',     component: SongView },
 ]
 

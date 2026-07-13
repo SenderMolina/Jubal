@@ -32,6 +32,26 @@
       </div>
     </div>
 
+    <!-- Rutina de hoy -->
+    <section v-if="todayItems.length" class="rutina-hoy">
+      <div class="rutina-hoy__head">
+        <h2 class="skill-group__title">Rutina de hoy</h2>
+        <RouterLink class="rutina-hoy__edit" to="/rutina">Editar</RouterLink>
+      </div>
+      <div v-for="it in todayItems" :key="it.id" class="rutina-hoy__item">
+        <div class="rutina-hoy__info">
+          <span class="rutina-hoy__name">{{ it.skill.name }}</span>
+          <span class="rutina-hoy__meta">
+            {{ [it.planned_minutes && `${it.planned_minutes} min`, it.target_bpm && `${it.target_bpm} bpm`].filter(Boolean).join(' · ') }}
+          </span>
+        </div>
+        <button class="rutina-hoy__play" aria-label="Practicar" @click="metronome.open(it.skill, it.target_bpm)">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+      </div>
+    </section>
+    <RouterLink v-else class="rutina-hoy__link" to="/rutina">Mi rutina ›</RouterLink>
+
     <div v-if="store.ready && !store.skills.length" class="activity-empty">
       Aún no tienes skills. Crea la primera con el botón +.
     </div>
@@ -63,9 +83,11 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { usePracticeStore } from '../stores/practice'
 import { useToast } from '../composables/useToast'
+import { useMetronome } from '../composables/useMetronome'
 import { TYPE_LABELS, skillProgress } from '../utils/skills'
 
 const store = usePracticeStore()
+const metronome = useMetronome()
 const { showToast } = useToast()
 
 const creating  = ref(false)
@@ -81,6 +103,15 @@ const groups = computed(() =>
     .filter(g => g.items.length))
 
 const progress = skillProgress
+
+// Items de la rutina que tocan hoy, con su skill resuelta
+const todayItems = computed(() => {
+  const r = store.routine
+  if (!r?.days.includes(new Date().getDay())) return []
+  return r.items
+    .map(it => ({ ...it, skill: store.skills.find(s => s.id === it.skill_id) }))
+    .filter(it => it.skill)
+})
 
 function metaLabel(s) {
   if (s.parts.length) return `${s.parts.filter(p => p.progress >= 100).length}/${s.parts.length} partes`
@@ -113,7 +144,10 @@ async function create() {
   }
 }
 
-onMounted(() => { if (!store.ready) store.loadSkills() })
+onMounted(() => {
+  if (!store.ready) store.loadSkills()
+  store.loadRoutine()
+})
 </script>
 
 <style scoped>
@@ -129,6 +163,32 @@ onMounted(() => { if (!store.ready) store.loadSkills() })
 .skill-create__bpm { width: 110px; }
 .skill-create__actions { display: flex; gap: 8px; }
 .skill-create__actions .btn { flex: 1; justify-content: center; }
+
+.rutina-hoy {
+  background: var(--surface); border: 1px solid var(--accent);
+  border-radius: var(--radius); padding: 12px 14px; margin-bottom: 18px;
+}
+.rutina-hoy__head { display: flex; justify-content: space-between; align-items: baseline; }
+.rutina-hoy__edit { font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 600; }
+.rutina-hoy__item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+}
+.rutina-hoy__item:last-child { border-bottom: none; }
+.rutina-hoy__info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.rutina-hoy__name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rutina-hoy__meta { font-size: 12px; color: var(--text-muted); }
+.rutina-hoy__play {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; cursor: pointer;
+  background: var(--accent); border: none; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+.rutina-hoy__play svg { width: 18px; height: 18px; }
+
+.rutina-hoy__link {
+  display: block; margin-bottom: 16px; font-size: 13px; font-weight: 600;
+  color: var(--text-mid); text-decoration: none;
+}
 
 .skill-group { margin-bottom: 18px; }
 .skill-group__title {
