@@ -42,19 +42,24 @@ const router = createRouter({
   routes,
 })
 
-// Las rutas de banda requieren banda activa; sin ella, al perfil.
-// (cubre /actividades, /actividad/:id, /canciones, /cancion/:id, etc.)
-const BAND_PREFIXES = ['/actividad', '/repertorio', '/cancion', '/agregar', '/tipos', '/banda', '/live']
-// Las rutas personales activan el modo personal (ej. recarga o re-login directo en /entrenar).
-const PERSONAL_PREFIXES = ['/entrenar', '/skill', '/estadisticas', '/rutina', '/metronomo']
+// Rutas exclusivas de banda: sin banda activa, al perfil.
+// (canciones/repertorios NO están aquí: existen también en el espacio personal)
+const BAND_ONLY = ['/actividad', '/banda', '/live']
+// Rutas exclusivas del espacio personal: activan el modo personal
+// (ej. recarga o re-login directo en /entrenar).
+const PERSONAL_ONLY = ['/entrenar', '/skill', '/estadisticas', '/rutina', '/metronomo']
 
 router.beforeEach((to) => {
-  if (BAND_PREFIXES.some(p => to.path.startsWith(p)) && !sessionStorage.getItem('bandId')) {
+  const band = useBandStore()
+  if (BAND_ONLY.some(p => to.path.startsWith(p)) && !band.currentBandId) {
     return '/perfil'
   }
-  if (PERSONAL_PREFIXES.some(p => to.path.startsWith(p))) {
-    const band = useBandStore()
-    if (!band.personalMode) band.enterPersonal()
+  if (PERSONAL_ONLY.some(p => to.path.startsWith(p)) && !band.personalMode) {
+    band.enterPersonal()
+  }
+  // Canciones/repertorios necesitan algún ámbito: sin banda ni personal, al perfil.
+  if (!band.currentBandId && !band.personalMode && to.path !== '/perfil') {
+    return '/perfil'
   }
 })
 

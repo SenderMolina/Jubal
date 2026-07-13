@@ -3,15 +3,18 @@ import { ref, watch } from 'vue'
 import { supabase } from '../supabase'
 import { useBandStore } from './band'
 
-// Sincroniza una tabla con el estado local, ACOTADO a la banda activa:
-// upsert de las filas presentes y borrado de las que ya no existen en esa banda.
+// Sincroniza una tabla con el estado local, ACOTADO al ámbito activo (banda o
+// espacio personal): upsert de las filas presentes y borrado de las que ya no
+// existen en ese ámbito.
 async function syncTable(table, bandId, rows) {
   if (rows.length) {
     const { error } = await supabase.from(table).upsert(rows)
     if (error) { console.error(`Error guardando ${table}:`, error); return }
   }
   const ids = rows.map(r => r.id)
-  let del = supabase.from(table).delete().eq('band_id', bandId)
+  // En personal (bandId null) RLS ya acota el delete a las filas del usuario.
+  let del = supabase.from(table).delete()
+  del = bandId ? del.eq('band_id', bandId) : del.is('band_id', null)
   if (ids.length) del = del.not('id', 'in', `(${ids.join(',')})`)
   const { error } = await del
   if (error) console.error(`Error limpiando ${table}:`, error)
@@ -25,30 +28,34 @@ export const useAppStore = defineStore('app', () => {
 
   const band = useBandStore()
   const bid = () => band.currentBandId
+  // ¿Hay un ámbito activo? Banda, o espacio personal (band_id null + RLS).
+  const scoped = () => band.currentBandId || band.personalMode
+  // Acota una consulta al ámbito activo.
+  const inScope = (q) => band.currentBandId ? q.eq('band_id', band.currentBandId) : q.is('band_id', null)
   let channels = []
 
-  // ---------- Cargas (filtradas por banda) ----------
+  // ---------- Cargas (filtradas por ámbito) ----------
   async function loadSongs() {
-    const b = bid(); if (!b) { songs.value = []; return }
-    const { data } = await supabase.from('songs').select('*').eq('band_id', b).order('id')
+    if (!scoped()) { songs.value = []; return }
+    const { data } = await inScope(supabase.from('songs').select('*')).order('id')
     songs.value = data || []
   }
 
   async function loadSongTypes() {
-    const b = bid(); if (!b) { songTypes.value = []; return }
-    const { data } = await supabase.from('song_types').select('*').eq('band_id', b).order('id')
+    if (!scoped()) { songTypes.value = []; return }
+    const { data } = await inScope(supabase.from('song_types').select('*')).order('id')
     songTypes.value = data || []
   }
 
   async function loadActivities() {
-    const b = bid(); if (!b) { activities.value = []; return }
+    const b = bid(); if (!b) { activities.value = []; return }  // solo banda
     const { data } = await supabase.from('activities').select('*').eq('band_id', b).order('id')
     activities.value = (data || []).map(a => ({ ...a, tiempos: a.tiempos || [] }))
   }
 
   async function loadRepertoires() {
-    const b = bid(); if (!b) { repertoires.value = []; return }
-    const { data: reps } = await supabase.from('repertoires').select('*').eq('band_id', b).order('id')
+    if (!scoped()) { repertoires.value = []; return }
+    const { data: reps } = await inScope(supabase.from('repertoires').select('*')).order('id')
     const repIds = (reps || []).map(r => r.id)
     let links = []
     if (repIds.length) {
@@ -107,7 +114,7 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // ---------- Realtime (re-suscrito por banda) ----------
+  // ---------- Realtime (solo en banda: en personal nadie más escribe) ----------
   function unsubscribe() {
     channels.forEach(c => supabase.removeChannel(c))
     channels = []
@@ -132,8 +139,8 @@ export const useAppStore = defineStore('app', () => {
     )
   }
 
-  // Al cambiar de banda (o entrar a una), recargar y re-suscribir.
-  watch(() => band.currentBandId, () => { loadAll(); subscribe() }, { immediate: true })
+  // Al cambiar de ámbito (banda o espacio personal), recargar y re-suscribir.
+  watch(() => [band.currentBandId, band.personalMode], () => { loadAll(); subscribe() }, { immediate: true })
 
   return { songs, activities, songTypes, repertoires, saveSongs, saveActivities, saveSongTypes, saveRepertoires }
 })

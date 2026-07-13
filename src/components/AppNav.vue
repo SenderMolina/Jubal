@@ -10,6 +10,25 @@
       <span class="bottom-nav__label">Entrenar</span>
     </RouterLink>
 
+    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/canciones') }" to="/canciones">
+      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 18V5l12-2v13"/>
+        <path d="M9 9l12-2"/>
+        <circle cx="6" cy="18" r="3"/>
+        <circle cx="18" cy="16" r="3"/>
+      </svg>
+      <span class="bottom-nav__label">Canciones</span>
+    </RouterLink>
+
+    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/repertorio') }" to="/repertorio">
+      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 18V5l12-2v13"/>
+        <circle cx="6" cy="18" r="3"/>
+        <circle cx="18" cy="16" r="3"/>
+      </svg>
+      <span class="bottom-nav__label">Repertorio</span>
+    </RouterLink>
+
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/metronomo') }" to="/metronomo">
       <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 3L5 20h14L12 3z"/>
@@ -26,14 +45,7 @@
       </svg>
       <span class="bottom-nav__label">Estadística</span>
     </RouterLink>
-
-    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/perfil') }" to="/perfil">
-      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-        <circle cx="12" cy="7" r="4"/>
-      </svg>
-      <span class="bottom-nav__label">Perfil</span>
-    </RouterLink>
+    <!-- Perfil queda en el header y el drawer: 5 items es el tope del tab bar -->
   </nav>
 
   <!-- Modo banda -->

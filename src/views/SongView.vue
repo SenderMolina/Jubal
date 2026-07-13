@@ -229,7 +229,8 @@ function openMenu() {
   sheet.value?.open({
     title: song.value?.title,
     actions: [
-      { label: '▶ Iniciar en vivo', onSelect: startLive },
+      // La sesión en vivo es de banda; en el espacio personal no aplica.
+      ...(roleStore.personalMode ? [] : [{ label: '▶ Iniciar en vivo', onSelect: startLive }]),
       { label: 'Editar canción', icon: 'edit', onSelect: startEdit },
       { label: 'Eliminar canción', icon: 'trash', danger: true, onSelect: deleteSong },
     ],

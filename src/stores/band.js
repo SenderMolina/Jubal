@@ -18,7 +18,8 @@ export const useBandStore = defineStore('band', () => {
     bands.value.find(b => b.id === currentBandId.value) || null)
 
   const myRole     = computed(() => currentBand.value?.role || null)
-  const isLeader   = computed(() => myRole.value === 'leader')
+  // En el espacio personal el músico es dueño de sus datos: mismas vistas, permisos de líder.
+  const isLeader   = computed(() => myRole.value === 'leader' || personalMode.value)
   const isMusico   = computed(() => myRole.value === 'musician')
   const isCantante = computed(() => myRole.value === 'singer')
 

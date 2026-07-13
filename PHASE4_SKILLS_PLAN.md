@@ -162,19 +162,18 @@ tablas nuevas (chequeo gratis de RLS/perf).
   navegador suspende el AudioContext y el metrónomo se muere a media
   práctica; es el escenario principal, no pulido.
 
-**C. Repertorio personal (funcionalidad 1)** — el más invasivo:
-- SQL 4b: `user_id uuid default auth.uid()` en `songs`, `song_types`,
-  `repertoires` + policies `band_id is null and user_id = auth.uid()`.
-- `stores/app.js`: en modo personal cargar con `.is('band_id', null)`
-  (RLS acota por usuario) y guardar sin `band_id`. Ojo: el `watch` de
-  recarga observa solo `currentBandId` — debe observar también
-  `personalMode` (al venir del perfil la banda ya era null y no dispara).
-  En personal, saltarse el realtime (canales filtrados por banda; para
-  datos de un solo usuario no aporta).
-- `role.js`: en modo personal `isLeader = true` (dueño de su espacio).
-- Nav personal gana **Canciones**; Perfil sale del nav (queda en header y
-  drawer) para no pasar de 4-5 items.
-- Opcional: al crear skill tipo `song`, select para ligar `song_id`.
+**C. Repertorio personal (funcionalidad 1)** ✅ hecho (`phase4b_personal_repertoire.sql`)
+- `user_id default auth.uid()` en `songs`/`song_types`/`repertoires` +
+  policies `band_id is null and user_id = auth.uid()` (conviven con las de
+  banda; `is_band_member(null)` = false, así que no se cruzan).
+- `stores/app.js`: ámbito = banda o personal (`.is('band_id', null)`);
+  realtime solo en banda; el watch observa ambos.
+- `isLeader` = true en modo personal (dueño de su espacio) → las vistas de
+  canciones/repertorios sirven sin cambios.
+- Nav personal: Entrenar · Canciones · Repertorio · Metrónomo · Estadística
+  (Perfil queda en header y drawer). "Iniciar en vivo" oculto en personal.
+- Pendiente opcional: copiar canciones de una banda al espacio personal;
+  al crear skill tipo `song`, select para ligar `song_id`.
 
 **D. Estadística v2**
 - Barras de minutos/día (últimos 14 días) en SVG/divs, sin librerías.
