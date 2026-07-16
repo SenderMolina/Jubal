@@ -70,3 +70,15 @@ export function parseSections(lyrics) {
   // Quitar secciones totalmente vacías (solo spacers)
   return sections.filter(s => s.label || s.lines.some(l => l.type !== 'spacer'))
 }
+
+// Traduce la estructura musical de la letra a partes personales. Conserva el
+// índice de origen para poder sincronizar nombres sin borrar progreso/historial.
+export function sectionsToPracticeParts(lyrics) {
+  const seen = new Map()
+  return parseSections(lyrics).map((section, index) => {
+    const base = section.label || `Parte ${index + 1}`
+    const count = (seen.get(base) || 0) + 1
+    seen.set(base, count)
+    return { name: count > 1 ? `${base} ${count}` : base, source_section_index: index }
+  })
+}

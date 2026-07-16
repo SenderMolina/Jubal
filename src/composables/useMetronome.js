@@ -16,6 +16,7 @@ const beatsPerBar    = ref(4)
 const currentBeat    = ref(-1)  // para el pulso visual (-1 = detenido)
 const elapsedSeconds = ref(0)   // tiempo practicado acumulado (entre guardados)
 const skill          = ref(null) // skill en práctica, o null (metrónomo libre)
+const part           = ref(null) // parte concreta de la skill, o null
 
 let ctx = null
 let timer = null
@@ -107,10 +108,14 @@ function resetElapsed() {
 
 // Preparar el metrónomo antes de navegar a /metronomo: opcionalmente con una
 // skill en práctica y un tempo de trabajo (p. ej. el planeado en la rutina).
-function open(s = null, workBpm = null) {
+function open(s = null, workBpm = null, selectedPart = null) {
   skill.value = s
+  part.value = selectedPart
   if (workBpm) {
     setBpm(workBpm)
+  } else if (selectedPart?.current_bpm || selectedPart?.target_bpm) {
+    // La parte tiene su propio tempo: arrancar ahí, o por debajo de su meta
+    setBpm(selectedPart.current_bpm || Math.round(selectedPart.target_bpm * 0.7))
   } else if (s?.current_bpm || s?.target_bpm) {
     // Arrancar en el bpm alcanzado, o algo por debajo de la meta
     setBpm(s.current_bpm || Math.round(s.target_bpm * 0.7))
@@ -123,11 +128,12 @@ function close() {
   stop()
   resetElapsed()
   skill.value = null
+  part.value = null
 }
 
 export function useMetronome() {
   return {
-    isRunning, bpm, beatsPerBar, currentBeat, elapsedSeconds, skill,
+    isRunning, bpm, beatsPerBar, currentBeat, elapsedSeconds, skill, part,
     open, close, start, stop, toggle, setBpm, tap, resetElapsed,
   }
 }

@@ -4,6 +4,9 @@ dist/
 # Entornos — contienen credenciales, no subir al repo
 .env.development
 .env.production
+.env
+.env.local
+supabase/.temp/
 # .env.example sí se puede commitear (no tiene credenciales reales)
 
 # Export de datos de Firebase usado para la migración (contiene datos reales)

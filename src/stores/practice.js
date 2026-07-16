@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { supabase } from '../supabase'
+import { sectionsToPracticeParts } from '../utils/sections'
+import { progressFromSessions, stableBpm } from '../utils/skills'
 
 // Store del espacio personal: skills, partes y sesiones de práctica.
 // Todo va acotado al usuario por RLS (user_id = auth.uid()), sin filtros extra.
@@ -15,7 +17,7 @@ export const usePracticeStore = defineStore('practice', () => {
   async function loadSkills() {
     const { data, error } = await supabase
       .from('skills')
-      .select('*, parts:skill_parts(*)')
+      .select('*, song:songs(id,title,author,key,bpm,lyrics,band_id), parts:skill_parts(*)')
       .order('created_at', { ascending: false })
     if (error) { console.error('Error cargando skills:', error); return }
     skills.value = (data || []).map(s => ({
@@ -25,15 +27,67 @@ export const usePracticeStore = defineStore('practice', () => {
     ready.value = true
   }
 
-  async function createSkill({ name, type, target_bpm = null, song_id = null }) {
+  async function createSkill({ name, type, target_bpm = null, song_id = null, parts = [] }) {
     const { data, error } = await supabase
       .from('skills')
       .insert({ name, type, target_bpm, song_id })
-      .select('*, parts:skill_parts(*)')
+      .select('*, song:songs(id,title,author,key,bpm,lyrics,band_id), parts:skill_parts(*)')
       .single()
     if (error) throw error
-    skills.value.unshift({ ...data, parts: [] })
-    return data
+    const skill = { ...data, parts: [] }
+    skills.value.unshift(skill)
+    try {
+      if (parts.length) {
+        const rows = parts.map((part, position) => ({
+          skill_id: data.id,
+          name: typeof part === 'string' ? part : part.name,
+          position,
+          source_section_index: typeof part === 'string' ? null : (part.source_section_index ?? null),
+        }))
+        const { data: createdParts, error: partsError } = await supabase
+          .from('skill_parts').insert(rows).select()
+        if (partsError) throw partsError
+        skill.parts = (createdParts || []).sort((a, b) => a.position - b.position)
+      }
+      return skill
+    } catch (reason) {
+      await supabase.from('skills').delete().eq('id', data.id)
+      skills.value = skills.value.filter(item => item.id !== data.id)
+      throw reason
+    }
+  }
+
+  function partsFromSong(song) {
+    return sectionsToPracticeParts(song?.lyrics)
+  }
+
+  async function createSkillFromSong(song) {
+    if (!ready.value) await loadSkills()
+    const existing = skills.value.find(skill => Number(skill.song_id) === Number(song.id))
+    if (existing) return existing
+    return createSkill({
+      name: song.title,
+      type: 'song',
+      song_id: song.id,
+      target_bpm: song.bpm || null,
+      parts: partsFromSong(song),
+    })
+  }
+
+  async function syncSongParts(skillId) {
+    const skill = skills.value.find(item => item.id === skillId)
+    if (!skill?.song) return []
+    const sourceParts = partsFromSong(skill.song)
+    const changed = []
+    for (const source of sourceParts) {
+      const existing = skill.parts.find(part => part.source_section_index === source.source_section_index)
+      if (!existing) changed.push(await addPart(skillId, source))
+      else if (existing.name !== source.name) {
+        await updatePart(skillId, existing.id, { name: source.name })
+        changed.push(existing)
+      }
+    }
+    return changed
   }
 
   async function updateSkill(id, patch) {
@@ -50,12 +104,13 @@ export const usePracticeStore = defineStore('practice', () => {
   }
 
   // ---------- Partes ----------
-  async function addPart(skillId, name) {
+  async function addPart(skillId, value) {
     const s = skills.value.find(x => x.id === skillId)
     const position = s ? s.parts.length : 0
+    const part = typeof value === 'string' ? { name: value } : value
     const { data, error } = await supabase
       .from('skill_parts')
-      .insert({ skill_id: skillId, name, position })
+      .insert({ skill_id: skillId, name: part.name, position, source_section_index: part.source_section_index ?? null })
       .select()
       .single()
     if (error) throw error
@@ -93,9 +148,23 @@ export const usePracticeStore = defineStore('practice', () => {
   async function loadAllSessions() {
     const { data, error } = await supabase
       .from('practice_sessions')
-      .select('skill_id, bpm, duration_seconds, practiced_at')
+      .select('id, skill_id, part_id, bpm, duration_seconds, quality, practiced_at, routine_run_item_id')
       .order('practiced_at', { ascending: false })
     if (error) { console.error('Error cargando sesiones:', error); return [] }
+    return data || []
+  }
+
+  // Hitos de XP ganados (ledger, no se pierden al borrar skills). Devuelve
+  // null si la migración phase8 no está aplicada → el caller usa el fallback.
+  async function loadXpEvents() {
+    const { data, error } = await supabase
+      .from('xp_events')
+      .select('amount, reason, ref_name, created_at')
+    if (error) {
+      const missing = ['PGRST204', 'PGRST205', '42P01', '42703'].includes(error.code)
+      if (!missing) console.error('Error cargando eventos de XP:', error)
+      return null
+    }
     return data || []
   }
 
@@ -108,27 +177,47 @@ export const usePracticeStore = defineStore('practice', () => {
     if (error) throw error
 
     const s = skills.value.find(x => x.id === skill_id)
-    if (s && bpm) {
-      const { data: recent, error: recentError } = await supabase
+    if (s && part_id) {
+      const { data: partSessions, error: partError } = await supabase
         .from('practice_sessions')
         .select('bpm, duration_seconds, quality')
         .eq('skill_id', skill_id)
-        .not('bpm', 'is', null)
+        .eq('part_id', part_id)
         .order('practiced_at', { ascending: false })
-        .limit(5)
-      if (recentError) throw recentError
-      const reliable = (recent || []).filter(item => Number(item.duration_seconds) >= 60 && (item.quality || 3) >= 3)
-      const tempos = reliable.map(item => Number(item.bpm)).filter(Boolean).sort((a, b) => b - a).slice(0, 3)
-      const stableBpm = tempos.length
-        ? Math.round(tempos.reduce((total, value) => total + value, 0) / tempos.length)
-        : bpm
-      const patch = { current_bpm: stableBpm }
-      const qualifying = s.target_bpm
-        ? reliable.filter(item => Number(item.bpm) >= s.target_bpm).length
-        : 0
-      if (s.target_bpm && qualifying >= 3) patch.status = 'mastered'
-      else if (s.status !== 'mastered') patch.status = 'practicing'
-      await updateSkill(skill_id, patch)
+        .limit(20)
+      if (partError) throw partError
+      const part = s.parts.find(item => item.id === part_id)
+      if (part) {
+        const partPatch = {}
+        const evidence = progressFromSessions(partSessions || [], part.target_bpm || s.target_bpm)
+        if (evidence > Number(part.progress || 0)) partPatch.progress = evidence
+        const partBpm = stableBpm(partSessions || [])
+        if (partBpm && partBpm !== part.current_bpm) partPatch.current_bpm = partBpm
+        if (Object.keys(partPatch).length) await updatePart(skill_id, part_id, partPatch)
+      }
+    }
+
+    if (s) {
+      const patch = {}
+      if (s.status !== 'mastered' && Number(duration_seconds) >= 10) patch.status = 'practicing'
+      if (bpm) {
+        const { data: recent, error: recentError } = await supabase
+          .from('practice_sessions')
+          .select('bpm, duration_seconds, quality')
+          .eq('skill_id', skill_id)
+          .not('bpm', 'is', null)
+          .order('practiced_at', { ascending: false })
+          .limit(5)
+        if (recentError) throw recentError
+        const reliable = (recent || []).filter(item => Number(item.duration_seconds) >= 60 && (item.quality || 3) >= 3)
+        patch.current_bpm = stableBpm(recent || []) || bpm
+        const qualifying = s.target_bpm
+          ? reliable.filter(item => Number(item.bpm) >= s.target_bpm).length
+          : 0
+        if (s.target_bpm && qualifying >= 3) patch.status = 'mastered'
+      }
+      if (!s.target_bpm && s.parts.length && s.parts.every(part => Number(part.progress) >= 100)) patch.status = 'mastered'
+      if (Object.keys(patch).length) await updateSkill(skill_id, patch)
     }
   }
 
@@ -253,12 +342,12 @@ export const usePracticeStore = defineStore('practice', () => {
     syncRoutineItems(routine.value)
   }
 
-  async function addRoutineItem({ section_id = routine.value?.sections[0]?.id, skill_id, planned_minutes = 10, target_bpm = null }) {
+  async function addRoutineItem({ section_id = routine.value?.sections[0]?.id, skill_id, part_id = null, planned_minutes = 10, target_bpm = null }) {
     const section = routine.value?.sections.find(item => item.id === section_id)
     if (!section) throw new Error('Selecciona una sección')
     const { data, error } = await supabase.from('routine_items').insert({
       routine_id: routine.value.id,
-      section_id, skill_id, planned_minutes, target_bpm,
+      section_id, skill_id, part_id, planned_minutes, target_bpm,
       break_after_minutes: 0,
       position: section.items.length,
     }).select().single()
@@ -353,10 +442,13 @@ export const usePracticeStore = defineStore('practice', () => {
     let position = 0
     const snapshots = source.sections.flatMap(section => section.items.map(item => {
       const selectedSkill = skills.value.find(skill => skill.id === item.skill_id)
+      const selectedPart = selectedSkill?.parts.find(part => part.id === item.part_id)
       return {
         run_id: run.id,
         routine_item_id: item.id,
         skill_id: item.skill_id,
+        part_id: item.part_id || null,
+        part_name: selectedPart?.name || null,
         section_name: section.name,
         skill_name: selectedSkill?.name || 'Habilidad',
         position: position++,
@@ -406,9 +498,9 @@ export const usePracticeStore = defineStore('practice', () => {
 
   return {
     skills, ready, routines, routine, routineError, routineRuns,
-    loadSkills, createSkill, updateSkill, deleteSkill,
+    loadSkills, createSkill, createSkillFromSong, syncSongParts, updateSkill, deleteSkill,
     addPart, updatePart, deletePart,
-    loadSessions, loadAllSessions, logSession,
+    loadSessions, loadAllSessions, loadXpEvents, logSession,
     loadRoutine, loadRoutines, selectRoutine, createRoutine, updateRoutine, deleteRoutine,
     updateRoutineDays, addRoutineSection, updateRoutineSection, removeRoutineSection,
     addRoutineItem, updateRoutineItem, removeRoutineItem, moveRoutineItem,

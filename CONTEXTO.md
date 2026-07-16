@@ -1,42 +1,37 @@
-# Proyecto: App de Repertorio de Alabanzas
+# Contexto de Jubal
 
-## Descripción
-App web para un grupo de alabanza pequeño (3-10 personas), construida en HTML/CSS/JS puro (un solo archivo `index.html`). El líder selecciona canciones para el servicio del día y los músicos las ven con letra y acordes en tiempo real.
+Jubal sirve a dos ámbitos conectados:
 
-## Roles
-- **Líder de alabanza** — puede agregar, editar, eliminar canciones y armar el setlist del día
-- **Músicos** — ven el setlist con letra y acordes (vista de solo lectura)
+1. **Banda:** el líder administra canciones, repertorios, actividades, miembros,
+   responsabilidades y sesiones en vivo. Los integrantes consultan el contenido
+   y pueden compartir voluntariamente su preparación.
+2. **Práctica personal:** cada músico gestiona canciones, solos, licks y técnicas,
+   los divide en partes, crea rutinas y registra tiempo, BPM y calidad.
 
-## Funciones actuales
-- Repertorio de alabanzas con título, autor, tono (key), BPM y letra+acordes
-- Setlist del día — el líder selecciona qué canciones se tocan
-- Vista de letra y acordes por canción (detecta líneas de acordes automáticamente)
-- Búsqueda en el repertorio
-- Agregar y eliminar canciones con formulario
-- Los datos se guardan en `localStorage` (solo local, sin sincronización)
-- 5 canciones de ejemplo precargadas
-- Diseño oscuro, minimalista, responsive (funciona en celular)
+La canción es el puente entre ambos ámbitos. Desde su ficha puede crearse una
+skill personal; las marcas `[Intro]`, `[Verso]`, `[Coro]`, `[Solo]`, etc. generan
+partes practicables. Las sesiones se mantienen privadas. Solo se comparte con la
+banda un resumen cuando el músico activa esa opción.
 
-## Stack
-- HTML + CSS + JavaScript puro (vanilla), sin frameworks
-- Un solo archivo: `index.html`
-- Fuentes: DM Serif Display + DM Sans (Google Fonts)
-- Almacenamiento actual: `localStorage`
+## Arquitectura actual
 
-## Próximos pasos (pendientes)
-1. **Conectar Firebase Realtime Database** para que el setlist y el repertorio se sincronicen en tiempo real entre todos los usuarios
-2. **Publicar en GitHub Pages** como `usuario.github.io/alabanzas-iglesia`
-3. Considerar roles con autenticación (líder vs músico) en el futuro
+- Vue 3 + Pinia + Vue Router.
+- Vite con soporte PWA.
+- Supabase Auth, Postgres, Row Level Security y Realtime.
+- Datos de banda aislados por `band_id`.
+- Datos personales aislados por `user_id`.
 
-## Estructura del proyecto
-```
-alabanzas-iglesia/
-├── index.html       # App completa (único archivo por ahora)
-└── CONTEXTO.md      # Este archivo
-```
+## Migraciones
 
-## Notas importantes
-- Al conectar Firebase, reemplazar `localStorage` por Firebase Realtime Database
-- El setlist debe actualizarse en tiempo real para todos los usuarios conectados
-- Mantener el diseño actual (oscuro, minimalista) al agregar nuevas funciones
-- El proyecto debe seguir siendo lo más simple posible (sin frameworks pesados si no es necesario)
+Aplicar los archivos de `supabase/` en orden. La última requerida es
+`phase8_part_tempo_xp.sql` (tempo por parte + ledger de XP `xp_events`).
+
+## Principios de producto
+
+- El estado de aprendizaje pertenece al músico, no a la canción compartida.
+- Compartir preparación es opcional y no revela el historial privado.
+- Una sección o parte debe poder practicarse y medirse por separado.
+- El progreso se apoya en sesiones, tiempo, calidad y BPM; el ajuste manual se
+  conserva para casos excepcionales.
+- El líder organiza el repertorio y responsabilidades, pero cada músico controla
+  su práctica personal.

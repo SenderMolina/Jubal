@@ -2071,6 +2071,7 @@ header {
   min-height: 40px;
   justify-content: center;
 }
+.song-navbar__actions { display: flex; align-items: center; justify-content: center; gap: 7px; }
 .song-play-btn {
   display: flex;
   align-items: center;
@@ -2089,6 +2090,7 @@ header {
 }
 .song-play-btn:active { background: var(--action2); }
 .song-play-btn svg { width: 14px; height: 14px; }
+.song-practice-btn { padding: 8px 14px; border: 1px solid var(--accent); border-radius: 999px; background: var(--accent-soft); color: var(--accent2); font: inherit; font-size: .78rem; font-weight: 700; cursor: pointer; }.song-practice-btn:disabled { opacity: .6; cursor: wait; }
 .song-nav-count { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
 
 /* ── REPRODUCTOR (pantalla completa con autoscroll) ── */

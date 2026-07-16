@@ -32,10 +32,15 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
       <div class="song-navbar__center">
-        <button v-if="canPlay" class="song-play-btn" @click="openPlayer">
-          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20"/></svg>
-          Play
-        </button>
+        <div class="song-navbar__actions">
+          <button v-if="canPlay" class="song-play-btn" @click="openPlayer">
+            <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20"/></svg>
+            Play
+          </button>
+          <button class="song-practice-btn" :disabled="practiceBusy" @click="openPractice">
+            {{ linkedSkill ? 'Ver práctica' : (practiceBusy ? 'Agregando…' : 'Practicar') }}
+          </button>
+        </div>
         <span v-if="navList.length > 1" class="song-nav-count">{{ navIndex + 1 }} de {{ navList.length }}</span>
       </div>
       <button class="song-nav-btn" aria-label="Canción siguiente" :disabled="navIndex < 0 || navIndex >= navList.length - 1" @click="goTo(1)">
@@ -174,11 +179,12 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, onBeforeUnmount } from 'vue'
+import { ref, computed, nextTick, onBeforeUnmount, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useRoleStore } from '../stores/role'
 import { useLiveStore } from '../stores/live'
+import { usePracticeStore } from '../stores/practice'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import { parseDuration, formatDuration } from '../utils/duration'
@@ -193,6 +199,7 @@ const router    = useRouter()
 const store     = useAppStore()
 const roleStore = useRoleStore()
 const live      = useLiveStore()
+const practice  = usePracticeStore()
 const { showToast } = useToast()
 const { confirm }   = useConfirm()
 
@@ -202,6 +209,7 @@ const form        = ref({})
 const showDetails = ref(false)
 const titleError  = ref('')
 const editTitleInput = ref(null)
+const practiceBusy = ref(false)
 
 const lyricsPlaceholder = `[Intro]
 G  Em  C  D
@@ -220,6 +228,19 @@ const keyOptions = [
 ]
 
 const song = computed(() => store.songs.find(s => s.id === Number(route.params.id)))
+const linkedSkill = computed(() => practice.skills.find(skill => Number(skill.song_id) === Number(song.value?.id)))
+
+async function openPractice() {
+  if (!song.value || practiceBusy.value) return
+  practiceBusy.value = true
+  try {
+    const skill = linkedSkill.value || await practice.createSkillFromSong(song.value)
+    roleStore.enterPersonal()
+    router.push(`/skill/${skill.id}`)
+  } catch (reason) {
+    showToast(reason.message || 'No se pudo agregar a la práctica')
+  } finally { practiceBusy.value = false }
+}
 
 const authorSuggestions = computed(() =>
   [...new Set(store.songs.map(s => s.author).filter(Boolean))]
@@ -494,4 +515,6 @@ onBeforeUnmount(() => {
   pause()
   releaseWakeLock()
 })
+
+onMounted(() => { if (!practice.ready) practice.loadSkills() })
 </script>

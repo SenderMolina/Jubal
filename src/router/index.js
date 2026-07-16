@@ -1,24 +1,27 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useBandStore } from '../stores/band'
-import ActividadesView       from '../views/ActividadesView.vue'
-import ActividadDetailView   from '../views/ActividadDetailView.vue'
-import CancionesView         from '../views/CancionesView.vue'
-import AgregarView           from '../views/AgregarView.vue'
-import TiposView             from '../views/TiposView.vue'
-import SongView              from '../views/SongView.vue'
-import RepertorioView        from '../views/RepertorioView.vue'
-import RepertorioDetailView  from '../views/RepertorioDetailView.vue'
-import BandManageView        from '../views/BandManageView.vue'
-import LiveView              from '../views/LiveView.vue'
-import ProfileView           from '../views/ProfileView.vue'
-import EntrenarView          from '../views/EntrenarView.vue'
-import SkillDetailView       from '../views/SkillDetailView.vue'
-import EstadisticasView      from '../views/EstadisticasView.vue'
-import RoutineView           from '../views/RoutineView.vue'
-import RoutinePlayView       from '../views/RoutinePlayView.vue'
-import MetronomoView         from '../views/MetronomoView.vue'
-import HomeView              from '../views/HomeView.vue'
-import BandDashboardView     from '../views/BandDashboardView.vue'
+
+// Cada pantalla se carga al entrar en su ruta. Reduce el arranque de la PWA y
+// evita enviar de una vez los editores, estadísticas y modo en vivo.
+const ActividadesView = () => import('../views/ActividadesView.vue')
+const ActividadDetailView = () => import('../views/ActividadDetailView.vue')
+const CancionesView = () => import('../views/CancionesView.vue')
+const AgregarView = () => import('../views/AgregarView.vue')
+const TiposView = () => import('../views/TiposView.vue')
+const SongView = () => import('../views/SongView.vue')
+const RepertorioView = () => import('../views/RepertorioView.vue')
+const RepertorioDetailView = () => import('../views/RepertorioDetailView.vue')
+const BandManageView = () => import('../views/BandManageView.vue')
+const LiveView = () => import('../views/LiveView.vue')
+const ProfileView = () => import('../views/ProfileView.vue')
+const EntrenarView = () => import('../views/EntrenarView.vue')
+const SkillDetailView = () => import('../views/SkillDetailView.vue')
+const EstadisticasView = () => import('../views/EstadisticasView.vue')
+const RoutineView = () => import('../views/RoutineView.vue')
+const RoutinePlayView = () => import('../views/RoutinePlayView.vue')
+const MetronomoView = () => import('../views/MetronomoView.vue')
+const HomeView = () => import('../views/HomeView.vue')
+const BandDashboardView = () => import('../views/BandDashboardView.vue')
 
 const routes = [
   { path: '/',                redirect: '/inicio' },

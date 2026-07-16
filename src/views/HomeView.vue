@@ -113,6 +113,7 @@ const practice = usePracticeStore()
 const metronome = useMetronome()
 const sessions = ref([])
 const runs = ref([])
+const xpEvents = ref(null)
 
 const todayItems = computed(() => {
   const day = new Date().getDay()
@@ -131,7 +132,7 @@ const todayRoutine = computed(() => (practice.routines || []).find(item => item.
 const todayRoutineMinutes = computed(() => todayRoutine.value?.items.reduce((total, item) => total
   + (Number(item.planned_minutes) || 0) + (Number(item.break_after_minutes) || 0), 0) || 0)
 const masteredSkills = computed(() => practice.skills.filter(skill => skill.status === 'mastered').length)
-const totalXp = computed(() => xpForProgress(sessions.value, masteredSkills.value, runs.value))
+const totalXp = computed(() => xpForProgress(sessions.value, masteredSkills.value, runs.value, xpEvents.value))
 const playerLevel = computed(() => levelFromXp(totalXp.value))
 const streak = computed(() => practiceStreak(sessions.value))
 const rankTitle = computed(() => {
@@ -203,7 +204,8 @@ function practiceMeta(item) {
   return [item.sectionName, item.planned_minutes && `${item.planned_minutes} min`, (item.target_bpm || item.skill.target_bpm) && `${item.target_bpm || item.skill.target_bpm} BPM`].filter(Boolean).join(' · ') || 'Práctica libre'
 }
 function startPractice(item) {
-  metronome.open(item.skill, item.target_bpm)
+  const part = item.skill.parts?.find(p => p.id === item.part_id) || null
+  metronome.open(item.skill, item.target_bpm, part)
   router.push('/metronomo')
 }
 function startDailyQuest() {
@@ -214,7 +216,9 @@ function startDailyQuest() {
 onMounted(async () => {
   if (!practice.ready) await practice.loadSkills()
   await practice.loadRoutine()
-  ;[sessions.value, runs.value] = await Promise.all([practice.loadAllSessions(), practice.loadRoutineRuns()])
+  ;[sessions.value, runs.value, xpEvents.value] = await Promise.all([
+    practice.loadAllSessions(), practice.loadRoutineRuns(), practice.loadXpEvents(),
+  ])
 })
 </script>
 

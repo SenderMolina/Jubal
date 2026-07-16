@@ -4,6 +4,7 @@
       {{ skill.name }}
       <span v-if="skill.target_bpm" class="metro-skill__goal">meta {{ skill.target_bpm }} bpm</span>
     </p>
+    <p v-if="part" class="metro-part">Sección: <strong>{{ part.name }}</strong></p>
 
     <!-- BPM -->
     <div class="metro-bpm">
@@ -52,6 +53,17 @@
     </div>
 
     <!-- Guardar sesión -->
+    <div v-if="skill" class="metro-quality">
+      <span>¿Cómo se sintió?</span>
+      <div>
+        <button
+          v-for="option in QUALITY"
+          :key="option.value"
+          :class="{ active: quality === option.value }"
+          @click="quality = option.value"
+        ><b>{{ option.icon }}</b><small>{{ option.label }}</small></button>
+      </div>
+    </div>
     <button
       v-if="skill"
       class="btn btn-primary metro-save"
@@ -62,7 +74,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { useMetronome } from '../composables/useMetronome'
 import { usePracticeStore } from '../stores/practice'
@@ -71,12 +83,19 @@ import { useConfirm } from '../composables/useConfirm'
 
 const router = useRouter()
 const {
-  isRunning, bpm, beatsPerBar, currentBeat, elapsedSeconds, skill,
+  isRunning, bpm, beatsPerBar, currentBeat, elapsedSeconds, skill, part,
   close, stop, toggle, setBpm, tap,
 } = useMetronome()
 const store = usePracticeStore()
 const { showToast } = useToast()
 const { confirm } = useConfirm()
+
+const QUALITY = [
+  { value: 1, icon: '●', label: 'Difícil' },
+  { value: 3, icon: '◆', label: 'Bien' },
+  { value: 5, icon: '★', label: 'Fluyó' },
+]
+const quality = ref(3)
 
 const timerLabel = computed(() => {
   const t = elapsedSeconds.value
@@ -90,10 +109,12 @@ async function saveSession() {
   try {
     await store.logSession({
       skill_id: s.id,
+      part_id: part.value?.id || null,
       bpm: bpm.value,
       duration_seconds: elapsedSeconds.value,
+      quality: quality.value,
     })
-    const mastered = s.target_bpm && bpm.value >= s.target_bpm && !wasMastered
+    const mastered = s.status === 'mastered' && !wasMastered
     showToast(mastered ? '🎉 ¡Skill dominada!' : 'Sesión guardada ✓')
     close()
     router.back()
@@ -121,6 +142,7 @@ onBeforeRouteLeave(async () => {
 
 .metro-skill { font-weight: 600; font-size: 16px; color: var(--text); display: flex; gap: 10px; align-items: baseline; }
 .metro-skill__goal { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+.metro-part { margin-top: -16px; padding: 5px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent2); font-size: 12px; }
 
 .metro-bpm { display: flex; align-items: center; gap: 8px; }
 .metro-bpm__btn {
@@ -175,6 +197,19 @@ onBeforeRouteLeave(async () => {
   font-size: 16px; font-weight: 600; color: var(--text-muted);
 }
 .metro-timer.running { color: var(--text); }
+
+.metro-quality { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.metro-quality > span { font-size: 11px; color: var(--text-muted); text-align: center; text-transform: uppercase; letter-spacing: .05em; }
+.metro-quality > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.metro-quality button {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 4px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; color: var(--text-mid);
+}
+.metro-quality button.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent2); }
+.metro-quality b { font-size: 12px; }
+.metro-quality small { font-size: 11px; font-weight: 600; }
 
 .metro-save { width: 100%; justify-content: center; padding: 13px; }
 </style>

@@ -1,6 +1,6 @@
 // Run: node src/utils/sections.test.mjs
 import assert from 'node:assert'
-import { parseSections, splitChordPro } from './sections.js'
+import { parseSections, sectionsToPracticeParts, splitChordPro } from './sections.js'
 
 // Inline ChordPro: pares acorde/texto
 assert.deepEqual(splitChordPro('[C]Sublime [G]gra[Am]cia'), [
@@ -28,5 +28,11 @@ assert.equal(s2[0].lines[0].type, 'lyric')
 const s3 = parseSections('C  G  Am\nletra')
 assert.equal(s3[0].lines[0].type, 'chord')
 assert.equal(s3[0].lines[1].type, 'lyric')
+
+assert.deepEqual(sectionsToPracticeParts('[Intro]\nC G\n[Coro]\nletra\n[Coro]\notra'), [
+  { name: 'Intro', source_section_index: 0 },
+  { name: 'Coro', source_section_index: 1 },
+  { name: 'Coro 2', source_section_index: 2 },
+])
 
 console.log('sections.test.mjs OK')

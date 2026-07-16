@@ -113,10 +113,21 @@
                 <span class="routine-exercise__icon">{{ skillIcon(skill(item.skill_id)?.type) }}</span>
                 <div class="routine-exercise__identity">
                   <strong>{{ skill(item.skill_id)?.name || 'Ejercicio eliminado' }}</strong>
-                  <small>{{ skillType(skill(item.skill_id)?.type) }}</small>
+                  <small>{{ [skillType(skill(item.skill_id)?.type), part(item)?.name].filter(Boolean).join(' · ') }}</small>
                 </div>
                 <button class="routine-exercise__remove" aria-label="Quitar ejercicio" @click="store.removeRoutineItem(item.id)">×</button>
               </div>
+
+              <label v-if="skill(item.skill_id)?.parts.length" class="routine-part-select">
+                <span>Parte o sección</span>
+                <UiSelect
+                  :model-value="item.part_id || ''"
+                  :options="partOptions(skill(item.skill_id))"
+                  placeholder="Skill completa"
+                  aria-label="Parte de la habilidad"
+                  @update:model-value="store.updateRoutineItem(item.id, { part_id: $event || null })"
+                />
+              </label>
 
               <div class="routine-exercise__settings">
                 <label>
@@ -238,8 +249,7 @@ const routineNameInput = ref(null)
 const busy = ref(false)
 
 const availableSkills = computed(() => {
-  const used = new Set(routine.value?.items.map(item => item.skill_id) || [])
-  return store.skills.filter(item => !used.has(item.id))
+  return store.skills
 })
 const totalMinutes = computed(() => routineMinutes(routine.value))
 const playerName = computed(() => auth.user?.user_metadata?.full_name || auth.user?.email?.split('@')[0] || 'Guitarrista')
@@ -257,6 +267,10 @@ const rankTitle = computed(() => {
 })
 
 function skill(id) { return store.skills.find(item => item.id === id) }
+function part(item) { return skill(item.skill_id)?.parts.find(value => value.id === item.part_id) }
+function partOptions(item) {
+  return [{ value: '', label: 'Skill completa' }, ...(item?.parts || []).map(value => ({ value: value.id, label: value.name }))]
+}
 function skillType(type) { return TYPE_LABELS[type] || 'Ejercicio' }
 function skillIcon(type) { return { lick: 'ϟ', solo: '★', technique: '◎', song: '♫' }[type] || '♪' }
 function skillMastery(item) { return skillProgress(item) }
@@ -325,6 +339,7 @@ async function addExercise(section, skillId) {
   await run(() => store.addRoutineItem({
     section_id: section.id,
     skill_id: skillId,
+    part_id: selected?.parts.length === 1 ? selected.parts[0].id : null,
     planned_minutes: 10,
     target_bpm: selected?.current_bpm || selected?.target_bpm || null,
   }), 'Ejercicio agregado')
@@ -357,6 +372,7 @@ onMounted(async () => {
 .routine-sections { display: flex; flex-direction: column; gap: 11px; }.routine-section { overflow: hidden; }.routine-section__head { display: flex; align-items: center; gap: 9px; padding: 11px 12px; border-bottom: 1px solid var(--border); background: var(--surface2); }.routine-section__number { width: 31px; height: 31px; flex: 0 0 31px; display: grid; place-items: center; border-radius: 10px; background: var(--accent-soft); color: var(--accent2); font-size: 10px; font-weight: 900; }.routine-section__head > div { min-width: 0; flex: 1; }.routine-section__head input { font-size: 12px; }
 .routine-exercises { padding: 0 11px; }.routine-exercise { padding: 11px 0; border-bottom: 1px solid var(--border); }.routine-exercise__main { display: flex; align-items: center; gap: 8px; }.routine-exercise__order { display: flex; flex-direction: column; }.routine-exercise__order button { width: 20px; height: 17px; border: 0; background: transparent; color: var(--text-muted); font-size: 9px; cursor: pointer; }.routine-exercise__order button:disabled { opacity: .2; }.routine-exercise__icon { width: 31px; height: 31px; flex: 0 0 31px; display: grid; place-items: center; border-radius: 10px; background: var(--action-soft); color: var(--action2); font-size: 13px; }.routine-exercise__identity { min-width: 0; flex: 1; display: flex; flex-direction: column; }.routine-exercise__identity strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }.routine-exercise__identity small { color: var(--text-muted); font-size: 7px; }.routine-exercise__remove { width: 25px; height: 25px; border: 0; border-radius: 8px; background: var(--red-soft); color: var(--red); cursor: pointer; }
 .routine-exercise__settings { display: grid; grid-template-columns: .8fr .9fr 1.3fr; gap: 6px; margin: 9px 0 0 28px; }.routine-exercise__settings > label { min-width: 0; display: flex; flex-direction: column; gap: 3px; color: var(--text-muted); font-size: 7px; font-weight: 800; text-transform: uppercase; }.routine-number { height: 32px; display: flex; align-items: center; overflow: hidden; border: 1px solid var(--border); border-radius: 9px; background: var(--surface2); }.routine-number input { width: 100%; min-width: 0; padding: 6px 2px 6px 7px; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 10px; font-weight: 800; }.routine-number small { padding-right: 5px; color: var(--text-muted); font-size: 6px; }.routine-break-select :deep(.ui-select__trigger) { min-height: 32px; padding: 5px 7px; background: var(--surface2); font-size: 9px; }.routine-break-select :deep(.ui-select__chevron) { width: 11px; }
+.routine-part-select { display: flex; flex-direction: column; gap: 3px; margin: 8px 0 0 28px; color: var(--text-muted); font-size: 7px; font-weight: 800; text-transform: uppercase; }.routine-part-select :deep(.ui-select__trigger) { min-height: 32px; padding: 5px 8px; background: var(--surface2); font-size: 9px; }
 .routine-break { display: flex; align-items: center; gap: 5px; margin: 8px 0 0 28px; padding: 6px 8px; border-radius: 9px; background: var(--action-soft); color: var(--action2); }.routine-break span { font-size: 11px; }.routine-break b { font-size: 8px; }.routine-break small { overflow: hidden; color: var(--text-mid); font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
 .routine-section__empty { display: flex; flex-direction: column; align-items: center; padding: 15px 12px 3px; color: var(--text-muted); text-align: center; }.routine-section__empty > span { width: 30px; height: 30px; display: grid; place-items: center; margin-bottom: 5px; border-radius: 10px; background: var(--surface2); color: var(--accent); font-size: 17px; }.routine-section__empty strong { color: var(--text-mid); font-size: 9px; }.routine-section__empty small { margin-top: 2px; font-size: 7px; }.routine-add-exercise { width: calc(100% - 22px); min-height: 48px; display: grid; grid-template-columns: 32px 1fr auto; grid-template-rows: auto auto; align-items: center; gap: 0 8px; margin: 10px 11px 11px; padding: 7px 10px; border: 1px dashed rgba(var(--brand-rgb),.55); border-radius: 13px; background: var(--accent-soft); color: var(--accent2); font: inherit; text-align: left; cursor: pointer; }.routine-add-exercise > span { grid-row: 1/3; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 10px; background: var(--accent); color: #fff; font-size: 17px; }.routine-add-exercise b { align-self: end; font-size: 10px; }.routine-add-exercise small { align-self: start; color: var(--text-muted); font-size: 7px; }.routine-add-exercise i { grid-column: 3; grid-row: 1/3; font-size: 19px; font-style: normal; }.routine-create-skill { display: block; padding: 12px; color: var(--accent2); font-size: 9px; font-weight: 800; text-align: center; text-decoration: none; }
 .routine-add-section { min-height: 48px; border: 1px dashed var(--accent); border-radius: 16px; background: var(--accent-soft); color: var(--accent2); font: inherit; font-size: 10px; font-weight: 900; cursor: pointer; }.routine-add-section span { font-size: 16px; vertical-align: -1px; }.routine-loading { padding: 30px; color: var(--text-muted); font-size: 10px; text-align: center; }

@@ -126,9 +126,10 @@ const todayItems = computed(() => {
 })
 
 function metaLabel(s) {
-  if (s.parts.length) return `${s.parts.filter(p => p.progress >= 100).length}/${s.parts.length} partes`
-  if (s.target_bpm) return `${s.current_bpm || 0} / ${s.target_bpm} bpm`
-  return ''
+  const progress = s.parts.length
+    ? `${s.parts.filter(p => p.progress >= 100).length}/${s.parts.length} partes`
+    : (s.target_bpm ? `${s.current_bpm || 0} / ${s.target_bpm} bpm` : '')
+  return [s.song?.author, s.song?.key && `tono ${s.song.key}`, progress].filter(Boolean).join(' · ')
 }
 
 function skillIcon(type) {
@@ -136,7 +137,8 @@ function skillIcon(type) {
 }
 
 function practice(it) {
-  metronome.open(it.skill, it.target_bpm)
+  const part = it.skill.parts.find(p => p.id === it.part_id) || null
+  metronome.open(it.skill, it.target_bpm, part)
   router.push('/metronomo')
 }
 

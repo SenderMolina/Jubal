@@ -25,6 +25,8 @@ export const useAppStore = defineStore('app', () => {
   const activities  = ref([])
   const songTypes   = ref([])
   const repertoires = ref([])
+  const readiness   = ref([])
+  const assignments = ref([])
 
   const band = useBandStore()
   const bid = () => band.currentBandId
@@ -72,7 +74,46 @@ export const useAppStore = defineStore('app', () => {
     }))
   }
 
-  function loadAll() { loadSongs(); loadSongTypes(); loadActivities(); loadRepertoires() }
+  async function loadReadiness() {
+    const b = bid()
+    if (!b) { readiness.value = []; return }
+    const { data, error } = await supabase
+      .from('song_readiness')
+      .select('*, profile:profiles(display_name,avatar_url)')
+      .eq('band_id', b)
+      .order('updated_at', { ascending: false })
+    if (error) { console.error('Error cargando preparación:', error); return }
+    readiness.value = data || []
+  }
+
+  async function loadAssignments() {
+    const b = bid()
+    if (!b) { assignments.value = []; return }
+    const { data, error } = await supabase
+      .from('band_song_assignments')
+      .select('*, profile:profiles!band_song_assignments_user_id_fkey(display_name,avatar_url)')
+      .eq('band_id', b)
+      .order('created_at')
+    if (error) { console.error('Error cargando asignaciones:', error); return }
+    assignments.value = data || []
+  }
+
+  async function addSongAssignment({ song_id, user_id, responsibility, notes = null }) {
+    const { data, error } = await supabase.from('band_song_assignments').insert({
+      band_id: bid(), song_id, user_id, responsibility, notes,
+    }).select('*, profile:profiles!band_song_assignments_user_id_fkey(display_name,avatar_url)').single()
+    if (error) throw error
+    assignments.value.push(data)
+    return data
+  }
+
+  async function removeSongAssignment(id) {
+    const { error } = await supabase.from('band_song_assignments').delete().eq('id', id)
+    if (error) throw error
+    assignments.value = assignments.value.filter(item => item.id !== id)
+  }
+
+  function loadAll() { loadSongs(); loadSongTypes(); loadActivities(); loadRepertoires(); loadReadiness(); loadAssignments() }
 
   // ---------- Guardados (incluyen band_id) ----------
   function saveSongs() {
@@ -100,18 +141,13 @@ export const useAppStore = defineStore('app', () => {
   async function saveRepertoires() {
     const b = bid()
     await syncTable('repertoires', b, repertoires.value.map(r => ({ id: r.id, name: r.name, band_id: b })))
-    // Reconstruir la tabla puente solo para los repertorios de esta banda.
-    const repIds = repertoires.value.map(r => r.id)
-    if (repIds.length) {
-      await supabase.from('repertoire_songs').delete().in('repertoire_id', repIds)
-    }
-    const links = repertoires.value.flatMap(r =>
-      (r.songs || []).map((songId, i) => ({ repertoire_id: r.id, song_id: songId, position: i }))
-    )
-    if (links.length) {
-      const { error } = await supabase.from('repertoire_songs').insert(links)
-      if (error) console.error('Error guardando repertorios:', error)
-    }
+    const results = await Promise.all(repertoires.value.map(repertoire =>
+      supabase.rpc('replace_repertoire_songs', {
+        p_repertoire_id: repertoire.id,
+        p_song_ids: repertoire.songs || [],
+      })))
+    const failed = results.find(result => result.error)
+    if (failed) throw failed.error
   }
 
   // ---------- Realtime (solo en banda: en personal nadie más escribe) ----------
@@ -136,11 +172,21 @@ export const useAppStore = defineStore('app', () => {
         // repertoire_songs no tiene band_id; RLS limita la visibilidad y recargamos.
         .on('postgres_changes', { event: '*', schema: 'public', table: 'repertoire_songs' }, loadRepertoires)
         .subscribe(),
+      supabase.channel(`readiness-${b}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'song_readiness', filter }, loadReadiness)
+        .subscribe(),
+      supabase.channel(`assignments-${b}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'band_song_assignments', filter }, loadAssignments)
+        .subscribe(),
     )
   }
 
   // Al cambiar de ámbito (banda o espacio personal), recargar y re-suscribir.
   watch(() => [band.currentBandId, band.personalMode], () => { loadAll(); subscribe() }, { immediate: true })
 
-  return { songs, activities, songTypes, repertoires, saveSongs, saveActivities, saveSongTypes, saveRepertoires }
+  return {
+    songs, activities, songTypes, repertoires, readiness, assignments,
+    saveSongs, saveActivities, saveSongTypes, saveRepertoires,
+    addSongAssignment, removeSongAssignment,
+  }
 })
