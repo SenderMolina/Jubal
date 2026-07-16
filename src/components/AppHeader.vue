@@ -28,6 +28,7 @@ const drawerOpen = ref(false)
 
 const pageTitle = computed(() => {
   const path = route.path
+  if (path.startsWith('/inicio')) return 'Inicio'
   if (path.startsWith('/actividades') || path.startsWith('/actividad/')) return 'Actividades'
   if (path.startsWith('/repertorio')) return 'Repertorios'
   if (path.startsWith('/canciones') || path.startsWith('/cancion/')) return 'Canciones'
@@ -52,17 +53,18 @@ const initial = computed(() => {
 <style scoped>
 .app-header__left { display: flex; align-items: center; gap: 10px; }
 .app-header__menu {
-  background: none; border: none; cursor: pointer; padding: 4px;
+  width: 36px; height: 36px; background: var(--surface2); border: 1px solid var(--border); cursor: pointer; padding: 7px;
+  border-radius: 11px;
   color: var(--text); display: flex; align-items: center;
 }
-.app-header__menu svg { width: 24px; height: 24px; }
+.app-header__menu svg { width: 20px; height: 20px; }
 
 .app-header__user {
   background: none; border: none; cursor: pointer; padding: 0;
   border-radius: 50%; -webkit-tap-highlight-color: transparent;
 }
 .app-header__avatar {
-  width: 36px; height: 36px; border-radius: 50%; object-fit: cover; display: block;
+  width: 34px; height: 34px; border-radius: 50%; object-fit: cover; display: block;
   border: 1px solid var(--border);
 }
 .app-header__avatar--ph {

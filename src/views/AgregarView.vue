@@ -29,10 +29,7 @@
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Tono (Key)</label>
-        <select class="form-select" v-model="form.key">
-          <option value="">— Sin especificar —</option>
-          <option v-for="k in keys" :key="k">{{ k }}</option>
-        </select>
+        <UiSelect v-model="form.key" :options="keyOptions" placeholder="— Sin especificar —" aria-label="Tono de la canción" />
       </div>
       <div class="form-group">
         <label class="form-label">Tempo (BPM)</label>
@@ -79,12 +76,17 @@ import { useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useToast } from '../composables/useToast'
 import { parseDuration } from '../utils/duration'
+import UiSelect from '../components/UiSelect.vue'
 
 const router = useRouter()
 const store  = useAppStore()
 const { showToast } = useToast()
 
 const keys = ['A','A#/Bb','B','C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab']
+const keyOptions = [
+  { value: '', label: '— Sin especificar —' },
+  ...keys.map(key => ({ value: key, label: key })),
+]
 
 const titleInput = ref(null)
 const errors = ref({ title: '' })

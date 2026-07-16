@@ -87,3 +87,17 @@ solo-lectura y luego eliminar la base.
 - Storage de Supabase para PDFs/partituras/audio por canción.
 - Historial de servicios y reportes (consultas SQL sobre `activities`).
 - Búsqueda full-text en `songs.lyrics`.
+
+## 6. Constructor avanzado de rutinas
+
+Para habilitar múltiples rutinas, secciones y descansos entre ejercicios, ejecutar
+[`supabase/phase5_routine_builder.sql`](supabase/phase5_routine_builder.sql) en el
+SQL Editor después de `phase4_skills.sql`. La migración conserva los ejercicios
+existentes y los mueve a una sección inicial llamada “Entrenamiento”.
+
+## 7. Ejecución guiada y progreso verificable
+
+Después de la fase 5, ejecutar
+[`supabase/phase6_guided_practice.sql`](supabase/phase6_guided_practice.sql).
+Esta migración agrega las partidas de rutina, resultados por habilidad, recuperación
+de sesiones interrumpidas y cálculo de XP de misión dentro de la base de datos.

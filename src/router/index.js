@@ -15,10 +15,13 @@ import EntrenarView          from '../views/EntrenarView.vue'
 import SkillDetailView       from '../views/SkillDetailView.vue'
 import EstadisticasView      from '../views/EstadisticasView.vue'
 import RoutineView           from '../views/RoutineView.vue'
+import RoutinePlayView       from '../views/RoutinePlayView.vue'
 import MetronomoView         from '../views/MetronomoView.vue'
+import HomeView              from '../views/HomeView.vue'
 
 const routes = [
-  { path: '/',                redirect: '/perfil' },
+  { path: '/',                redirect: '/inicio' },
+  { path: '/inicio',          component: HomeView },
   { path: '/actividades',     component: ActividadesView },
   { path: '/actividad/:id',   component: ActividadDetailView },
   { path: '/repertorio',      component: RepertorioView },
@@ -33,6 +36,7 @@ const routes = [
   { path: '/skill/:id',       component: SkillDetailView },
   { path: '/estadisticas',    component: EstadisticasView },
   { path: '/rutina',          component: RoutineView },
+  { path: '/rutina/jugar/:id', component: RoutinePlayView },
   { path: '/metronomo',       component: MetronomoView },
   { path: '/cancion/:id',     component: SongView },
 ]

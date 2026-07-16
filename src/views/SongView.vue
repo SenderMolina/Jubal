@@ -66,20 +66,14 @@
         </div>
         <div class="form-group">
           <label class="form-label">Autor / Artista</label>
-          <input class="form-input" v-model="form.author" type="text" placeholder="Ej: Marcos Witt" list="sf-authors-edit">
-          <datalist id="sf-authors-edit">
-            <option v-for="a in authorSuggestions" :key="a" :value="a"></option>
-          </datalist>
+          <UiCombobox v-model="form.author" :options="authorSuggestions" placeholder="Ej: Marcos Witt" aria-label="Autor o artista" />
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Tono (Key)</label>
-          <select class="form-select" v-model="form.key">
-            <option value="">— Sin especificar —</option>
-            <option v-for="k in keys" :key="k">{{ k }}</option>
-          </select>
+          <UiSelect v-model="form.key" :options="keyOptions" placeholder="— Sin especificar —" aria-label="Tono de la canción" />
         </div>
         <div class="form-group">
           <label class="form-label">Tempo (BPM)</label>
@@ -191,6 +185,8 @@ import { parseDuration, formatDuration } from '../utils/duration'
 import { parseSections } from '../utils/sections'
 import ActionSheet from '../components/ActionSheet.vue'
 import ChordLine from '../components/ChordLine.vue'
+import UiSelect from '../components/UiSelect.vue'
+import UiCombobox from '../components/UiCombobox.vue'
 
 const route     = useRoute()
 const router    = useRouter()
@@ -218,6 +214,10 @@ G  Em  C  D
 [G]Santo, [D]Santo, [Em]Santo[C]...`
 
 const keys = ['A','A#/Bb','B','C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab']
+const keyOptions = [
+  { value: '', label: '— Sin especificar —' },
+  ...keys.map(key => ({ value: key, label: key })),
+]
 
 const song = computed(() => store.songs.find(s => s.id === Number(route.params.id)))
 

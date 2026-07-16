@@ -131,10 +131,7 @@
       <div class="sf-block">
         <div class="sf-field">
           <label class="sf-label" for="sf-author">Autor o artista</label>
-          <input id="sf-author" class="form-input" v-model="form.author" type="text" placeholder="Ej: Marcos Witt" list="sf-authors">
-          <datalist id="sf-authors">
-            <option v-for="a in authorSuggestions" :key="a" :value="a"></option>
-          </datalist>
+          <UiCombobox v-model="form.author" :options="authorSuggestions" placeholder="Ej: Marcos Witt" aria-label="Autor o artista" />
         </div>
       </div>
 
@@ -197,6 +194,7 @@ import { useRoleStore } from '../stores/role'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import { parseDuration } from '../utils/duration'
+import UiCombobox from '../components/UiCombobox.vue'
 
 const router    = useRouter()
 const store     = useAppStore()

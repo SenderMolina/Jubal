@@ -1,30 +1,30 @@
 <template>
   <!-- Modo práctica personal -->
   <nav v-if="band.personalMode" class="bottom-nav">
+    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/inicio') }" to="/inicio">
+      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
+      <span class="bottom-nav__label">Inicio</span>
+    </RouterLink>
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/entrenar') }" to="/entrenar">
       <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9 18V5l12-2v13"/>
-        <circle cx="6" cy="18" r="3"/>
-        <circle cx="18" cy="16" r="3"/>
+        <circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>
+        <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
       </svg>
       <span class="bottom-nav__label">Entrenar</span>
     </RouterLink>
 
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/canciones') }" to="/canciones">
       <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9 18V5l12-2v13"/>
-        <path d="M9 9l12-2"/>
-        <circle cx="6" cy="18" r="3"/>
-        <circle cx="18" cy="16" r="3"/>
+        <path d="M6 2h8l4 4v16H6z"/><path d="M14 2v5h5"/>
+        <path d="M11 17v-6l4-1v5"/><circle cx="9.5" cy="17" r="1.5"/><circle cx="13.5" cy="15" r="1.5"/>
       </svg>
       <span class="bottom-nav__label">Canciones</span>
     </RouterLink>
 
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/repertorio') }" to="/repertorio">
       <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9 18V5l12-2v13"/>
-        <circle cx="6" cy="18" r="3"/>
-        <circle cx="18" cy="16" r="3"/>
+        <rect x="5" y="6" width="15" height="14" rx="2"/><path d="M8 3h11a2 2 0 012 2v12"/>
+        <path d="M9 11h7M9 15h5"/>
       </svg>
       <span class="bottom-nav__label">Repertorio</span>
     </RouterLink>
@@ -37,19 +37,15 @@
       <span class="bottom-nav__label">Metrónomo</span>
     </RouterLink>
 
-    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/estadisticas') }" to="/estadisticas">
-      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="20" x2="18" y2="10"/>
-        <line x1="12" y1="20" x2="12" y2="4"/>
-        <line x1="6" y1="20" x2="6" y2="14"/>
-      </svg>
-      <span class="bottom-nav__label">Estadística</span>
-    </RouterLink>
-    <!-- Perfil queda en el header y el drawer: 5 items es el tope del tab bar -->
+    <!-- Estadística y Perfil quedan en el drawer/header: 5 items es el tope del tab bar -->
   </nav>
 
   <!-- Modo banda -->
   <nav v-else-if="band.currentBand" class="bottom-nav">
+    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/inicio') }" to="/inicio">
+      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
+      <span class="bottom-nav__label">Inicio</span>
+    </RouterLink>
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/actividades') }" to="/actividades">
       <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -62,19 +58,16 @@
 
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/repertorio') }" to="/repertorio">
       <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9 18V5l12-2v13"/>
-        <circle cx="6" cy="18" r="3"/>
-        <circle cx="18" cy="16" r="3"/>
+        <rect x="5" y="6" width="15" height="14" rx="2"/><path d="M8 3h11a2 2 0 012 2v12"/>
+        <path d="M9 11h7M9 15h5"/>
       </svg>
       <span class="bottom-nav__label">Repertorios</span>
     </RouterLink>
 
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/canciones') }" to="/canciones">
       <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9 18V5l12-2v13"/>
-        <path d="M9 9l12-2"/>
-        <circle cx="6" cy="18" r="3"/>
-        <circle cx="18" cy="16" r="3"/>
+        <path d="M6 2h8l4 4v16H6z"/><path d="M14 2v5h5"/>
+        <path d="M11 17v-6l4-1v5"/><circle cx="9.5" cy="17" r="1.5"/><circle cx="13.5" cy="15" r="1.5"/>
       </svg>
       <span class="bottom-nav__label">Canciones</span>
     </RouterLink>
@@ -91,13 +84,6 @@
       </RouterLink>
     </template>
 
-    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/perfil') }" to="/perfil">
-      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-        <circle cx="12" cy="7" r="4"/>
-      </svg>
-      <span class="bottom-nav__label">Perfil</span>
-    </RouterLink>
   </nav>
 </template>
 
@@ -117,4 +103,3 @@ function isActive(path) {
   return route.path.startsWith(path)
 }
 </script>
-

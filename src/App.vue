@@ -60,11 +60,11 @@ watch(() => authStore.isAuthenticated, (authed) => {
 
 // Detalle de actividad, canción y la sesión en vivo van a pantalla completa
 const isFullscreen = computed(() =>
-  route.path.startsWith('/actividad/') || route.path.startsWith('/cancion/') || route.path.startsWith('/live')
+  route.path.startsWith('/actividad/') || route.path.startsWith('/cancion/') || route.path.startsWith('/live') || route.path.startsWith('/rutina/jugar/')
 )
 
 // Canción y sesión en vivo ocultan la navegación inferior (pantalla completa)
 const hideNav = computed(() =>
-  route.path.startsWith('/cancion/') || route.path.startsWith('/live')
+  route.path.startsWith('/cancion/') || route.path.startsWith('/live') || route.path.startsWith('/rutina/jugar/')
 )
 </script>

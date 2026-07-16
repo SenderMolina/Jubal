@@ -14,10 +14,18 @@
           </RouterLink>
 
           <!-- Espacio personal -->
+          <button class="drawer-item" :class="{ active: isPath('/inicio') }" @click="goHome">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
+            <span>Inicio</span>
+          </button>
           <p class="drawer-section">Personal</p>
           <button class="drawer-item" :class="{ active: band.personalMode && isPath('/entrenar') }" @click="goPractice">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
             <span>Práctica</span>
+          </button>
+          <button class="drawer-item" :class="{ active: isPath('/rutina') }" @click="goRoutine">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5M8 16h7"/><path d="M9 3v2M15 3v2"/></svg>
+            <span>Rutinas</span>
           </button>
           <button class="drawer-item" :class="{ active: isPath('/estadisticas') }" @click="goStats">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -109,15 +117,26 @@ function goPractice() {
   emit('close')
 }
 
+function goHome() {
+  router.push('/inicio')
+  emit('close')
+}
+
 function goStats() {
   band.enterPersonal()
   router.push('/estadisticas')
   emit('close')
 }
 
+function goRoutine() {
+  band.enterPersonal()
+  router.push('/rutina')
+  emit('close')
+}
+
 function goBand(id) {
   band.selectBand(id)
-  router.push('/actividades')
+  router.push('/inicio')
   emit('close')
 }
 
@@ -132,7 +151,7 @@ async function create() {
   busy.value = true
   try {
     await band.createBand(newName.value)
-    router.push('/actividades')
+    router.push('/inicio')
     creating.value = false
     newName.value = ''
     emit('close')
