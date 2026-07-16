@@ -6,10 +6,7 @@
       <span class="bottom-nav__label">Inicio</span>
     </RouterLink>
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/entrenar') }" to="/entrenar">
-      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>
-        <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-      </svg>
+      <img class="bottom-nav__icon bottom-nav__icon--image" :src="trainIcon" alt="">
       <span class="bottom-nav__label">Entrenar</span>
     </RouterLink>
 
@@ -74,12 +71,7 @@
 
     <template v-if="roleStore.isLeader">
       <RouterLink class="bottom-nav__item" :class="{ active: isActive('/banda') }" to="/banda">
-        <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 00-3-3.87"/>
-          <path d="M16 3.13a4 4 0 010 7.75"/>
-        </svg>
+        <img class="bottom-nav__icon bottom-nav__icon--image" :src="bandIcon" alt="">
         <span class="bottom-nav__label">Banda</span>
       </RouterLink>
     </template>
@@ -91,6 +83,8 @@
 import { useRoute } from 'vue-router'
 import { useRoleStore } from '../stores/role'
 import { useBandStore } from '../stores/band'
+import trainIcon from '../../icons/train.png'
+import bandIcon from '../../icons/band.png'
 
 const route     = useRoute()
 const roleStore = useRoleStore()

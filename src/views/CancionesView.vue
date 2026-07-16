@@ -59,10 +59,7 @@
           @contextmenu.prevent="roleStore.isLeader && openContextMenu($event, s)"
         >
           <span class="song-item__badge" :class="{ 'song-item__badge--empty': !s.key }">
-            <template v-if="s.key">
-              <span class="song-item__key">{{ fmtKey(s.key) }}</span>
-              <span v-if="s.bpm" class="song-item__bpm">♩{{ s.bpm }}</span>
-            </template>
+            <span v-if="s.key" class="song-item__key">{{ fmtKey(s.key) }}</span>
             <svg v-else class="song-item__note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
             </svg>
@@ -74,6 +71,9 @@
               <template v-for="(tl, ti) in typeLabels(s)" :key="tl"><span v-if="s.author || ti" class="song-item__dot">·</span>{{ tl }}</template>
             </span>
           </span>
+          <svg class="song-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
         </button>
       </div>
 
@@ -368,66 +368,79 @@ async function deleteSongFromCtx() {
 /* Icono de búsqueda como SVG (a juego con la nav), reemplaza el emoji */
 .search-box__svg { width: 18px; height: 18px; display: block; }
 
-/* ── LISTA DE CANCIONES: cada fila anclada por su tono + tempo ── */
-.song-list { display: flex; flex-direction: column; padding-bottom: 24px; }
+/* ── LISTA DE CANCIONES: tarjetas legibles en banda y espacio personal ── */
+.song-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 24px;
+}
 
 .song-item {
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: 9px;
   width: 100%;
   text-align: left;
-  background: none;
-  border: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
   font-family: var(--font);
-  padding: 9px 8px;
-  border-radius: 12px;
+  padding: 8px 10px;
+  border-radius: 13px;
+  box-shadow: var(--shadow);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
 }
-.song-item:not(:first-child) { border-top: 1px solid var(--border); }
-.song-item:active { background: var(--accent-soft); }
+.song-item:active { background: var(--accent-soft); transform: scale(.99); }
 .song-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
-/* La firma: tono grande, tempo debajo — la huella musical de la canción */
+/* El tono funciona como ancla visual compacta. */
 .song-item__badge {
   flex-shrink: 0;
-  width: 46px;
-  height: 46px;
-  border-radius: 13px;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent2);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   line-height: 1;
 }
 .song-item__badge--empty { background: var(--surface2); color: var(--text-muted); }
-.song-item__key { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.01em; }
-.song-item__bpm { font-size: 0.56rem; font-weight: 700; margin-top: 2px; opacity: 0.75; }
-.song-item__note { width: 20px; height: 20px; }
+.song-item__key { font-size: .9rem; font-weight: 800; letter-spacing: -0.01em; }
+.song-item__note { width: 17px; height: 17px; }
 
 .song-item__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .song-item__title {
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 0.82rem;
+  font-weight: 700;
   color: var(--text);
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.25;
 }
 .song-item__sub {
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .song-item__dot { margin: 0 5px; opacity: 0.6; }
+.song-item__arrow { width: 15px; height: 15px; flex-shrink: 0; color: var(--text-muted); }
 
 @media (hover: hover) {
-  .song-item:hover { background: var(--accent-soft); }
+  .song-item:hover { border-color: rgba(var(--brand-rgb), .35); box-shadow: var(--shadow-hover); transform: translateY(-1px); }
+}
+
+@media (max-width: 380px) {
+  .song-item { gap: 8px; padding: 7px 9px; }
+  .song-item__badge { width: 36px; height: 36px; }
+  .song-item__arrow { display: none; }
 }
 
 /* Estado vacío con icono SVG en vez de emoji */

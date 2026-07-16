@@ -33,6 +33,8 @@
   --bg: var(--c-paper);
   --surface: var(--c-white);
   --surface2: var(--c-cloud);
+  --nav-bg: #123B49;
+  --nav-text: rgba(255, 255, 255, 0.72);
   --border: var(--c-line);
   --text: var(--c-ink);
   --text-mid: var(--c-slate-600);
@@ -569,11 +571,11 @@ header {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
+  background: var(--nav-bg);
+  border-top: 1px solid rgba(255, 255, 255, .12);
   padding: 5px 6px max(5px, env(safe-area-inset-bottom, 5px));
   z-index: 100;
-  box-shadow: 0 -5px 18px rgba(var(--ink-rgb), .08);
+  box-shadow: 0 -5px 18px rgba(var(--ink-rgb), .18);
 }
 .bottom-nav__item {
   position: relative;
@@ -582,38 +584,44 @@ header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 6px 2px 5px;
+  gap: 0;
+  padding: 8px 2px;
   text-decoration: none;
-  color: var(--text-muted);
+  color: var(--nav-text);
   transition: color 0.18s ease;
   -webkit-tap-highlight-color: transparent;
   border-radius: 12px;
 }
 .bottom-nav__item.active {
-  color: var(--accent2);
-  background: var(--accent-soft);
+  color: #fff;
+  background: rgba(255, 255, 255, .12);
 }
 .bottom-nav__item::before { content: ''; position: absolute; top: -5px; width: 20px; height: 3px; border-radius: 0 0 4px 4px; background: transparent; }
-.bottom-nav__item.active::before { background: var(--accent); }
+.bottom-nav__item.active::before { background: var(--action); }
 .bottom-nav__icon {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
+}
+.bottom-nav__icon--image {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  object-fit: contain;
+  box-shadow: 0 1px 4px rgba(var(--ink-rgb), .2);
 }
 .bottom-nav__label {
-  font-family: var(--font);
-  max-width: 100%;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 0.62rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 .bottom-nav__item:active { transform: scale(.96); }
-.bottom-nav__item:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.bottom-nav__item.active .bottom-nav__label {
-  font-weight: 700;
-}
+.bottom-nav__item:focus-visible { outline: 2px solid var(--action); outline-offset: 1px; }
 
 /* Legacy tabs (keep for internal use) */
 .tabs {

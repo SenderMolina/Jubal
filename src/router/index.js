@@ -55,6 +55,11 @@ const PERSONAL_ONLY = ['/entrenar', '/skill', '/estadisticas', '/rutina', '/metr
 
 router.beforeEach((to) => {
   const band = useBandStore()
+  // Inicio siempre debe estar disponible. Si aún no hay un ámbito elegido,
+  // abrimos el espacio personal en lugar de enviar al usuario a su perfil.
+  if (to.path === '/inicio' && !band.currentBandId && !band.personalMode) {
+    band.enterPersonal()
+  }
   if (BAND_ONLY.some(p => to.path.startsWith(p)) && !band.currentBandId) {
     return '/perfil'
   }

@@ -1,8 +1,7 @@
 <template>
   <div>
-    <div class="acts-greeting">
-      <p class="acts-greeting__hi">Hola{{ firstName ? ', ' + firstName : '' }}</p>
-      <h2 class="acts-greeting__band">{{ band.currentBand?.name || 'Jubal' }}</h2>
+    <div class="acts-heading">
+      <h2 class="acts-heading__band">{{ band.currentBand?.name || 'Jubal' }}</h2>
     </div>
 
     <div class="page-actions cal-anchor">
@@ -163,7 +162,6 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useRoleStore } from '../stores/role'
 import { useBandStore } from '../stores/band'
-import { useAuthStore } from '../stores/auth'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import ActivityModal from '../components/ActivityModal.vue'
@@ -174,12 +172,6 @@ const route     = useRoute()
 const store     = useAppStore()
 const roleStore = useRoleStore()
 const band      = useBandStore()
-const auth      = useAuthStore()
-
-const firstName = computed(() => {
-  const n = auth.user?.user_metadata?.full_name || ''
-  return n.split(' ')[0]
-})
 const modal     = ref(null)
 const sheet     = ref(null)
 const { showToast } = useToast()
@@ -332,10 +324,8 @@ const selectedDayActivities = computed(() =>
 </script>
 
 <style scoped>
-/* Saludo compacto: la fuerza visual se concentra en el hero, no aquí */
-.acts-greeting { padding: 10px 2px 2px; margin: 2px 0 14px; }
-.acts-greeting__hi { color: var(--text-mid); font-size: .9rem; font-weight: 500; }
-.acts-greeting__band {
+.acts-heading { padding: 10px 2px 2px; margin: 2px 0 14px; }
+.acts-heading__band {
   font-weight: 700; font-size: 1.45rem;
   line-height: 1.15; color: var(--text); margin: 2px 0 0;
 }

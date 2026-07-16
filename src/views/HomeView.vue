@@ -2,7 +2,6 @@
   <div class="home">
     <section class="home-welcome">
       <p class="home-welcome__eyebrow">{{ contextLabel }}</p>
-      <h2>Hola{{ firstName ? `, ${firstName}` : '' }}</h2>
       <p>{{ welcomeMessage }}</p>
     </section>
 
@@ -152,7 +151,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
 import { useBandStore } from '../stores/band'
 import { useAppStore } from '../stores/app'
 import { usePracticeStore } from '../stores/practice'
@@ -161,7 +159,6 @@ import { useMetronome } from '../composables/useMetronome'
 import { dateKey, levelFromXp, practiceStreak, xpForProgress } from '../utils/gamification'
 
 const router = useRouter()
-const auth = useAuthStore()
 const band = useBandStore()
 const app = useAppStore()
 const practice = usePracticeStore()
@@ -170,10 +167,6 @@ const metronome = useMetronome()
 const sessions = ref([])
 const runs = ref([])
 
-const firstName = computed(() => {
-  const name = auth.user?.user_metadata?.full_name || ''
-  return name.trim().split(/\s+/)[0]
-})
 const contextLabel = computed(() => band.currentBand?.name || 'Tu espacio personal')
 const welcomeMessage = computed(() => band.currentBand
   ? 'Esto es lo que viene para la banda y lo que puedes preparar hoy.'
@@ -320,7 +313,6 @@ onMounted(async () => {
 .home { max-width: 620px; margin: 0 auto; padding: 10px 0 96px; display: flex; flex-direction: column; gap: 12px; }
 .home-welcome { padding: 3px 2px 1px; }
 .home-welcome__eyebrow, .home-section__eyebrow { display: block; color: var(--accent2); font-size: 9px; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }
-.home-welcome h2 { margin-top: 3px; font-size: 1.42rem; line-height: 1.15; letter-spacing: -.02em; }
 .home-welcome p:last-child { max-width: 100%; margin-top: 3px; color: var(--text-mid); font-size: 11px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .player-card { position: relative; isolation: isolate; overflow: hidden; padding: 15px; border: 1px solid rgba(255,255,255,.08); border-radius: 20px; color: #fff; background: linear-gradient(135deg, #0e2936 0%, #11566c 55%, #087b8c 100%); box-shadow: 0 11px 25px rgba(17, 59, 73, .24); }
 .player-card__glow { position: absolute; z-index: -1; width: 160px; height: 160px; right: -55px; top: -85px; border-radius: 50%; background: rgba(255, 190, 77, .24); filter: blur(2px); animation: hero-glow 4s ease-in-out infinite; }
