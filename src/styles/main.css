@@ -611,6 +611,12 @@ header {
   object-fit: contain;
   box-shadow: 0 1px 4px rgba(var(--ink-rgb), .2);
 }
+.bottom-nav__icon--wide {
+  display: block;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: auto 200%;
+}
 .bottom-nav__label {
   position: absolute;
   width: 1px;

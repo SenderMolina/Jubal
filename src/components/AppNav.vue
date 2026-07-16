@@ -1,9 +1,9 @@
 <template>
   <!-- Modo práctica personal -->
   <nav v-if="band.personalMode" class="bottom-nav">
-    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/inicio') }" to="/inicio">
-      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
-      <span class="bottom-nav__label">Inicio</span>
+    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/practica') }" to="/practica">
+      <span class="bottom-nav__icon bottom-nav__icon--image bottom-nav__icon--wide" :style="{ backgroundImage: `url(${homeIcon})` }" aria-hidden="true"></span>
+      <span class="bottom-nav__label">Dashboard de práctica</span>
     </RouterLink>
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/entrenar') }" to="/entrenar">
       <img class="bottom-nav__icon bottom-nav__icon--image" :src="trainIcon" alt="">
@@ -11,26 +11,17 @@
     </RouterLink>
 
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/canciones') }" to="/canciones">
-      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M6 2h8l4 4v16H6z"/><path d="M14 2v5h5"/>
-        <path d="M11 17v-6l4-1v5"/><circle cx="9.5" cy="17" r="1.5"/><circle cx="13.5" cy="15" r="1.5"/>
-      </svg>
+      <img class="bottom-nav__icon bottom-nav__icon--image" :src="songsIcon" alt="">
       <span class="bottom-nav__label">Canciones</span>
     </RouterLink>
 
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/repertorio') }" to="/repertorio">
-      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="5" y="6" width="15" height="14" rx="2"/><path d="M8 3h11a2 2 0 012 2v12"/>
-        <path d="M9 11h7M9 15h5"/>
-      </svg>
+      <img class="bottom-nav__icon bottom-nav__icon--image" :src="setlistIcon" alt="">
       <span class="bottom-nav__label">Repertorio</span>
     </RouterLink>
 
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/metronomo') }" to="/metronomo">
-      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 3L5 20h14L12 3z"/>
-        <line x1="12" y1="14" x2="17" y2="6"/>
-      </svg>
+      <span class="bottom-nav__icon bottom-nav__icon--image bottom-nav__icon--wide" :style="{ backgroundImage: `url(${metronomeIcon})` }" aria-hidden="true"></span>
       <span class="bottom-nav__label">Metrónomo</span>
     </RouterLink>
 
@@ -40,7 +31,7 @@
   <!-- Modo banda -->
   <nav v-else-if="band.currentBand" class="bottom-nav">
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/inicio') }" to="/inicio">
-      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
+      <span class="bottom-nav__icon bottom-nav__icon--image bottom-nav__icon--wide" :style="{ backgroundImage: `url(${homeIcon})` }" aria-hidden="true"></span>
       <span class="bottom-nav__label">Inicio</span>
     </RouterLink>
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/actividades') }" to="/actividades">
@@ -54,18 +45,12 @@
     </RouterLink>
 
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/repertorio') }" to="/repertorio">
-      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="5" y="6" width="15" height="14" rx="2"/><path d="M8 3h11a2 2 0 012 2v12"/>
-        <path d="M9 11h7M9 15h5"/>
-      </svg>
+      <img class="bottom-nav__icon bottom-nav__icon--image" :src="setlistIcon" alt="">
       <span class="bottom-nav__label">Repertorios</span>
     </RouterLink>
 
     <RouterLink class="bottom-nav__item" :class="{ active: isActive('/canciones') }" to="/canciones">
-      <svg class="bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M6 2h8l4 4v16H6z"/><path d="M14 2v5h5"/>
-        <path d="M11 17v-6l4-1v5"/><circle cx="9.5" cy="17" r="1.5"/><circle cx="13.5" cy="15" r="1.5"/>
-      </svg>
+      <img class="bottom-nav__icon bottom-nav__icon--image" :src="songsIcon" alt="">
       <span class="bottom-nav__label">Canciones</span>
     </RouterLink>
 
@@ -85,6 +70,10 @@ import { useRoleStore } from '../stores/role'
 import { useBandStore } from '../stores/band'
 import trainIcon from '../../icons/train.png'
 import bandIcon from '../../icons/band.png'
+import songsIcon from '../../icons/songs.png'
+import setlistIcon from '../../icons/setlist.png'
+import homeIcon from '../../icons/inicio.png'
+import metronomeIcon from '../../icons/metronomo.png'
 
 const route     = useRoute()
 const roleStore = useRoleStore()

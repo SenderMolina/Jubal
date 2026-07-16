@@ -93,7 +93,7 @@
         <span><b>{{ formatMinutes(summary.seconds) }}</b> practicados</span>
         <span><b>{{ summary.averageQuality }}/5</b> calidad</span>
       </div>
-      <button @click="router.replace('/inicio')">Volver al inicio</button>
+      <button @click="router.replace('/practica')">Volver a práctica</button>
       <button class="mission-summary__secondary" @click="router.replace('/estadisticas')">Ver mi progreso</button>
     </section>
   </div>

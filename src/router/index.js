@@ -18,10 +18,12 @@ import RoutineView           from '../views/RoutineView.vue'
 import RoutinePlayView       from '../views/RoutinePlayView.vue'
 import MetronomoView         from '../views/MetronomoView.vue'
 import HomeView              from '../views/HomeView.vue'
+import BandDashboardView     from '../views/BandDashboardView.vue'
 
 const routes = [
   { path: '/',                redirect: '/inicio' },
-  { path: '/inicio',          component: HomeView },
+  { path: '/inicio',          component: BandDashboardView },
+  { path: '/practica',        component: HomeView },
   { path: '/actividades',     component: ActividadesView },
   { path: '/actividad/:id',   component: ActividadDetailView },
   { path: '/repertorio',      component: RepertorioView },
@@ -46,28 +48,28 @@ const router = createRouter({
   routes,
 })
 
-// Rutas exclusivas de banda: sin banda activa, al perfil.
+// Rutas exclusivas de banda: sin banda activa, al dashboard de práctica.
 // (canciones/repertorios NO están aquí: existen también en el espacio personal)
-const BAND_ONLY = ['/actividad', '/banda', '/live']
+const BAND_ONLY = ['/inicio', '/actividad', '/banda', '/live']
 // Rutas exclusivas del espacio personal: activan el modo personal
 // (ej. recarga o re-login directo en /entrenar).
-const PERSONAL_ONLY = ['/entrenar', '/skill', '/estadisticas', '/rutina', '/metronomo']
+const PERSONAL_ONLY = ['/practica', '/entrenar', '/skill', '/estadisticas', '/rutina', '/metronomo']
 
 router.beforeEach((to) => {
   const band = useBandStore()
-  // Inicio siempre debe estar disponible. Si aún no hay un ámbito elegido,
-  // abrimos el espacio personal en lugar de enviar al usuario a su perfil.
-  if (to.path === '/inicio' && !band.currentBandId && !band.personalMode) {
-    band.enterPersonal()
+  // Durante la restauración App.vue mantiene las vistas ocultas; esperamos a
+  // conocer las membresías antes de decidir entre banda y práctica.
+  if (!band.ready) {
+    return
   }
   if (BAND_ONLY.some(p => to.path.startsWith(p)) && !band.currentBandId) {
-    return '/perfil'
+    return '/practica'
   }
   if (PERSONAL_ONLY.some(p => to.path.startsWith(p)) && !band.personalMode) {
     band.enterPersonal()
   }
   // Canciones/repertorios necesitan algún ámbito: sin banda ni personal, al perfil.
-  if (!band.currentBandId && !band.personalMode && to.path !== '/perfil') {
+  if (!band.currentBandId && !band.personalMode && to.path !== '/perfil' && to.path !== '/practica') {
     return '/perfil'
   }
 })

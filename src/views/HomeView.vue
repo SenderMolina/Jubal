@@ -1,8 +1,8 @@
 <template>
   <div class="home">
     <section class="home-welcome">
-      <p class="home-welcome__eyebrow">{{ contextLabel }}</p>
-      <p>{{ welcomeMessage }}</p>
+      <p class="home-welcome__eyebrow">Dashboard de práctica</p>
+      <p>Tu progreso, misión diaria y plan personal de entrenamiento.</p>
     </section>
 
     <section class="player-card" aria-label="Tu progreso como guitarrista">
@@ -40,34 +40,6 @@
         <small>{{ dailyQuest.detail }}</small>
       </div>
       <button v-if="!dailyQuest.done" @click="startDailyQuest">{{ dailyQuest.available ? 'Jugar' : 'Crear' }}</button>
-    </section>
-
-    <section v-if="band.currentBand" class="home-section">
-      <div class="home-section__head">
-        <div>
-          <span class="home-section__eyebrow">Agenda</span>
-          <h3>Próxima actividad</h3>
-        </div>
-        <RouterLink to="/actividades">Ver todas</RouterLink>
-      </div>
-
-      <button v-if="nextActivity" class="home-event" @click="router.push(`/actividad/${nextActivity.id}`)">
-        <span class="home-event__date">
-          <strong>{{ dateDay(nextActivity.date) }}</strong>
-          <small>{{ dateMonth(nextActivity.date) }}</small>
-        </span>
-        <span class="home-event__body">
-          <span class="home-event__countdown">{{ countdown(nextActivity.date) }}</span>
-          <strong>{{ nextActivity.title }}</strong>
-          <small>{{ eventMeta(nextActivity) }}</small>
-        </span>
-        <span class="home-event__arrow">›</span>
-      </button>
-
-      <div v-else class="home-empty">
-        <span>No hay actividades próximas.</span>
-        <RouterLink v-if="roleStore.isLeader" to="/actividades?nueva=1">Crear actividad</RouterLink>
-      </div>
     </section>
 
     <section class="home-section">
@@ -112,25 +84,6 @@
       </div>
     </section>
 
-    <section v-if="upcomingActivities.length > 1" class="home-section home-section--compact">
-      <div class="home-section__head">
-        <div>
-          <span class="home-section__eyebrow">Después</span>
-          <h3>Más actividades</h3>
-        </div>
-      </div>
-      <button
-        v-for="activity in upcomingActivities.slice(1, 4)"
-        :key="activity.id"
-        class="home-upcoming"
-        @click="router.push(`/actividad/${activity.id}`)"
-      >
-        <span>{{ shortDate(activity.date) }}</span>
-        <strong>{{ activity.title }}</strong>
-        <small>{{ activity.time || 'Sin hora' }}</small>
-      </button>
-    </section>
-
     <section class="home-section home-actions">
       <div class="home-section__head home-section__head--actions">
         <div>
@@ -140,9 +93,9 @@
       </div>
       <div class="home-actions__grid">
         <button @click="router.push('/metronomo')"><span>♩</span>Metrónomo</button>
+        <button @click="router.push('/entrenar')"><span>◎</span>Entrenar</button>
         <button @click="router.push('/repertorio')"><span>♫</span>Repertorio</button>
-        <button v-if="roleStore.isLeader && band.currentBand" @click="router.push('/actividades?nueva=1')"><span>＋</span>Actividad</button>
-        <button v-else @click="router.push('/rutina')"><span>✓</span>Mi rutina</button>
+        <button @click="router.push('/rutina')"><span>✓</span>Mi rutina</button>
       </div>
     </section>
   </div>
@@ -151,36 +104,15 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useBandStore } from '../stores/band'
-import { useAppStore } from '../stores/app'
 import { usePracticeStore } from '../stores/practice'
-import { useRoleStore } from '../stores/role'
 import { useMetronome } from '../composables/useMetronome'
 import { dateKey, levelFromXp, practiceStreak, xpForProgress } from '../utils/gamification'
 
 const router = useRouter()
-const band = useBandStore()
-const app = useAppStore()
 const practice = usePracticeStore()
-const roleStore = useRoleStore()
 const metronome = useMetronome()
 const sessions = ref([])
 const runs = ref([])
-
-const contextLabel = computed(() => band.currentBand?.name || 'Tu espacio personal')
-const welcomeMessage = computed(() => band.currentBand
-  ? 'Esto es lo que viene para la banda y lo que puedes preparar hoy.'
-  : 'Un vistazo a tu práctica y a tu siguiente paso.')
-
-function localDateKey(date = new Date()) {
-  const pad = n => String(n).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
-}
-const today = localDateKey()
-const upcomingActivities = computed(() => app.activities
-  .filter(a => a.date && a.date >= today)
-  .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || '')))
-const nextActivity = computed(() => upcomingActivities.value[0])
 
 const todayItems = computed(() => {
   const day = new Date().getDay()
@@ -260,11 +192,6 @@ const recommendation = computed(() => {
     body: 'Agrega skills y días de ensayo para recibir una recomendación concreta cada día.',
     label: 'Crear mi rutina', action: () => router.push('/rutina'),
   }
-  if (nextActivity.value) return {
-    title: `Prepárate para ${nextActivity.value.title}`,
-    body: `${countdown(nextActivity.value.date)}. Revisa el orden y las canciones antes del ensayo.`,
-    label: 'Revisar actividad', action: () => router.push(`/actividad/${nextActivity.value.id}`),
-  }
   return {
     title: 'Haz una práctica libre',
     body: 'Aunque hoy no esté en tu rutina, diez minutos con metrónomo mantienen el hábito.',
@@ -272,24 +199,6 @@ const recommendation = computed(() => {
   }
 })
 
-const months = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC']
-function dateParts(value) { const [y, m, d] = value.split('-').map(Number); return { y, m, d } }
-function dateDay(value) { return dateParts(value).d }
-function dateMonth(value) { return months[dateParts(value).m - 1] }
-function shortDate(value) { const p = dateParts(value); return `${p.d} ${months[p.m - 1]}` }
-function countdown(value) {
-  const { y, m, d } = dateParts(value)
-  const target = new Date(y, m - 1, d)
-  const base = new Date(); base.setHours(0, 0, 0, 0)
-  const days = Math.round((target - base) / 86400000)
-  if (days <= 0) return 'Hoy'
-  if (days === 1) return 'Mañana'
-  return `En ${days} días`
-}
-function eventMeta(activity) {
-  const songs = (activity.tiempos || []).reduce((sum, time) => sum + (time.songs?.length || 0), 0)
-  return [activity.time, songs && `${songs} canción${songs === 1 ? '' : 'es'}`].filter(Boolean).join(' · ') || 'Sin hora definida'
-}
 function practiceMeta(item) {
   return [item.sectionName, item.planned_minutes && `${item.planned_minutes} min`, (item.target_bpm || item.skill.target_bpm) && `${item.target_bpm || item.skill.target_bpm} BPM`].filter(Boolean).join(' · ') || 'Práctica libre'
 }
@@ -340,11 +249,6 @@ onMounted(async () => {
 .home-section__head--actions { margin-bottom: 12px; }
 .home-section__head h3, .home-tip h3, .home-actions h3 { font-size: 14px; margin-top: 2px; line-height: 1.2; }
 .home-section__head a { color: var(--accent2); font-size: 10px; font-weight: 800; text-decoration: none; }
-.home-event { width: 100%; display: flex; align-items: center; gap: 13px; padding: 0; border: 0; background: transparent; color: var(--text); text-align: left; cursor: pointer; }
-.home-event__date { width: 58px; height: 66px; border-radius: 15px; background: var(--action-soft); color: var(--action2); display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
-.home-event__date strong { font-size: 24px; line-height: 1; }.home-event__date small { font-size: 10px; font-weight: 800; margin-top: 4px; }
-.home-event__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }.home-event__body strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }.home-event__body small { color: var(--text-muted); font-size: 12px; }
-.home-event__countdown { color: var(--action2); font-size: 11px; font-weight: 800; text-transform: uppercase; }.home-event__arrow { color: var(--text-muted); font-size: 25px; }
 .home-empty { min-height: 52px; border: 1px solid var(--border); background: var(--surface2); padding: 10px 12px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--text-mid); font-size: 11px; line-height: 1.35; }
 .home-empty a { color: var(--accent); text-decoration: none; font-weight: 700; flex-shrink: 0; }
 .home-practice-summary { display: flex; gap: 18px; padding: 9px 12px; margin-bottom: 5px; background: var(--accent-soft); color: var(--text-mid); border-radius: 11px; font-size: 11px; }.home-practice-summary strong { color: var(--accent2); }
@@ -353,7 +257,6 @@ onMounted(async () => {
 .home-practice__body { flex: 1; min-width: 0; display: flex; flex-direction: column; }.home-practice__body strong { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }.home-practice__body small { color: var(--text-muted); font-size: 11px; margin-top: 2px; }.home-practice__action { color: var(--accent); font-size: 11px; font-weight: 700; }
 .home-tip { display: flex; align-items: flex-start; gap: 13px; background: var(--surface); }
 .home-tip__icon { width: 35px; height: 35px; flex-shrink: 0; border-radius: 11px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-size: 16px; }.home-tip p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--text-mid); font-size: 10px; line-height: 1.45; margin: 5px 0 8px; }.home-tip button { border: 0; background: transparent; color: var(--accent2); font: inherit; font-size: 10px; font-weight: 800; cursor: pointer; padding: 0; }
-.home-section--compact { padding-bottom: 8px; }.home-upcoming { width: 100%; display: grid; grid-template-columns: 58px 1fr auto; align-items: center; gap: 8px; padding: 10px 0; border: 0; border-top: 1px solid var(--border); background: transparent; color: var(--text); text-align: left; cursor: pointer; }.home-upcoming span { color: var(--accent); font-size: 11px; font-weight: 800; }.home-upcoming strong { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }.home-upcoming small { color: var(--text-muted); font-size: 11px; }
 .home-actions { padding: 14px; }.home-actions h3 { margin: 2px 0 0; }.home-actions__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }.home-actions button { min-height: 58px; border: 1px solid var(--border); background: var(--surface2); color: var(--text-mid); border-radius: 12px; padding: 8px 5px; font: inherit; font-size: 9px; font-weight: 700; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; }.home-actions button span { color: var(--accent); font-size: 17px; line-height: 1; }
 
 @media (max-width: 350px) {

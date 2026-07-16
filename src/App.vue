@@ -21,7 +21,7 @@
 
 <script setup>
 import { computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { useBandStore } from './stores/band'
 import { usePracticeStore } from './stores/practice'
@@ -40,6 +40,7 @@ const authStore = useAuthStore()
 const bandStore = useBandStore()
 const practiceStore = usePracticeStore()
 const route = useRoute()
+const router = useRouter()
 const { showToast } = useToast()
 
 // Avisar del resultado de una invitación (unido o inválida/expirada).
@@ -49,9 +50,22 @@ watch(() => bandStore.inviteResult, (r) => {
 })
 
 // Cargar bandas (y canjear invitación pendiente) al autenticarse; limpiar al salir.
-watch(() => authStore.isAuthenticated, (authed) => {
+watch(() => authStore.isAuthenticated, async (authed) => {
   if (authed) {
-    if (!bandStore.ready) bandStore.init()
+    if (!bandStore.ready) await bandStore.init()
+    const isPersonalRoute = ['/practica', '/entrenar', '/skill', '/estadisticas', '/rutina', '/metronomo']
+      .some(path => route.path.startsWith(path))
+    if (isPersonalRoute && !bandStore.personalMode) {
+      bandStore.enterPersonal()
+    } else if (route.path === '/inicio' && !bandStore.currentBandId) {
+      if (bandStore.bands.length) {
+        bandStore.selectBand(bandStore.bands[0].id)
+      } else {
+        router.replace('/practica')
+      }
+    } else if (!bandStore.currentBandId && ['/actividad', '/banda', '/live'].some(path => route.path.startsWith(path))) {
+      router.replace('/practica')
+    }
   } else {
     bandStore.reset()
     practiceStore.reset()

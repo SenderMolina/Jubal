@@ -13,13 +13,13 @@
             </div>
           </RouterLink>
 
-          <!-- Espacio personal -->
+          <!-- Dashboards -->
           <button class="drawer-item" :class="{ active: isPath('/inicio') }" @click="goHome">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
-            <span>Inicio</span>
+            <span>Dashboard de banda</span>
           </button>
           <p class="drawer-section">Personal</p>
-          <button class="drawer-item" :class="{ active: band.personalMode && isPath('/entrenar') }" @click="goPractice">
+          <button class="drawer-item" :class="{ active: band.personalMode && isPath('/practica') }" @click="goPractice">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
             <span>Práctica</span>
           </button>
@@ -113,12 +113,20 @@ function roleLabel(r) {
 
 function goPractice() {
   band.enterPersonal()
-  router.push('/entrenar')
+  router.push('/practica')
   emit('close')
 }
 
 function goHome() {
-  router.push('/inicio')
+  if (band.currentBandId) {
+    router.push('/inicio')
+  } else if (band.bands.length) {
+    band.selectBand(band.bands[0].id)
+    router.push('/inicio')
+  } else {
+    band.enterPersonal()
+    router.push('/practica')
+  }
   emit('close')
 }
 

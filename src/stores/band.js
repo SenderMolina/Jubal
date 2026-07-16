@@ -25,7 +25,7 @@ export const useBandStore = defineStore('band', () => {
 
   async function loadBands() {
     const auth = useAuthStore()
-    if (!auth.user) { bands.value = []; ready.value = true; return }
+    if (!auth.user) { bands.value = []; return }
 
     const { data, error } = await supabase
       .from('band_members')
@@ -36,13 +36,21 @@ export const useBandStore = defineStore('band', () => {
     bands.value = (data || [])
       .filter(r => r.band)
       .map(r => ({ id: r.band.id, name: r.band.name, owner_id: r.band.owner_id, role: r.role }))
-    ready.value = true
   }
 
   // Cargar bandas y, si hay una invitación pendiente, canjearla.
   async function init() {
     await loadBands()
     if (pendingInvite.value) await redeemPending()
+    const selectedBandExists = bands.value.some(b => b.id === currentBandId.value)
+    if (selectedBandExists) {
+      selectBand(currentBandId.value)
+    } else if (!personalMode.value && bands.value.length) {
+      selectBand(bands.value[0].id)
+    } else if (!bands.value.length) {
+      enterPersonal()
+    }
+    ready.value = true
   }
 
   async function createBand(name) {

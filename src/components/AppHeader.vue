@@ -28,7 +28,8 @@ const drawerOpen = ref(false)
 
 const pageTitle = computed(() => {
   const path = route.path
-  if (path.startsWith('/inicio')) return 'Inicio'
+  if (path.startsWith('/inicio')) return 'Banda'
+  if (path.startsWith('/practica')) return 'Práctica'
   if (path.startsWith('/actividades') || path.startsWith('/actividad/')) return 'Actividades'
   if (path.startsWith('/repertorio')) return 'Repertorios'
   if (path.startsWith('/canciones') || path.startsWith('/cancion/')) return 'Canciones'
