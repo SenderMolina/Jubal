@@ -62,7 +62,7 @@ async function signOut() {
   background: var(--accent); color: #fff; font-weight: 700; font-size: 2rem;
 }
 .profile-name {
-  font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.4rem;
+  font-family: var(--font); font-weight: 900; font-size: 1.4rem;
   color: var(--text); margin: 0;
 }
 .profile-email { color: var(--text-muted); font-size: .88rem; margin: 4px 0 0; }

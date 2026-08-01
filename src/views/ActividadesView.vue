@@ -1,7 +1,9 @@
 <template>
   <div>
     <div class="acts-heading">
+      <span class="acts-heading__eyebrow">Agenda musical</span>
       <h2 class="acts-heading__band">{{ band.currentBand?.name || 'Jubal' }}</h2>
+      <p>Organiza cada actividad, sus tiempos y las canciones del equipo.</p>
     </div>
 
     <div class="page-actions cal-anchor">
@@ -325,10 +327,12 @@ const selectedDayActivities = computed(() =>
 
 <style scoped>
 .acts-heading { padding: 10px 2px 2px; margin: 2px 0 14px; }
+.acts-heading__eyebrow { color:var(--jubal-blue-light);font-size:12px;font-weight:900;letter-spacing:.1em;text-transform:uppercase; }
 .acts-heading__band {
-  font-weight: 700; font-size: 1.45rem;
+  font-weight: 900; font-size: 1.75rem;
   line-height: 1.15; color: var(--text); margin: 2px 0 0;
 }
+.acts-heading p { margin-top:5px;color:var(--text-muted);font-size:14px;line-height:1.45; }
 
 .btn-pill__cal { width: 15px; height: 15px; display: block; }
 
@@ -374,4 +378,8 @@ const selectedDayActivities = computed(() =>
   .next-hero { transition: none; }
   .next-hero:hover, .next-hero:active { transform: none; }
 }
+
+.next-hero { padding:20px;margin-bottom:28px;border:1px solid rgba(142,202,230,.28);border-radius:28px;background:radial-gradient(circle at 14% 6%,rgba(255,255,255,.16),transparent 30%),linear-gradient(145deg,#27b5d5,var(--jubal-blue));box-shadow:0 8px 0 #126f85,0 14px 24px rgba(0,0,0,.24),inset 0 2px 0 rgba(255,255,255,.14); }
+.next-hero:hover { transform:translateY(-2px);box-shadow:0 9px 0 #126f85,0 16px 26px rgba(0,0,0,.25); }.next-hero:active { transform:translateY(5px);box-shadow:0 3px 0 #126f85,0 7px 12px rgba(0,0,0,.2); }
+.next-hero__eyebrow { color:rgba(255,255,255,.78);font-size:12px;font-weight:900; }.next-hero__count { padding:6px 12px;background:var(--jubal-orange);font-size:12px;font-weight:900;box-shadow:0 3px 0 #a95600; }.next-hero__title { color:#fff;font-size:24px;font-weight:900; }.next-hero__when { color:#fff;font-size:14px; }.next-hero__summary { color:rgba(255,255,255,.76);font-size:13px;font-weight:700; }
 </style>

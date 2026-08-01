@@ -1,5 +1,14 @@
 <template>
   <div v-if="skill" class="skill-detail">
+    <section class="skill-identity">
+      <span class="skill-identity__icon">{{ skillIcon(skill.type) }}</span>
+      <div>
+        <span>{{ TYPE_LABELS[skill.type] }}</span>
+        <h1>{{ skill.name }}</h1>
+      </div>
+      <strong>{{ progress }}%</strong>
+    </section>
+
     <!-- Practicar -->
     <button class="btn btn-primary skill-practice" @click="practice">
       <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M8 5v14l11-7z"/></svg>
@@ -25,6 +34,18 @@
         :class="{ active: skill.status === st }"
         @click="setStatus(st)"
       >{{ label }}</button>
+    </div>
+
+    <div class="skill-block">
+      <h3 class="skill-block__title">Notas y referencias</h3>
+      <textarea
+        v-model="notes"
+        class="form-input skill-notes"
+        placeholder="Artista, enlace, afinación, compases difíciles, recordatorios…"
+        maxlength="1000"
+        @change="saveNotes"
+      />
+      <small class="skill-notes__hint">Se guarda al salir del campo.</small>
     </div>
 
     <!-- Tempo -->
@@ -114,9 +135,35 @@
 
     <!-- Historial -->
     <div class="skill-block">
-      <h3 class="skill-block__title">Sesiones de práctica</h3>
+      <div class="skill-block__heading">
+        <h3 class="skill-block__title">Sesiones de práctica</h3>
+        <button @click="manualOpen = !manualOpen">{{ manualOpen ? 'Cancelar' : '+ Registrar' }}</button>
+      </div>
+      <div v-if="sessions.length" class="skill-session-summary">
+        <span><strong>{{ sessions.length }}</strong> sesiones</span>
+        <span><strong>{{ totalPracticeLabel }}</strong> acumulado</span>
+        <span><strong>{{ lastPracticeLabel }}</strong> última práctica</span>
+      </div>
+      <form v-if="manualOpen" class="manual-session" @submit.prevent="saveManualSession">
+        <label>Minutos<input v-model.number="manual.duration" class="form-input" type="number" min="1" max="600" required></label>
+        <label>BPM<input v-model.number="manual.bpm" class="form-input" type="number" min="20" max="300" placeholder="Opcional"></label>
+        <label>Calidad
+          <select v-model.number="manual.quality" class="form-input">
+            <option :value="1">Difícil</option><option :value="3">Bien</option><option :value="5">Fluyó</option>
+          </select>
+        </label>
+        <label v-if="skill.parts.length" class="manual-session__part">Parte
+          <select v-model="manual.part_id" class="form-input">
+            <option value="">Objetivo completo</option>
+            <option v-for="item in skill.parts" :key="item.id" :value="item.id">{{ item.name }}</option>
+          </select>
+        </label>
+        <button class="btn btn-primary manual-session__save" :disabled="manualBusy">
+          {{ manualBusy ? 'Guardando…' : 'Guardar práctica' }}
+        </button>
+      </form>
       <p v-if="!sessions.length" class="skill-sessions-empty">
-        Aún no hay sesiones. Se registrarán al practicar con el metrónomo.
+        Aún no hay sesiones. Usa el metrónomo o registra una práctica manual.
       </p>
       <div v-for="ses in sessions" :key="ses.id" class="skill-session">
         <span><strong v-if="sessionPart(ses)">{{ sessionPart(ses) }}</strong>{{ formatDate(ses.practiced_at) }}</span>
@@ -124,18 +171,18 @@
       </div>
     </div>
 
-    <button class="btn skill-delete" @click="removeSkill">Eliminar skill</button>
+    <button class="btn skill-delete" @click="removeSkill">Eliminar objetivo</button>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePracticeStore } from '../stores/practice'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import { useMetronome } from '../composables/useMetronome'
-import { STATUS_LABELS } from '../utils/skills'
+import { STATUS_LABELS, TYPE_LABELS, skillProgress } from '../utils/skills'
 
 const metronome = useMetronome()
 
@@ -148,6 +195,16 @@ const { confirm } = useConfirm()
 const skill    = computed(() => store.skills.find(s => s.id === route.params.id))
 const sessions = ref([])
 const newPart  = ref('')
+const notes = ref('')
+const manualOpen = ref(false)
+const manualBusy = ref(false)
+const manual = ref({ duration: 10, bpm: null, quality: 3, part_id: '' })
+const progress = computed(() => skillProgress(skill.value))
+const totalPracticeSeconds = computed(() => sessions.value.reduce((total, item) => total + Number(item.duration_seconds || 0), 0))
+const totalPracticeLabel = computed(() => formatTotalDuration(totalPracticeSeconds.value))
+const lastPracticeLabel = computed(() => sessions.value.length ? relativeDate(sessions.value[0].practiced_at) : '—')
+
+watch(skill, value => { notes.value = value?.notes || '' }, { immediate: true })
 
 // Curva de tempo: BPM de cada sesión en orden cronológico + línea de meta.
 const bpmTrend = computed(() => {
@@ -192,6 +249,13 @@ function setStatus(st) {
   store.updateSkill(skill.value.id, { status: st })
 }
 
+async function saveNotes() {
+  try {
+    await store.updateSkill(skill.value.id, { notes: notes.value.trim() || null })
+    showToast('Notas guardadas ✓')
+  } catch (reason) { showToast(reason.message || 'No se pudieron guardar las notas') }
+}
+
 function setTargetBpm(v) {
   store.updateSkill(skill.value.id, { target_bpm: v ? +v : null })
 }
@@ -215,10 +279,28 @@ async function syncSongParts() {
 }
 
 async function removeSkill() {
-  if (!await confirm('¿Eliminar skill?', 'Se borrará junto con sus partes y su historial quedará sin skill.')) return
+  if (!await confirm('¿Eliminar objetivo?', 'Se borrará junto con sus partes y su historial quedará sin objetivo.')) return
   await store.deleteSkill(skill.value.id)
-  showToast('Skill eliminada')
+  showToast('Objetivo eliminado')
   router.push('/entrenar')
+}
+
+async function saveManualSession() {
+  if (!manual.value.duration || manualBusy.value) return
+  manualBusy.value = true
+  try {
+    await store.logSession({
+      skill_id: skill.value.id,
+      part_id: manual.value.part_id || null,
+      bpm: manual.value.bpm || null,
+      duration_seconds: Math.round(Number(manual.value.duration) * 60),
+      quality: manual.value.quality,
+    })
+    sessions.value = await store.loadSessions(skill.value.id)
+    manualOpen.value = false
+    showToast('Práctica registrada ✓')
+  } catch (reason) { showToast(reason.message || 'No se pudo registrar la práctica') }
+  finally { manualBusy.value = false }
 }
 
 function formatDate(d) {
@@ -234,6 +316,23 @@ function formatDuration(secs) {
   return m ? `${m} min ${s ? s + ' s' : ''}`.trim() : `${s} s`
 }
 
+function formatTotalDuration(secs) {
+  const hours = Math.floor(secs / 3600)
+  const minutes = Math.round((secs % 3600) / 60)
+  return hours ? `${hours} h ${minutes ? `${minutes} min` : ''}`.trim() : `${minutes} min`
+}
+
+function relativeDate(value) {
+  const days = Math.floor((Date.now() - new Date(value).getTime()) / 86400000)
+  if (days <= 0) return 'hoy'
+  if (days === 1) return 'ayer'
+  return `hace ${days} días`
+}
+
+function skillIcon(type) {
+  return { lick: 'ϟ', solo: '★', technique: '◎', song: '♫' }[type] || '♪'
+}
+
 onMounted(async () => {
   if (!store.ready) await store.loadSkills()
   if (!skill.value) { router.replace('/entrenar'); return }
@@ -243,6 +342,13 @@ onMounted(async () => {
 
 <style scoped>
 .skill-detail { padding: 12px 16px 40px; display: flex; flex-direction: column; gap: 18px; }
+
+.skill-identity { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 11px; }
+.skill-identity__icon { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 14px; background: var(--accent-soft); color: var(--accent2); font-size: 20px; }
+.skill-identity > div { min-width: 0; }
+.skill-identity > div > span { color: var(--text-muted); font-size: 9px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+.skill-identity h1 { margin: 2px 0 0; overflow: hidden; text-overflow: ellipsis; font-size: 20px; }
+.skill-identity > strong { color: var(--accent2); font-size: 16px; font-variant-numeric: tabular-nums; }
 
 .skill-practice { justify-content: center; padding: 13px; gap: 8px; font-size: 15px; }
 .skill-song { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text); text-decoration: none; }.skill-song__icon { width: 35px; height: 35px; display: grid; place-items: center; border-radius: 11px; background: var(--accent-soft); color: var(--accent2); font-size: 18px; }.skill-song > span:nth-child(2) { min-width: 0; flex: 1; display: flex; flex-direction: column; }.skill-song small { margin-top: 2px; color: var(--text-muted); font-size: 11px; }.skill-song > b { color: var(--text-muted); font-size: 20px; }
@@ -255,6 +361,8 @@ onMounted(async () => {
   border-radius: 999px; color: var(--text-mid); transition: all .15s;
 }
 .skill-status__chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.skill-notes { width: 100%; min-height: 84px; resize: vertical; font: inherit; box-sizing: border-box; }
+.skill-notes__hint { display: block; margin-top: 5px; color: var(--text-muted); font-size: 9px; }
 
 .skill-block {
   background: var(--surface); border: 1px solid var(--border);
@@ -309,6 +417,14 @@ onMounted(async () => {
 .skill-part-add__btn:disabled { opacity: .5; cursor: default; }
 
 .skill-sessions-empty { font-size: 13px; color: var(--text-muted); }
+.skill-session-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
+.skill-session-summary span { padding: 8px 5px; border-radius: 10px; background: var(--surface2); color: var(--text-muted); font-size: 8px; text-align: center; }
+.skill-session-summary strong { display: block; margin-bottom: 2px; color: var(--text); font-size: 12px; }
+.manual-session { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 11px; margin-bottom: 12px; border-radius: 12px; background: var(--surface2); }
+.manual-session label { display: flex; flex-direction: column; gap: 4px; color: var(--text-muted); font-size: 9px; font-weight: 700; }
+.manual-session .form-input { min-width: 0; padding: 8px; font-size: 12px; }
+.manual-session__part, .manual-session__save { grid-column: 1 / -1; }
+.manual-session__save { justify-content: center; }
 .skill-session {
   display: flex; justify-content: space-between; gap: 8px;
   padding: 8px 0; font-size: 13px; color: var(--text-mid);
@@ -318,4 +434,8 @@ onMounted(async () => {
 .skill-session:last-child { border-bottom: none; }
 
 .skill-delete { justify-content: center; color: var(--red); }
+
+.skill-identity__icon { width:52px;height:52px;border-radius:16px;font-size:23px;box-shadow:0 5px 0 #0b2028,inset 0 2px 0 rgba(255,255,255,.1); }.skill-identity > div > span { color:var(--jubal-blue-light);font-size:12px; }.skill-identity h1 { font-size:24px; }.skill-identity > strong { color:var(--jubal-yellow);font-size:18px; }
+.skill-status__chip { min-height:46px;font-size:14px;font-weight:800; }.skill-status__chip.active { box-shadow:0 4px 0 #126f85; }.skill-block { padding:18px;border-radius:24px;box-shadow:var(--shadow); }.skill-block__title { font-size:13px;font-weight:900; }.skill-block__heading button { min-height:40px;padding:7px 10px;font-size:12px; }
+.skill-part__name { font-size:15px; }.skill-part__practice,.skill-part__delete { width:40px;height:40px;font-size:13px; }.skill-part__slider { min-height:28px; }.skill-session-summary span { padding:10px 6px;border-radius:13px;font-size:11px; }.skill-session-summary strong { font-size:14px; }.manual-session label { font-size:12px; }.manual-session .form-input { font-size:14px; }.skill-session { min-height:52px;align-items:center;font-size:14px; }.skill-session strong { font-size:12px; }
 </style>

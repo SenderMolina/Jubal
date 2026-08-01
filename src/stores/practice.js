@@ -27,10 +27,18 @@ export const usePracticeStore = defineStore('practice', () => {
     ready.value = true
   }
 
-  async function createSkill({ name, type, target_bpm = null, song_id = null, parts = [] }) {
+  async function createSkill({
+    name,
+    type,
+    target_bpm = null,
+    song_id = null,
+    parts = [],
+    status = 'learning',
+    notes = null,
+  }) {
     const { data, error } = await supabase
       .from('skills')
-      .insert({ name, type, target_bpm, song_id })
+      .insert({ name, type, target_bpm, song_id, status, notes })
       .select('*, song:songs(id,title,author,key,bpm,lyrics,band_id), parts:skill_parts(*)')
       .single()
     if (error) throw error

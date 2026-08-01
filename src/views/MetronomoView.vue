@@ -1,61 +1,124 @@
 <template>
   <div class="metro-view">
-    <p v-if="skill" class="metro-skill">
-      {{ skill.name }}
-      <span v-if="skill.target_bpm" class="metro-skill__goal">meta {{ skill.target_bpm }} bpm</span>
-    </p>
-    <p v-if="part" class="metro-part">Sección: <strong>{{ part.name }}</strong></p>
+    <!-- Escenario: la práctica ocurre aquí -->
+    <section class="stage" :class="{ running: isRunning }">
+      <div class="stage__ambient" aria-hidden="true"></div>
 
-    <!-- BPM -->
-    <div class="metro-bpm">
-      <button class="metro-bpm__btn" @click="setBpm(bpm - 5)">−5</button>
-      <button class="metro-bpm__btn" @click="setBpm(bpm - 1)">−</button>
-      <div class="metro-bpm__center">
-        <input
-          class="metro-bpm__value"
-          type="number"
-          :value="bpm"
-          @change="setBpm(+$event.target.value)"
-        >
-        <span class="metro-bpm__unit">bpm</span>
+      <!-- div, no <header>: main.css tiene un header{} global legacy con fondo claro -->
+      <div class="stage__head">
+        <template v-if="skill">
+          <span class="stage__label">{{ part ? 'Sección en práctica' : 'Objetivo en práctica' }}</span>
+          <h1 class="stage__title">{{ skill.name }}</h1>
+          <p v-if="part || targetLabel" class="stage__meta">
+            {{ [part?.name, targetLabel].filter(Boolean).join(' · ') }}
+          </p>
+        </template>
+        <template v-else>
+          <span class="stage__label">Metrónomo</span>
+          <h1 class="stage__title">Práctica libre</h1>
+          <p class="stage__meta">Abre un objetivo para registrar la sesión</p>
+        </template>
       </div>
-      <button class="metro-bpm__btn" @click="setBpm(bpm + 1)">+</button>
-      <button class="metro-bpm__btn" @click="setBpm(bpm + 5)">+5</button>
+
+      <!-- Tempo -->
+      <div class="stage__bpm">
+        <button class="bpm-btn" aria-label="Bajar 5 BPM" @click="setBpm(bpm - 5)">−5</button>
+        <button class="bpm-btn bpm-btn--fine" aria-label="Bajar 1 BPM" @click="setBpm(bpm - 1)">−</button>
+        <div class="bpm-value">
+          <input type="number" :value="bpm" aria-label="Pulsos por minuto" @change="setBpm(+$event.target.value)">
+          <span>BPM</span>
+        </div>
+        <button class="bpm-btn bpm-btn--fine" aria-label="Subir 1 BPM" @click="setBpm(bpm + 1)">+</button>
+        <button class="bpm-btn" aria-label="Subir 5 BPM" @click="setBpm(bpm + 5)">+5</button>
+      </div>
+      <input
+        class="stage__tempo-range"
+        type="range" min="20" max="300" step="1" :value="bpm"
+        aria-label="Ajustar tempo"
+        @input="setBpm(+$event.target.value)"
+      >
+      <div class="stage__presets" aria-label="Tempos rápidos">
+        <button v-for="tempo in [60, 80, 100, 120, 160]" :key="tempo" @click="setBpm(tempo)">{{ tempo }}</button>
+      </div>
+
+      <!-- Pulso visual del compás -->
+      <div class="stage__beats" aria-hidden="true">
+        <span
+          v-for="i in beatsPerBar"
+          :key="i"
+          :class="{ active: currentBeat === i - 1, accent: i === 1 }"
+        />
+      </div>
+
+      <!-- Controles: el dial late con el beat -->
+      <div class="stage__controls">
+        <button class="stage__tap" @click="tap">TAP</button>
+        <button
+          class="stage__play"
+          :class="{ beat: beatFlash, accent: accentFlash }"
+          :aria-label="isRunning ? 'Pausar' : 'Iniciar'"
+          @click="toggle"
+        >
+          <svg v-if="!isRunning" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <svg v-else viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+        </button>
+        <span class="stage__timer" :class="{ running: isRunning }">{{ timerLabel }}</span>
+      </div>
+    </section>
+
+    <!-- Compás -->
+    <div class="metro-row">
+      <span class="metro-row__label">Compás</span>
+      <div class="metro-bar">
+        <button
+          v-for="n in [2, 3, 4, 6]"
+          :key="n"
+          :class="{ active: beatsPerBar === n }"
+          @click="beatsPerBar = n"
+        >{{ n }}<small>/4</small></button>
+      </div>
     </div>
 
-    <!-- Pulso visual + compás -->
-    <div class="metro-beats">
-      <span
-        v-for="i in beatsPerBar"
-        :key="i"
-        class="metro-beats__dot"
-        :class="{ active: currentBeat === i - 1, accent: i === 1 }"
-      />
-    </div>
-    <div class="metro-bar">
-      <button
-        v-for="n in [2, 3, 4, 6]"
-        :key="n"
-        class="metro-bar__opt"
-        :class="{ active: beatsPerBar === n }"
-        @click="beatsPerBar = n"
-      >{{ n }}</button>
-    </div>
-
-    <!-- Controles -->
-    <div class="metro-controls">
-      <button class="metro-tap" @click="tap">TAP</button>
-      <button class="metro-play" :class="{ running: isRunning }" @click="toggle">
-        <svg v-if="!isRunning" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-        <svg v-else viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
-      </button>
-      <span class="metro-timer" :class="{ running: isRunning }">{{ timerLabel }}</span>
+    <div class="metro-row metro-row--stack">
+      <div class="metro-setting">
+        <span class="metro-row__label">Subdivisión</span>
+        <div class="metro-subdivision">
+          <button
+            v-for="option in SUBDIVISIONS"
+            :key="option.value"
+            :class="{ active: subdivision === option.value }"
+            :aria-label="option.label"
+            @click="setSubdivision(option.value)"
+          ><b>{{ option.icon }}</b><small>{{ option.short }}</small></button>
+        </div>
+      </div>
+      <div class="metro-setting metro-setting--sound">
+        <button class="metro-toggle" :class="{ active: accentEnabled }" @click="accentEnabled = !accentEnabled">
+          <span aria-hidden="true">{{ accentEnabled ? '●' : '○' }}</span> Acento
+        </button>
+        <label class="metro-volume">
+          <span aria-hidden="true">{{ volume ? '◖))' : '◖' }}</span>
+          <input type="range" min="0" max="1" step="0.05" :value="volume" aria-label="Volumen" @input="setVolume($event.target.value)">
+        </label>
+      </div>
     </div>
 
-    <!-- Guardar sesión -->
-    <div v-if="skill" class="metro-quality">
-      <span>¿Cómo se sintió?</span>
+    <div class="metro-row metro-row--trainer">
       <div>
+        <span class="metro-row__label">Entrenador de tempo</span>
+        <small>{{ trainerEnabled ? `Sube ${trainerStep} BPM cada ${trainerBars} compases` : 'Incrementa el tempo automáticamente' }}</small>
+      </div>
+      <button class="switch" :class="{ active: trainerEnabled }" :aria-pressed="trainerEnabled" @click="trainerEnabled = !trainerEnabled"><span /></button>
+      <div v-if="trainerEnabled" class="trainer-options">
+        <label>+ <input v-model.number="trainerStep" type="number" min="1" max="20"> BPM</label>
+        <label>cada <input v-model.number="trainerBars" type="number" min="1" max="32"> compases</label>
+      </div>
+    </div>
+
+    <!-- Cierre de sesión -->
+    <div v-if="skill" class="metro-row">
+      <span class="metro-row__label">¿Cómo se sintió?</span>
+      <div class="metro-quality">
         <button
           v-for="option in QUALITY"
           :key="option.value"
@@ -69,12 +132,12 @@
       class="btn btn-primary metro-save"
       :disabled="!elapsedSeconds"
       @click="saveSession"
-    >Guardar sesión</button>
+    >{{ elapsedSeconds ? `Guardar sesión · ${timerLabel}` : 'Guardar sesión' }}</button>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { useMetronome } from '../composables/useMetronome'
 import { usePracticeStore } from '../stores/practice'
@@ -83,8 +146,9 @@ import { useConfirm } from '../composables/useConfirm'
 
 const router = useRouter()
 const {
-  isRunning, bpm, beatsPerBar, currentBeat, elapsedSeconds, skill, part,
-  close, stop, toggle, setBpm, tap,
+  isRunning, bpm, beatsPerBar, subdivision, volume, accentEnabled,
+  currentBeat, elapsedSeconds, skill, part,
+  close, stop, toggle, setBpm, setSubdivision, setVolume, tap,
 } = useMetronome()
 const store = usePracticeStore()
 const { showToast } = useToast()
@@ -96,6 +160,47 @@ const QUALITY = [
   { value: 5, icon: '★', label: 'Fluyó' },
 ]
 const quality = ref(3)
+const SUBDIVISIONS = [
+  { value: 1, icon: '♩', short: 'Negras', label: 'Una negra por pulso' },
+  { value: 2, icon: '♪', short: 'Corcheas', label: 'Dos corcheas por pulso' },
+  { value: 4, icon: '♬', short: 'Semis', label: 'Cuatro semicorcheas por pulso' },
+]
+const trainerEnabled = ref(false)
+const trainerStep = ref(2)
+const trainerBars = ref(4)
+let completedBars = 0
+let receivedFirstBar = false
+
+const targetLabel = computed(() => {
+  const target = part.value?.target_bpm || skill.value?.target_bpm
+  return target ? `meta ${target} bpm` : ''
+})
+
+// El dial late con el audio real: currentBeat lo actualiza el scheduler del
+// metrónomo, así que el destello queda sincronizado con el click.
+const beatFlash = ref(false)
+const accentFlash = ref(false)
+let flashTimer = null
+watch(currentBeat, beat => {
+  clearTimeout(flashTimer)
+  if (beat < 0) { beatFlash.value = accentFlash.value = false; return }
+  beatFlash.value = true
+  accentFlash.value = beat === 0
+  flashTimer = setTimeout(() => { beatFlash.value = accentFlash.value = false }, 110)
+  if (!trainerEnabled.value || !isRunning.value || beat !== 0) return
+  if (!receivedFirstBar) { receivedFirstBar = true; return }
+  completedBars++
+  if (completedBars >= Math.max(1, Number(trainerBars.value) || 1)) {
+    setBpm(bpm.value + Math.max(1, Number(trainerStep.value) || 1))
+    completedBars = 0
+  }
+})
+
+watch(isRunning, running => {
+  if (!running) { completedBars = 0; receivedFirstBar = false }
+})
+
+watch(trainerEnabled, () => { completedBars = 0; receivedFirstBar = false })
 
 const timerLabel = computed(() => {
   const t = elapsedSeconds.value
@@ -115,13 +220,28 @@ async function saveSession() {
       quality: quality.value,
     })
     const mastered = s.status === 'mastered' && !wasMastered
-    showToast(mastered ? '🎉 ¡Skill dominada!' : 'Sesión guardada ✓')
+    showToast(mastered ? '🎉 ¡Objetivo dominado!' : 'Sesión guardada ✓')
     close()
     router.back()
   } catch (e) {
     showToast(e.message || 'No se pudo guardar la sesión')
   }
 }
+
+function handleKeyboard(event) {
+  const target = event.target
+  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return
+  if (event.code === 'Space') { event.preventDefault(); toggle() }
+  else if (event.key === 'ArrowUp' || event.key === 'ArrowRight') { event.preventDefault(); setBpm(bpm.value + 1) }
+  else if (event.key === 'ArrowDown' || event.key === 'ArrowLeft') { event.preventDefault(); setBpm(bpm.value - 1) }
+  else if (event.key.toLowerCase() === 't') tap()
+}
+
+onMounted(() => window.addEventListener('keydown', handleKeyboard))
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeyboard)
+  clearTimeout(flashTimer)
+})
 
 // No tirar a la basura una práctica cronometrada sin avisar
 onBeforeRouteLeave(async () => {
@@ -135,81 +255,183 @@ onBeforeRouteLeave(async () => {
 
 <style scoped>
 .metro-view {
-  max-width: 420px; margin: 0 auto;
-  padding: 28px 20px 40px;
-  display: flex; flex-direction: column; align-items: center; gap: 22px;
+  max-width: 440px; margin: 0 auto;
+  /* Sin padding lateral: .page ya lo aporta (16/20px) */
+  padding: 12px 0 0;
+  display: flex; flex-direction: column; gap: 14px;
+  /* Llenar hasta el menú: alto de viewport menos header de la app y paddings de .page */
+  min-height: calc(100dvh - 182px);
+}
+@media (max-width: 600px) {
+  .metro-view { min-height: calc(100dvh - 136px); }
 }
 
-.metro-skill { font-weight: 600; font-size: 16px; color: var(--text); display: flex; gap: 10px; align-items: baseline; }
-.metro-skill__goal { font-size: 12px; font-weight: 500; color: var(--text-muted); }
-.metro-part { margin-top: -16px; padding: 5px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent2); font-size: 12px; }
-
-.metro-bpm { display: flex; align-items: center; gap: 8px; }
-.metro-bpm__btn {
-  width: 46px; height: 46px; border-radius: 50%; cursor: pointer;
-  background: var(--surface); border: 1px solid var(--border);
-  color: var(--text); font-size: 15px; font-weight: 600;
+/* ---- Escenario ---- */
+.stage {
+  flex: 1; display: flex; flex-direction: column;
+  position: relative; isolation: isolate; overflow: hidden;
+  padding: 20px 16px 24px; border-radius: 26px; color: #fff;
+  background:
+    radial-gradient(circle at 88% -4%, rgba(255, 193, 94, .2), transparent 44%),
+    linear-gradient(150deg, #0a2b38, #0b5d70 62%, #077d8e);
+  border: 1px solid rgba(255, 255, 255, .1);
+  box-shadow: 0 18px 34px rgba(6, 52, 64, .28);
 }
-.metro-bpm__btn:active { background: var(--accent); color: #fff; }
-.metro-bpm__center { display: flex; flex-direction: column; align-items: center; min-width: 110px; }
-.metro-bpm__value {
-  width: 110px; text-align: center; font-size: 3.2rem; font-weight: 800; line-height: 1.1;
-  background: none; border: none; color: var(--text); outline: none;
+.stage__ambient {
+  position: absolute; z-index: -1; right: -55px; top: -85px;
+  width: 195px; height: 195px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 188, 75, .3), transparent 68%);
+}
+.stage__head { text-align: center; }
+.stage__label {
+  color: #91e7ed; font-size: 8px; font-weight: 900;
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.stage__title {
+  margin-top: 3px; font-size: 17px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.stage__meta { margin-top: 3px; color: rgba(255, 255, 255, .62); font-size: 10px; }
+
+/* margin auto arriba y abajo: el tempo y el dial se reparten el alto sobrante */
+.stage__bpm { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: auto; padding-top: 16px; }
+.bpm-btn {
+  width: 46px; height: 42px; flex-shrink: 0; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, .18); border-radius: 13px;
+  background: rgba(255, 255, 255, .09); color: #fff;
+  font: inherit; font-size: 12px; font-weight: 800;
+}
+.bpm-btn--fine { width: 36px; background: rgba(255, 255, 255, .05); }
+.bpm-btn:active { background: rgba(255, 255, 255, .24); }
+.bpm-value { display: flex; flex-direction: column; align-items: center; min-width: 118px; }
+.bpm-value input {
+  width: 118px; text-align: center; line-height: 1;
+  font-size: 54px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -.03em;
+  background: none; border: none; color: #fff; outline: none;
   -moz-appearance: textfield; appearance: textfield;
 }
-.metro-bpm__value::-webkit-outer-spin-button,
-.metro-bpm__value::-webkit-inner-spin-button { -webkit-appearance: none; }
-.metro-bpm__unit { font-size: 11px; color: var(--text-muted); letter-spacing: .08em; text-transform: uppercase; }
+.bpm-value input::-webkit-outer-spin-button,
+.bpm-value input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.bpm-value span { color: rgba(255, 255, 255, .55); font-size: 8px; font-weight: 900; letter-spacing: .22em; }
+.stage__tempo-range { width: min(300px, 88%); margin: 9px auto 0; accent-color: #ffc15e; }
+.stage__presets { display: flex; justify-content: center; gap: 5px; margin-top: 8px; }
+.stage__presets button { min-width: 39px; padding: 4px 6px; border: 1px solid rgba(255,255,255,.13); border-radius: 999px; background: rgba(255,255,255,.07); color: rgba(255,255,255,.72); font: inherit; font-size: 9px; cursor: pointer; }
 
-.metro-beats { display: flex; gap: 12px; }
-.metro-beats__dot {
-  width: 14px; height: 14px; border-radius: 50%;
-  background: var(--surface2); border: 1px solid var(--border);
-  transition: transform .05s, background .05s;
+.stage__beats { display: flex; justify-content: center; gap: 11px; margin: 17px 0 4px; }
+.stage__beats span {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .3);
+  transition: transform .06s, background .06s, box-shadow .06s;
 }
-.metro-beats__dot.accent { border-color: var(--accent); }
-.metro-beats__dot.active { background: var(--accent); transform: scale(1.35); }
+.stage__beats .accent { border-color: #ffc15e; }
+.stage__beats .active { background: #fff; transform: scale(1.45); }
+.stage__beats .accent.active { background: #ffc15e; box-shadow: 0 0 12px rgba(255, 193, 94, .75); }
 
-.metro-bar { display: flex; gap: 6px; }
-.metro-bar__opt {
-  width: 36px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;
-  background: var(--surface); border: 1px solid var(--border); color: var(--text-mid);
+.stage__controls {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: center; margin-top: auto; padding-top: 14px;
 }
-.metro-bar__opt.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-
-.metro-controls { display: flex; align-items: center; gap: 26px; margin-top: 4px; }
-.metro-tap {
-  width: 60px; height: 60px; border-radius: 50%; cursor: pointer;
-  background: var(--surface); border: 1px solid var(--border);
-  color: var(--text-mid); font-size: 12px; font-weight: 700; letter-spacing: .05em;
+.stage__tap {
+  justify-self: center; width: 56px; height: 56px; border-radius: 50%; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, .22); background: rgba(255, 255, 255, .08);
+  color: rgba(255, 255, 255, .85); font: inherit; font-size: 10px; font-weight: 800; letter-spacing: .08em;
 }
-.metro-tap:active { background: var(--accent); color: #fff; }
-.metro-play {
-  width: 84px; height: 84px; border-radius: 50%; cursor: pointer;
-  background: var(--accent); border: none; color: #fff;
+.stage__tap:active { background: rgba(255, 255, 255, .26); }
+.stage__play {
+  width: 92px; height: 92px; border-radius: 50%; border: none; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: var(--shadow-hover);
+  background: linear-gradient(160deg, #ffb340, #ff9b25); color: #063440;
+  box-shadow: 0 10px 24px rgba(255, 155, 37, .35);
+  transition: transform .09s ease-out, box-shadow .09s ease-out;
 }
-.metro-play svg { width: 38px; height: 38px; }
-.metro-play.running { background: var(--red); }
-.metro-timer {
-  min-width: 60px; font-variant-numeric: tabular-nums;
-  font-size: 16px; font-weight: 600; color: var(--text-muted);
+.stage__play svg { width: 38px; height: 38px; }
+.stage__play.beat { transform: scale(1.06); }
+.stage__play.accent {
+  box-shadow: 0 0 0 9px rgba(255, 193, 94, .22), 0 10px 26px rgba(255, 155, 37, .5);
 }
-.metro-timer.running { color: var(--text); }
+.stage.running .stage__play { background: linear-gradient(160deg, #f06a6a, #ef5c5c); color: #fff; box-shadow: 0 10px 24px rgba(239, 92, 92, .3); }
+.stage__timer {
+  justify-self: center; min-width: 54px; text-align: center;
+  color: rgba(255, 255, 255, .55); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.stage__timer.running { color: #fff; }
 
-.metro-quality { width: 100%; display: flex; flex-direction: column; gap: 8px; }
-.metro-quality > span { font-size: 11px; color: var(--text-muted); text-align: center; text-transform: uppercase; letter-spacing: .05em; }
-.metro-quality > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stage button:focus-visible, .metro-view button:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+.stage button:focus-visible { outline-color: #ffc15e; }
+
+/* ---- Fuera del escenario ---- */
+.metro-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 11px 14px; border: 1px solid var(--border); border-radius: 16px;
+  background: var(--surface); box-shadow: var(--shadow);
+}
+.metro-row__label {
+  color: var(--text-mid); font-size: 10px; font-weight: 800;
+  letter-spacing: .06em; text-transform: uppercase; flex-shrink: 0;
+}
+.metro-bar { display: flex; gap: 6px; }
+.metro-bar button {
+  width: 44px; height: 34px; cursor: pointer; font: inherit; font-size: 13px; font-weight: 700;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text-mid);
+}
+.metro-bar button small { font-size: 9px; font-weight: 500; color: inherit; opacity: .55; }
+.metro-bar button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.metro-bar button.active small { opacity: .75; }
+.metro-row--stack { align-items: stretch; flex-direction: column; gap: 10px; }
+.metro-setting { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.metro-subdivision { display: flex; gap: 5px; }
+.metro-subdivision button { min-width: 66px; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface2); color: var(--text-mid); font: inherit; cursor: pointer; }
+.metro-subdivision b { font-size: 15px; }
+.metro-subdivision small { font-size: 8px; }
+.metro-subdivision button.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent2); }
+.metro-setting--sound { padding-top: 9px; border-top: 1px solid var(--border); }
+.metro-toggle { padding: 6px 9px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface2); color: var(--text-muted); font: inherit; font-size: 9px; font-weight: 700; cursor: pointer; }
+.metro-toggle.active { color: var(--accent2); border-color: var(--accent); background: var(--accent-soft); }
+.metro-volume { display: flex; align-items: center; gap: 7px; color: var(--text-muted); font-size: 10px; }
+.metro-volume input { width: 120px; accent-color: var(--accent); }
+.metro-row--trainer { display: grid; grid-template-columns: 1fr auto; }
+.metro-row--trainer > div:first-child { display: flex; flex-direction: column; gap: 3px; }
+.metro-row--trainer > div:first-child small { color: var(--text-muted); font-size: 9px; }
+.switch { width: 40px; height: 23px; padding: 2px; border: 0; border-radius: 999px; background: var(--border); cursor: pointer; transition: background .15s; }
+.switch span { display: block; width: 19px; height: 19px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2); transition: transform .15s; }
+.switch.active { background: var(--accent); }
+.switch.active span { transform: translateX(17px); }
+.trainer-options { grid-column: 1 / -1; display: flex; gap: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.trainer-options label { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; color: var(--text-muted); font-size: 9px; }
+.trainer-options input { width: 42px; padding: 5px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface2); color: var(--text); text-align: center; }
+
+.metro-quality { display: flex; gap: 6px; }
 .metro-quality button {
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  padding: 9px 4px; cursor: pointer;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 12px; color: var(--text-mid);
+  display: flex; align-items: center; gap: 5px;
+  padding: 8px 10px; cursor: pointer; font: inherit;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text-mid);
 }
 .metro-quality button.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent2); }
-.metro-quality b { font-size: 12px; }
+.metro-quality b { font-size: 11px; }
 .metro-quality small { font-size: 11px; font-weight: 600; }
 
-.metro-save { width: 100%; justify-content: center; padding: 13px; }
+.metro-save { width: 100%; justify-content: center; padding: 13px; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 350px) {
+  .stage { padding-inline: 12px; }
+  .bpm-value { min-width: 104px; }
+  .bpm-value input { width: 104px; font-size: 48px; }
+  .bpm-btn { width: 40px; }
+  .bpm-btn--fine { display: none; }
+  .metro-row { flex-direction: column; align-items: stretch; }
+  .metro-quality button { flex: 1; justify-content: center; }
+  .metro-setting { align-items: stretch; flex-direction: column; }
+  .metro-subdivision button { flex: 1; min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage__play, .stage__beats span { transition: none; }
+  .stage__play.beat { transform: none; }
+}
+
+.stage__label { font-size:11px; }.stage__title { font-size:21px; }.stage__meta { font-size:13px; }.bpm-value span { font-size:11px; }.stage__presets button { min-height:32px;font-size:11px;font-weight:800; }.stage__timer { font-size:17px; }
+.metro-row { padding:13px 15px;border-radius:18px;box-shadow:0 4px 0 #0b2028,0 8px 14px rgba(0,0,0,.15); }.metro-row__label { font-size:12px; }.metro-bar button { min-height:40px;font-size:14px; }.metro-subdivision button { min-height:44px; }.metro-subdivision small,.metro-toggle,.metro-row--trainer > div:first-child small,.trainer-options label { font-size:11px; }.metro-quality small { font-size:12px; }
 </style>

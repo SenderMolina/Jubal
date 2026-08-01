@@ -7,7 +7,7 @@
     <div v-else-if="!bandStore.ready" class="role-screen"></div>
     <template v-else>
       <AppHeader v-if="!isFullscreen" />
-      <main class="page active" :class="{ 'page--no-nav': hideNav }">
+      <main class="page app-shell active" :class="{ 'page--no-nav': hideNav }">
         <RouterView />
       </main>
       <AppNav v-if="!hideNav" />

@@ -71,20 +71,6 @@
       </button>
     </section>
 
-    <section class="band-section band-actions">
-      <div class="band-section__head">
-        <div>
-          <span>Atajos</span>
-          <h3>Acciones rápidas</h3>
-        </div>
-      </div>
-      <div class="band-actions__grid">
-        <button @click="router.push('/repertorio')"><span>♫</span>Setlists</button>
-        <button @click="router.push('/canciones')"><span>♪</span>Canciones</button>
-        <button v-if="roleStore.isLeader" @click="router.push('/actividades?nueva=1')"><span>＋</span>Actividad</button>
-        <button @click="openPractice"><span>⚡</span>Práctica</button>
-      </div>
-    </section>
   </div>
 </template>
 
@@ -131,10 +117,6 @@ function eventMeta(activity) {
   const songs = (activity.tiempos || []).reduce((sum, time) => sum + (time.songs?.length || 0), 0)
   return [activity.time, songs && `${songs} canción${songs === 1 ? '' : 'es'}`].filter(Boolean).join(' · ') || 'Sin hora definida'
 }
-function openPractice() {
-  band.enterPersonal()
-  router.push('/practica')
-}
 </script>
 
 <style scoped>
@@ -145,6 +127,12 @@ function openPractice() {
 .band-section { position: relative; overflow: hidden; padding: 14px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); }.band-section::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 3px; background: linear-gradient(var(--accent),rgba(var(--brand-rgb),.15)); }.band-section__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-bottom: 11px; }.band-section__head span { color: var(--accent2); font-size: 8px; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }.band-section__head h3 { margin-top: 2px; font-size: 14px; }.band-section__head a,.band-empty a { color: var(--accent2); font-size: 10px; font-weight: 800; text-decoration: none; }
 .band-event { width: 100%; display: flex; align-items: center; gap: 13px; padding: 0; border: 0; background: transparent; color: var(--text); text-align: left; cursor: pointer; }.band-event__date { width: 58px; height: 66px; flex: 0 0 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 15px; background: var(--action-soft); color: var(--action2); }.band-event__date strong { font-size: 24px; line-height: 1; }.band-event__date small { margin-top: 4px; font-size: 10px; font-weight: 800; }.band-event__body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }.band-event__body > span { color: var(--action2); font-size: 10px; font-weight: 800; text-transform: uppercase; }.band-event__body strong,.band-upcoming strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.band-event__body small { color: var(--text-muted); font-size: 11px; }.band-event__arrow { color: var(--text-muted); font-size: 25px; }
 .band-empty { min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface2); color: var(--text-mid); font-size: 11px; }.band-section--compact { padding-bottom: 8px; }.band-upcoming { width: 100%; display: grid; grid-template-columns: 58px 1fr auto; align-items: center; gap: 8px; padding: 10px 0; border: 0; border-top: 1px solid var(--border); background: transparent; color: var(--text); text-align: left; cursor: pointer; }.band-upcoming span { color: var(--accent); font-size: 10px; font-weight: 800; }.band-upcoming strong { font-size: 12px; }.band-upcoming small { color: var(--text-muted); font-size: 10px; }
-.band-actions__grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; }.band-actions__grid button { min-height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 5px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface2); color: var(--text-mid); font: inherit; font-size: 9px; font-weight: 700; cursor: pointer; }.band-actions__grid span { color: var(--accent); font-size: 17px; }
-@media (max-width:350px) { .band-hero { padding: 15px; }.band-actions__grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width:350px) { .band-hero { padding: 15px; } }
+
+/* Escala legible + profundidad game-like del sistema Jubal */
+.band-hero { padding:20px;border:1px solid rgba(142,202,230,.25);border-radius:26px;background:radial-gradient(circle at 14% 5%,rgba(255,255,255,.14),transparent 28%),linear-gradient(135deg,#0e3e50,#137c95 62%,#219ebc);box-shadow:0 8px 0 #0a596c,0 14px 25px rgba(0,0,0,.24),inset 0 2px 0 rgba(255,255,255,.12); }
+.band-hero__eyebrow { color:#ffd15c;font-size:12px; }.band-hero h2 { font-size:24px;line-height:1.15; }.band-hero p { margin-top:7px;font-size:14px; }.band-hero__role { padding:7px 10px;border:1px solid rgba(255,255,255,.22);font-size:12px; }
+.band-stats { gap:9px; }.band-stats button { min-height:76px;border-radius:18px;box-shadow:0 5px 0 #0b2028,0 9px 16px rgba(0,0,0,.16); }.band-stats button:active { transform:translateY(3px);box-shadow:0 2px 0 #0b2028; }.band-stats strong { color:var(--jubal-yellow);font-size:22px; }.band-stats span { font-size:13px;font-weight:800; }
+.band-section { padding:18px;border-radius:24px;box-shadow:var(--shadow); }.band-section::before { width:4px; }.band-section__head { margin-bottom:14px; }.band-section__head span { color:var(--jubal-blue-light);font-size:12px; }.band-section__head h3 { font-size:18px; }.band-section__head a,.band-empty a { color:var(--jubal-blue-light);font-size:14px;font-weight:900; }
+.band-event__body > span { color:var(--jubal-yellow);font-size:12px;font-weight:900; }.band-event__body strong,.band-upcoming strong { font-size:16px; }.band-event__body small { font-size:13px; }.band-empty { min-height:64px;padding:12px 14px;border-radius:16px;font-size:14px; }.band-upcoming { min-height:54px;grid-template-columns:64px 1fr auto; }.band-upcoming span { color:var(--jubal-blue-light);font-size:12px; }.band-upcoming small { font-size:12px; }
 </style>

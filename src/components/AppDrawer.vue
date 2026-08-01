@@ -180,23 +180,24 @@ async function signOut() {
 <style scoped>
 .drawer-backdrop {
   position: fixed; inset: 0; z-index: 960;
-  background: rgba(0, 0, 0, .45);
+  background: rgba(1, 20, 29, .78);
 }
 .drawer {
   position: absolute; top: 0; bottom: 0; left: 0;
-  width: min(300px, 84vw);
+  width: min(320px, 88vw);
   background: var(--surface);
   display: flex; flex-direction: column;
   padding: calc(14px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom));
   overflow-y: auto;
-  box-shadow: var(--shadow-hover);
+  border-right: 2px solid rgba(142,202,230,.18);
+  box-shadow: 9px 0 0 #091b22, 18px 0 34px rgba(0,0,0,.3);
 }
 
 .drawer-user {
   display: flex; align-items: center; gap: 12px;
-  padding: 10px; border-radius: var(--radius);
+  min-height:68px;padding: 12px; border:1px solid var(--border);border-radius: 20px;
   text-decoration: none; color: var(--text);
-  background: var(--surface2); margin-bottom: 10px;
+  background: var(--surface2); margin-bottom: 12px;box-shadow:0 4px 0 #0b2028;
 }
 .drawer-user__avatar {
   width: 44px; height: 44px; border-radius: 50%; object-fit: cover;
@@ -217,13 +218,13 @@ async function signOut() {
 
 .drawer-item {
   display: flex; align-items: center; gap: 12px; width: 100%;
-  padding: 11px 10px; border-radius: 10px; cursor: pointer; text-align: left;
-  background: none; border: none; color: var(--text); font-size: 14px; font-weight: 600;
+  min-height:48px;padding: 11px 10px; border-radius: 14px; cursor: pointer; text-align: left;
+  background: none; border: 2px solid transparent; color: var(--text); font-size: 14px; font-weight: 800;
 }
 .drawer-item svg { width: 20px; height: 20px; color: var(--text-mid); flex-shrink: 0; }
 .drawer-item:hover { background: var(--surface2); }
-.drawer-item.active { background: var(--surface2); color: var(--accent); }
-.drawer-item.active svg { color: var(--accent); }
+.drawer-item.active { border-color:rgba(142,202,230,.45);background: var(--accent-soft); color: var(--jubal-blue-light);box-shadow:inset 0 2px 0 rgba(255,255,255,.05); }
+.drawer-item.active svg { color: var(--jubal-blue-light); }
 .drawer-item span:nth-child(2) { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .drawer-item--muted { color: var(--text-mid); font-weight: 500; }
 

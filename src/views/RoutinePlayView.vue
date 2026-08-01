@@ -79,7 +79,7 @@
       <section class="mission-next">
         <span>Siguiente</span>
         <strong>{{ nextItem?.skill_name || 'Resumen de la misión' }}</strong>
-        <small>{{ nextItem ? nextItem.section_name : 'Recompensas y progreso' }}</small>
+        <small>{{ nextItem ? nextItem.section_name : 'Resumen de la práctica' }}</small>
       </section>
     </template>
 
@@ -88,7 +88,6 @@
       <span>Misión finalizada</span>
       <h1>{{ run.routine_name }}</h1>
       <p>{{ summary.completed === summary.total ? '¡Completaste todas las habilidades!' : 'Guardamos todo tu avance de esta sesión.' }}</p>
-      <div class="mission-summary__xp">+{{ summary.xp }} <small>XP</small></div>
       <div class="mission-summary__stats">
         <span><b>{{ summary.completed }}/{{ summary.total }}</b> completadas</span>
         <span><b>{{ formatMinutes(summary.seconds) }}</b> practicados</span>
@@ -279,7 +278,6 @@ async function finishRun() {
     total: run.value.items.length,
     seconds: run.value.items.reduce((sum, item) => sum + (item.actual_seconds || 0), 0),
     averageQuality: qualities.length ? (qualities.reduce((sum, value) => sum + value, 0) / qualities.length).toFixed(1) : '—',
-    xp: saved.xp_earned || 0,
   }
   allowLeave = true
 }

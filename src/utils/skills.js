@@ -1,5 +1,5 @@
 export const TYPE_LABELS = {
-  lick: 'Lick',
+  lick: 'Riff / Lick',
   solo: 'Solo',
   technique: 'Técnica',
   song: 'Canción',

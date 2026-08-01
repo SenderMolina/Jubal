@@ -13,7 +13,11 @@ const TICK_MS = 25        // frecuencia del alimentador
 const isRunning      = ref(false)
 const bpm            = ref(100)
 const beatsPerBar    = ref(4)
+const subdivision    = ref(1)    // pulsos por beat: negra, corcheas o semicorcheas
+const volume         = ref(0.7)
+const accentEnabled  = ref(true)
 const currentBeat    = ref(-1)  // para el pulso visual (-1 = detenido)
+const currentSubdivision = ref(-1)
 const elapsedSeconds = ref(0)   // tiempo practicado acumulado (entre guardados)
 const skill          = ref(null) // skill en práctica, o null (metrónomo libre)
 const part           = ref(null) // parte concreta de la skill, o null
@@ -21,11 +25,12 @@ const part           = ref(null) // parte concreta de la skill, o null
 let ctx = null
 let timer = null
 let nextNoteTime = 0
-let beatCount = 0
+let pulseCount = 0
 let accumulatedMs = 0
 let runStartMs = 0
 let taps = []
 let wakeLock = null
+const scheduledNodes = new Set()
 
 function clampBpm(v) {
   return Math.min(MAX_BPM, Math.max(MIN_BPM, Math.round(v)))
@@ -36,29 +41,49 @@ function setBpm(v) {
   bpm.value = clampBpm(v)
 }
 
-function scheduleClick(time, accent) {
+function setSubdivision(value) {
+  const parsed = Number(value)
+  if ([1, 2, 4].includes(parsed)) subdivision.value = parsed
+}
+
+function setVolume(value) {
+  volume.value = Math.min(1, Math.max(0, Number(value) || 0))
+}
+
+function scheduleClick(time, { accent = false, primary = true } = {}) {
   const osc  = ctx.createOscillator()
   const gain = ctx.createGain()
-  osc.frequency.value = accent ? 1100 : 800
+  const audibleAccent = accent && accentEnabled.value
+  osc.frequency.value = audibleAccent ? 1250 : (primary ? 850 : 560)
+  const peak = Math.max(0.0001, volume.value * (audibleAccent ? 0.72 : (primary ? 0.46 : 0.22)))
   gain.gain.setValueAtTime(0.001, time)
-  gain.gain.exponentialRampToValueAtTime(0.5, time + 0.005)
+  gain.gain.exponentialRampToValueAtTime(peak, time + 0.004)
   gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05)
   osc.connect(gain).connect(ctx.destination)
+  scheduledNodes.add(osc)
+  osc.onended = () => scheduledNodes.delete(osc)
   osc.start(time)
   osc.stop(time + 0.06)
 }
 
 function tick() {
   while (nextNoteTime < ctx.currentTime + LOOKAHEAD_S) {
-    const beat = beatCount % beatsPerBar.value
-    scheduleClick(nextNoteTime, beat === 0)
+    const pulsesPerBeat = subdivision.value
+    const sub = pulseCount % pulsesPerBeat
+    const beat = Math.floor(pulseCount / pulsesPerBeat) % beatsPerBar.value
+    const primary = sub === 0
+    scheduleClick(nextNoteTime, { accent: primary && beat === 0, primary })
     // Sincronizar el pulso visual con el audio agendado
     const delay = Math.max(0, (nextNoteTime - ctx.currentTime) * 1000)
-    setTimeout(() => { if (isRunning.value) currentBeat.value = beat }, delay)
-    nextNoteTime += 60 / bpm.value
-    beatCount++
+    setTimeout(() => {
+      if (!isRunning.value) return
+      currentBeat.value = beat
+      currentSubdivision.value = sub
+    }, delay)
+    nextNoteTime += 60 / bpm.value / pulsesPerBeat
+    pulseCount++
   }
-  elapsedSeconds.value = Math.floor((accumulatedMs + Date.now() - runStartMs) / 1000)
+  elapsedSeconds.value = Math.floor((accumulatedMs + performance.now() - runStartMs) / 1000)
 }
 
 async function start() {
@@ -66,8 +91,8 @@ async function start() {
   ctx ??= new (window.AudioContext || window.webkitAudioContext)()
   await ctx.resume()
   nextNoteTime = ctx.currentTime + 0.05
-  beatCount = 0
-  runStartMs = Date.now()
+  pulseCount = 0
+  runStartMs = performance.now()
   isRunning.value = true
   timer = setInterval(tick, TICK_MS)
   // Pantalla encendida mientras suena: al apagarse, el navegador suspende el
@@ -80,10 +105,13 @@ async function start() {
 function stop() {
   if (!isRunning.value) return
   clearInterval(timer)
-  accumulatedMs += Date.now() - runStartMs
+  accumulatedMs += performance.now() - runStartMs
   elapsedSeconds.value = Math.floor(accumulatedMs / 1000)
   isRunning.value = false
   currentBeat.value = -1
+  currentSubdivision.value = -1
+  scheduledNodes.forEach(node => { try { node.stop() } catch { /* ya finalizó */ } })
+  scheduledNodes.clear()
   wakeLock?.release().catch(() => {})
   wakeLock = null
 }
@@ -133,7 +161,8 @@ function close() {
 
 export function useMetronome() {
   return {
-    isRunning, bpm, beatsPerBar, currentBeat, elapsedSeconds, skill, part,
-    open, close, start, stop, toggle, setBpm, tap, resetElapsed,
+    isRunning, bpm, beatsPerBar, subdivision, volume, accentEnabled,
+    currentBeat, currentSubdivision, elapsedSeconds, skill, part,
+    open, close, start, stop, toggle, setBpm, setSubdivision, setVolume, tap, resetElapsed,
   }
 }

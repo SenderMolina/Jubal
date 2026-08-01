@@ -4,6 +4,7 @@
       <button class="app-header__menu" aria-label="Menú" @click="drawerOpen = true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
+      <span class="app-header__mark" aria-hidden="true">♪</span>
       <h1 class="app-header__title">{{ pageTitle }}</h1>
     </div>
 
@@ -36,7 +37,7 @@ const pageTitle = computed(() => {
   if (path.startsWith('/tipos')) return 'Tipos'
   if (path.startsWith('/banda')) return 'Banda'
   if (path.startsWith('/perfil')) return 'Perfil'
-  if (path.startsWith('/entrenar') || path.startsWith('/skill/')) return 'Entrenar'
+  if (path.startsWith('/entrenar') || path.startsWith('/skill/')) return 'Tracker de práctica'
   if (path.startsWith('/estadisticas')) return 'Estadística'
   if (path.startsWith('/rutina')) return 'Rutina'
   if (path.startsWith('/metronomo')) return 'Metrónomo'
@@ -52,24 +53,30 @@ const initial = computed(() => {
 </script>
 
 <style scoped>
-.app-header__left { display: flex; align-items: center; gap: 10px; }
+.app-header__left { min-width: 0; display: flex; align-items: center; gap: 9px; }
 .app-header__menu {
-  width: 36px; height: 36px; background: var(--surface2); border: 1px solid var(--border); cursor: pointer; padding: 7px;
-  border-radius: 11px;
+  width: 44px; height: 44px; flex: 0 0 44px; background: var(--surface2); border: 1px solid var(--border); cursor: pointer; padding: 10px;
+  border-radius: 14px; box-shadow: 0 3px 0 #091b22;
   color: var(--text); display: flex; align-items: center;
 }
 .app-header__menu svg { width: 20px; height: 20px; }
+.app-header__menu:active { transform: translateY(2px); box-shadow: 0 1px 0 #091b22; }
+.app-header__mark { width: 30px; height: 30px; flex: 0 0 30px; display: grid; place-items: center; border-radius: 10px; background: linear-gradient(145deg, var(--jubal-yellow), var(--jubal-orange)); color: var(--jubal-navy-dark); font-size: 18px; font-weight: 900; box-shadow: 0 3px 0 #ad5b00, inset 0 2px 0 rgba(255,255,255,.28); transform: rotate(-4deg); }
 
 .app-header__user {
   background: none; border: none; cursor: pointer; padding: 0;
   border-radius: 50%; -webkit-tap-highlight-color: transparent;
 }
 .app-header__avatar {
-  width: 34px; height: 34px; border-radius: 50%; object-fit: cover; display: block;
-  border: 1px solid var(--border);
+  width: 44px; height: 44px; border-radius: 50%; object-fit: cover; display: block;
+  border: 3px solid rgba(142,202,230,.5); box-shadow: 0 3px 0 #091b22;
 }
 .app-header__avatar--ph {
   display: flex; align-items: center; justify-content: center;
-  background: var(--accent); color: #fff; font-weight: 700; font-size: .95rem;
+  background: linear-gradient(145deg, var(--accent), var(--accent2)); color: #fff; font-weight: 900; font-size: 1rem;
+}
+
+@media (max-width: 359px) {
+  .app-header__mark { display: none; }
 }
 </style>

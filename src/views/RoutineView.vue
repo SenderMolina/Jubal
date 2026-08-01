@@ -9,27 +9,25 @@
       <button class="routine-new" aria-label="Nueva rutina" @click="startCreateRoutine">＋</button>
     </header>
 
-    <section class="player-hero" aria-label="Tu personaje y progreso">
+    <section class="player-hero" aria-label="Resumen de tu práctica">
       <div class="player-hero__glow" aria-hidden="true"></div>
       <div class="player-avatar">
         <img v-if="playerAvatar" :src="playerAvatar" alt="" @error="$event.target.style.display = 'none'">
         <span>{{ playerInitial }}</span>
-        <b>{{ playerLevel.level }}</b>
       </div>
       <div class="player-identity">
-        <span class="player-kicker">Tu personaje · {{ rankTitle }}</span>
+        <span class="player-kicker">Tu práctica personal</span>
         <h3>{{ playerName }}</h3>
-        <div class="player-xp"><span :style="{ width: `${playerLevel.percent}%` }"></span></div>
-        <small>{{ playerLevel.earned }} / {{ playerLevel.needed }} XP para el siguiente nivel</small>
+        <small>Organiza tus sesiones y mantén visible tu avance.</small>
       </div>
       <div class="player-power">
         <strong>{{ averageMastery }}%</strong>
-        <span>poder</span>
+        <span>dominio</span>
       </div>
       <div class="player-hero__stats">
         <span><b>{{ store.skills.length }}</b> habilidades</span>
         <span><b>{{ masteredSkills }}</b> dominadas</span>
-        <span><b>{{ totalXp }}</b> XP total</span>
+        <span><b>{{ routines.length }}</b> rutinas</span>
       </div>
     </section>
 
@@ -218,7 +216,6 @@ import { usePracticeStore } from '../stores/practice'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import { TYPE_LABELS, skillProgress } from '../utils/skills'
-import { levelFromXp, xpForProgress } from '../utils/gamification'
 import UiSelect from '../components/UiSelect.vue'
 
 const DAYS = [
@@ -244,7 +241,6 @@ const creatingSection = ref(false)
 const newRoutineName = ref('')
 const newSectionName = ref('')
 const skillPickerSection = ref(null)
-const sessions = ref([])
 const routineNameInput = ref(null)
 const busy = ref(false)
 
@@ -256,15 +252,9 @@ const playerName = computed(() => auth.user?.user_metadata?.full_name || auth.us
 const playerInitial = computed(() => playerName.value.trim().charAt(0).toUpperCase() || 'G')
 const playerAvatar = computed(() => auth.user?.user_metadata?.avatar_url || auth.user?.user_metadata?.picture || '')
 const masteredSkills = computed(() => store.skills.filter(item => skillProgress(item) >= 100).length)
-const totalXp = computed(() => xpForProgress(sessions.value, masteredSkills.value, store.routineRuns || []))
-const playerLevel = computed(() => levelFromXp(totalXp.value))
 const averageMastery = computed(() => store.skills.length
   ? Math.round(store.skills.reduce((sum, item) => sum + skillProgress(item), 0) / store.skills.length)
   : 0)
-const rankTitle = computed(() => {
-  const ranks = ['Explorador de acordes', 'Aprendiz del riff', 'Cazador de ritmo', 'Héroe del groove', 'Virtuoso del escenario']
-  return ranks[Math.min(ranks.length - 1, Math.floor((playerLevel.value.level - 1) / 2))]
-})
 
 function skill(id) { return store.skills.find(item => item.id === id) }
 function part(item) { return skill(item.skill_id)?.parts.find(value => value.id === item.part_id) }
@@ -355,8 +345,6 @@ onMounted(async () => {
   if (!store.ready) await store.loadSkills()
   if (store.loadRoutines) await store.loadRoutines()
   else await store.loadRoutine?.()
-  sessions.value = await store.loadAllSessions?.() || []
-  await store.loadRoutineRuns?.()
 })
 </script>
 
@@ -381,4 +369,15 @@ onMounted(async () => {
 @media (max-width:480px) { .skill-picker__grid { grid-template-columns: 1fr; } }
 @media (max-width:350px) { .routine-builder { gap: 10px; }.routine-intro p { display:none; }.player-hero { grid-template-columns:auto 1fr; }.player-power { display:none; }.player-avatar { width:56px;height:56px; }.routine-days { gap: 3px; }.routine-days button small { display:none; }.routine-exercise__settings { margin-left: 0; }.routine-create,.routine-section-create { grid-template-columns: 1fr 1fr; }.routine-create input,.routine-section-create input { grid-column: 1/-1; } }
 @media (prefers-reduced-motion:reduce) { .player-xp span,.skill-sheet-enter-active,.skill-sheet-leave-active,.skill-sheet-enter-active .skill-picker__sheet,.skill-sheet-leave-active .skill-picker__sheet { transition:none; } }
+
+/* Escala accesible: conserva la densidad del constructor sin texto microscópico. */
+.routine-eyebrow,.routine-block-title span,.routine-section__head > div > span,.mission-heading span { color:var(--jubal-blue-light);font-size:11px; }.routine-intro h2 { font-size:24px; }.routine-intro p { font-size:14px;line-height:1.4; }.routine-new { width:48px;height:48px;flex-basis:48px;border-radius:16px;box-shadow:0 5px 0 #126f85; }
+.player-hero { padding:18px 16px 0;border-radius:26px;box-shadow:0 8px 0 #064b59,0 14px 24px rgba(0,0,0,.22); }.player-kicker { font-size:11px; }.player-identity h3 { font-size:18px; }.player-identity small { font-size:12px; }.player-power { width:56px;height:56px; }.player-power strong { font-size:16px; }.player-power span { font-size:9px; }.player-hero__stats { margin-inline:-16px; }.player-hero__stats span { padding:11px 4px;font-size:11px; }.player-hero__stats b { font-size:14px; }
+.mission-heading small { font-size:11px; }.routine-tabs button { min-width:175px;min-height:66px;padding:11px 12px;border-radius:17px;box-shadow:0 4px 0 #0b2028; }.routine-tabs span { font-size:13px; }.routine-tabs small { font-size:11px; }
+.routine-overview,.routine-days-card,.routine-section { border-radius:22px; }.routine-overview__top { padding:16px; }.routine-overview__icon { width:46px;height:46px;flex-basis:46px;border-radius:15px;box-shadow:0 4px 0 #126f85; }.routine-overview label { font-size:11px; }.routine-overview input,.routine-section__head input { font-size:15px; }.routine-delete,.routine-section__head > button { width:40px;height:40px; }.routine-stats span { padding:11px 4px;font-size:11px; }.routine-stats b { font-size:14px; }.routine-play { min-height:60px;border-radius:17px;box-shadow:0 6px 0 #064b59; }.routine-play>span { width:40px;height:40px;font-size:14px; }.routine-play b { font-size:14px; }.routine-play small { font-size:11px; }
+.routine-days-card { padding:16px; }.routine-block-title h3 { font-size:17px; }.routine-block-title small { font-size:11px; }.routine-days { grid-template-columns:repeat(4,1fr);gap:8px; }.routine-days button { min-height:52px;aspect-ratio:auto;border-radius:14px; }.routine-days button span { font-size:13px; }.routine-days button small { font-size:10px; }
+.routine-section__head { padding:14px; }.routine-section__number { width:40px;height:40px;flex-basis:40px;border-radius:13px;font-size:13px; }.routine-exercises { padding-inline:14px; }.routine-exercise { padding:14px 0; }.routine-exercise__order button { width:28px;height:24px;font-size:12px; }.routine-exercise__icon { width:40px;height:40px;flex-basis:40px;border-radius:13px;font-size:17px; }.routine-exercise__identity strong { font-size:14px; }.routine-exercise__identity small { font-size:11px; }.routine-exercise__remove { width:40px;height:40px;border-radius:12px; }
+.routine-exercise__settings>label,.routine-part-select { font-size:10px; }.routine-number { height:42px;border-radius:12px; }.routine-number input { font-size:13px; }.routine-number small { font-size:9px; }.routine-break-select :deep(.ui-select__trigger),.routine-part-select :deep(.ui-select__trigger) { min-height:42px;font-size:12px; }.routine-break b { font-size:11px; }.routine-break small { font-size:10px; }.routine-section__empty strong { font-size:13px; }.routine-section__empty small { font-size:11px; }.routine-add-exercise { min-height:62px; }.routine-add-exercise b { font-size:13px; }.routine-add-exercise small { font-size:11px; }.routine-create-skill,.routine-add-section,.routine-loading { font-size:13px; }
+.skill-picker header span { color:var(--jubal-blue-light);font-size:11px; }.skill-picker header h2 { font-size:21px; }.skill-picker header p { font-size:13px; }.skill-picker header button { width:44px;height:44px;flex-basis:44px; }.skill-picker__grid .skill-card { min-height:68px;padding:12px;border-radius:18px; }.skill-picker .skill-card__icon { width:44px;height:44px;flex-basis:44px; }.skill-picker .skill-card__body>small,.skill-picker .skill-card__body em { font-size:10px; }.skill-picker .skill-card__body strong { font-size:14px; }.skill-picker__create { min-height:48px;font-size:13px; }
+@media (max-width:350px) { .routine-days button small { display:block; } }
 </style>

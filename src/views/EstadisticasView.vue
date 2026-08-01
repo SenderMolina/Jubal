@@ -1,23 +1,19 @@
 <template>
   <div class="progress-page">
     <header class="progress-hero">
-      <span class="progress-hero__eyebrow">Perfil de jugador</span>
+      <span class="progress-hero__eyebrow">Progreso personal</span>
       <div class="progress-hero__main">
-        <div class="progress-hero__level"><small>NIVEL</small>{{ playerLevel.level }}</div>
+        <div class="progress-hero__icon" aria-hidden="true">♫</div>
         <div>
-          <h2>{{ rankTitle }}</h2>
-          <p>{{ playerLevel.remaining }} XP para el siguiente nivel</p>
+          <h2>Tu práctica en números</h2>
+          <p>Tiempo, constancia y avance de tu repertorio.</p>
         </div>
       </div>
-      <div class="progress-hero__track" role="progressbar" :aria-valuenow="playerLevel.percent" aria-valuemin="0" aria-valuemax="100">
-        <span :style="{ width: `${playerLevel.percent}%` }"></span>
-      </div>
-      <div class="progress-hero__xp"><span>{{ playerLevel.earned }} XP</span><span>{{ playerLevel.needed }} XP</span></div>
     </header>
 
     <section class="stat-powers" aria-label="Resumen de progreso">
       <article><span class="stat-powers__icon">🔥</span><strong>{{ streak }}</strong><small>racha actual</small></article>
-      <article><span class="stat-powers__icon">⚡</span><strong>{{ totalXp }}</strong><small>XP total</small></article>
+      <article><span class="stat-powers__icon">⏱</span><strong>{{ formatMinutes(totalSeconds) }}</strong><small>tiempo total</small></article>
       <article><span class="stat-powers__icon">🏆</span><strong>{{ mastered }}</strong><small>dominadas</small></article>
     </section>
 
@@ -132,7 +128,7 @@
       <p v-else class="progress-empty">Crea tu primera skill para comenzar la aventura.</p>
     </section>
 
-    <p v-if="!sessions.length" class="progress-hint">Tu primera sesión con el metrónomo desbloqueará XP, rachas y estadísticas semanales.</p>
+    <p v-if="!sessions.length" class="progress-hint">Tu primera sesión con el metrónomo activará las rachas y estadísticas semanales.</p>
   </div>
 </template>
 
@@ -140,14 +136,12 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { usePracticeStore } from '../stores/practice'
 import { useToast } from '../composables/useToast'
-import { ACTIVE_DAY_SECONDS, dailySecondsMap, dateKey, lastSevenDays, levelFromXp, maxStreak, practiceStreak, xpForProgress } from '../utils/gamification'
+import { ACTIVE_DAY_SECONDS, dailySecondsMap, dateKey, lastSevenDays, maxStreak, practiceStreak } from '../utils/gamification'
 import { skillProgress } from '../utils/skills'
 
 const store = usePracticeStore()
 const { showToast } = useToast()
 const sessions = ref([])
-const runs = ref([])
-const xpEvents = ref(null)
 
 const totalSeconds = computed(() => sessions.value.reduce((a, s) => a + (Number(s.duration_seconds) || 0), 0))
 const weekDays = computed(() => lastSevenDays(sessions.value))
@@ -156,8 +150,6 @@ const activeDays = computed(() => weekDays.value.filter(day => day.seconds >= AC
 const mastered = computed(() => store.skills.filter(s => s.status === 'mastered').length)
 const practicing = computed(() => store.skills.filter(s => s.status === 'practicing').length)
 const learning = computed(() => store.skills.filter(s => s.status === 'learning').length)
-const totalXp = computed(() => xpForProgress(sessions.value, mastered.value, runs.value, xpEvents.value))
-const playerLevel = computed(() => levelFromXp(totalXp.value))
 const streak = computed(() => practiceStreak(sessions.value))
 const skillCompletion = computed(() => store.skills.length
   ? Math.round(store.skills.reduce((total, skill) => total + skillProgress(skill), 0) / store.skills.length)
@@ -222,10 +214,6 @@ const reviewSkills = computed(() => store.skills
   .filter(item => !item.last || (Date.now() - new Date(item.last).getTime()) / 86400000 > REVIEW_AFTER_DAYS)
   .slice(0, 3))
 
-const rankTitle = computed(() => {
-  const ranks = ['Explorador de acordes', 'Riff aprendiz', 'Cazador de ritmo', 'Héroe del groove', 'Virtuoso del escenario']
-  return ranks[Math.min(ranks.length - 1, Math.floor((playerLevel.value.level - 1) / 2))]
-})
 const achievements = computed(() => [
   { icon: '🎸', name: 'Primer riff', description: 'Completa tu primera sesión', unlocked: sessions.value.length >= 1 },
   { icon: '🔥', name: 'En llamas', description: 'Alcanza una racha de 3 días', unlocked: streak.value >= 3 },
@@ -263,9 +251,7 @@ function lastPracticedLabel(value) {
 
 onMounted(async () => {
   if (!store.ready) await store.loadSkills()
-  ;[sessions.value, runs.value, xpEvents.value] = await Promise.all([
-    store.loadAllSessions(), store.loadRoutineRuns(), store.loadXpEvents(),
-  ])
+  sessions.value = await store.loadAllSessions()
 })
 </script>
 
@@ -274,8 +260,7 @@ onMounted(async () => {
 .progress-hero { position: relative; overflow: hidden; padding: 21px 19px 18px; border-radius: 24px; color: #fff; background: radial-gradient(circle at 90% 0, rgba(255,191,77,.28), transparent 35%), linear-gradient(145deg, #102936, #12657b); box-shadow: 0 14px 30px rgba(17,67,82,.2); }
 .progress-hero::after { content: '♫'; position: absolute; right: 19px; top: 10px; color: rgba(255,255,255,.07); font-size: 88px; transform: rotate(10deg); }
 .progress-hero__eyebrow, .progress-card__head span { font-size: 9px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; color: #ffc163; }
-.progress-hero__main { position: relative; z-index: 1; display: flex; align-items: center; gap: 13px; margin-top: 10px; }.progress-hero__level { width: 58px; height: 58px; flex: 0 0 58px; border: 2px solid #ffb33f; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; font-size: 25px; font-weight: 900; box-shadow: inset 0 0 18px rgba(255,179,63,.12), 0 0 15px rgba(255,179,63,.12); }.progress-hero__level small { font-size: 7px; letter-spacing: .08em; color: #ffc163; }.progress-hero h2 { font-size: 18px; }.progress-hero p { margin-top: 3px; color: rgba(255,255,255,.64); font-size: 10px; }
-.progress-hero__track { position: relative; z-index: 1; height: 8px; margin-top: 17px; border-radius: 99px; background: rgba(0,0,0,.3); overflow: hidden; }.progress-hero__track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg,#fb8500,#ffd166); box-shadow: 0 0 8px rgba(255,190,70,.5); transition: width .8s ease; }.progress-hero__xp { position: relative; z-index: 1; display: flex; justify-content: space-between; margin-top: 6px; color: rgba(255,255,255,.55); font-size: 8px; font-weight: 700; }
+.progress-hero__main { position: relative; z-index: 1; display: flex; align-items: center; gap: 13px; margin-top: 10px; }.progress-hero__icon { width: 58px; height: 58px; flex: 0 0 58px; border: 2px solid #ffb33f; border-radius: 18px; display: grid; place-items: center; color: #ffc163; font-size: 25px; box-shadow: inset 0 0 18px rgba(255,179,63,.12), 0 0 15px rgba(255,179,63,.12); }.progress-hero h2 { font-size: 18px; }.progress-hero p { margin-top: 3px; color: rgba(255,255,255,.64); font-size: 10px; }
 .stat-powers { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }.stat-powers article { min-width: 0; padding: 13px 6px; border: 1px solid var(--border); border-radius: 17px; background: var(--surface); text-align: center; box-shadow: var(--shadow); }.stat-powers__icon { display: block; font-size: 17px; }.stat-powers strong { display: block; margin-top: 3px; font-size: 17px; font-variant-numeric: tabular-nums; }.stat-powers small { display: block; margin-top: 1px; color: var(--text-muted); font-size: 8px; }
 .progress-card { padding: 16px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow); }.progress-card__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-bottom: 15px; }.progress-card__head span { color: var(--accent); }.progress-card__head h3 { margin-top: 3px; font-size: 14px; }.progress-card__head > strong { color: var(--accent2); font-size: 13px; }.progress-card__head a { color: var(--accent); font-size: 10px; font-weight: 800; text-decoration: none; }
 .week-chart { height: 126px; display: grid; grid-template-columns: repeat(7,1fr); gap: 7px; padding-top: 8px; border-bottom: 1px solid var(--border); }.week-chart__day { min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; }.week-chart__column { width: 100%; height: 91px; display: flex; align-items: flex-end; justify-content: center; }.week-chart__column > span { position: relative; display: block; width: min(22px, 72%); min-height: 3px; border-radius: 7px 7px 2px 2px; background: linear-gradient(180deg, #48bfd4, var(--accent)); transition: height .65s cubic-bezier(.2,.8,.2,1); }.week-chart__column i { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); color: var(--text-muted); font-size: 7px; font-style: normal; }.week-chart__day small { padding-bottom: 5px; color: var(--text-muted); font-size: 8px; font-weight: 700; text-transform: uppercase; }.week-chart__day.today small { color: var(--accent); }.week-chart__day.today .week-chart__column > span { background: linear-gradient(180deg,#ffc15e,var(--action)); }
@@ -297,4 +282,8 @@ onMounted(async () => {
 .practice-ranking,.attention-list { display: flex; flex-direction: column; gap: 7px; }.practice-ranking a,.attention-list a { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface2); color: var(--text); text-decoration: none; }.practice-ranking__body,.attention-list a > span { min-width: 0; flex: 1; display: flex; flex-direction: column; }.practice-ranking strong,.attention-list strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }.practice-ranking small,.attention-list small { margin-top: 2px; color: var(--text-muted); font-size: 8px; }.practice-ranking__tempo { display: flex; flex-direction: column; align-items: flex-end; color: var(--accent2); }.practice-ranking__tempo b { font-size: 10px; }.practice-ranking__tempo i { color: var(--green); font-style: normal; font-weight: 800; }.practice-ranking__tempo i.down { color: var(--red); }.attention-list a > b { min-width: 42px; color: var(--action2); font-size: 13px; text-align: right; }
 @media (max-width:350px) { .progress-page { padding-inline: 12px; }.progress-card { padding: 14px; }.week-chart { gap: 3px; }.weekly-goal { grid-template-columns: 1fr auto; }.weekly-goal > div { display:none; }.skills-summary { gap: 14px; } }
 @media (prefers-reduced-motion: reduce) { .progress-hero__track span,.week-chart__column > span { transition: none; } }
+
+.progress-hero { border:1px solid rgba(142,202,230,.25);border-radius:28px;background:radial-gradient(circle at 90% 0,rgba(255,191,77,.3),transparent 35%),linear-gradient(145deg,#0b5062,#219ebc);box-shadow:0 8px 0 #0a596c,0 14px 25px rgba(0,0,0,.24); }.progress-hero__eyebrow,.progress-card__head span { font-size:11px; }.progress-hero h2 { font-size:22px; }.progress-hero p { font-size:13px; }.stat-powers article { min-height:82px;border-radius:19px;box-shadow:0 5px 0 #0b2028; }.stat-powers strong { color:var(--jubal-yellow);font-size:20px; }.stat-powers small { font-size:11px; }
+.progress-card { padding:18px;border-radius:24px;box-shadow:var(--shadow); }.progress-card__head h3 { font-size:17px; }.progress-card__head>strong,.progress-card__head a { font-size:13px; }.week-chart__column i,.week-chart__day small { font-size:10px; }.weekly-goal { font-size:12px; }.weekly-goal strong { font-size:11px; }
+.achievement-list article { min-height:62px;padding:12px;border-radius:17px; }.achievement-list article>span { width:44px;height:44px;flex-basis:44px;border-radius:14px; }.achievement-list article strong { font-size:14px; }.achievement-list article small { font-size:12px; }.skills-ring small,.skills-summary__legend span,.heatmap-legend small { font-size:11px; }.practice-ranking a,.attention-list a { min-height:58px;padding:12px;border-radius:16px; }.practice-ranking strong,.attention-list strong { font-size:14px; }.practice-ranking small,.attention-list small { font-size:11px; }.practice-ranking__tempo b { font-size:13px; }.progress-empty,.progress-hint { font-size:13px; }
 </style>

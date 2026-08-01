@@ -3,6 +3,13 @@
 
     <!-- ── Lista de canciones ── -->
     <template v-if="!showForm">
+      <div class="songs-header">
+        <div>
+          <h2 class="songs-header__title">Cancionero</h2>
+          <p class="songs-header__subtitle">Tonos, BPM, letras y acordes listos para tu banda.</p>
+        </div>
+        <span class="songs-header__count" :aria-label="`${store.songs.length} canciones`">{{ store.songs.length }}</span>
+      </div>
       <div v-if="roleStore.isLeader" class="page-actions">
         <button class="btn-pill btn-pill--primary" @click="openForm">
           <span class="btn-pill__icon">+</span> Agregar canción
