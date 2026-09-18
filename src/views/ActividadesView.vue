@@ -3,7 +3,6 @@
     <div class="acts-heading">
       <span class="acts-heading__eyebrow">Agenda musical</span>
       <h2 class="acts-heading__band">{{ band.currentBand?.name || 'Jubal' }}</h2>
-      <p>Organiza cada actividad, sus tiempos y las canciones del equipo.</p>
     </div>
 
     <div class="page-actions cal-anchor">

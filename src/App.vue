@@ -6,11 +6,12 @@
     <LoginView v-else-if="!authStore.isAuthenticated" />
     <div v-else-if="!bandStore.ready" class="role-screen"></div>
     <template v-else>
-      <AppHeader v-if="!isFullscreen" />
+      <AppHeader v-if="!isFullscreen" :menu-open="menuOpen" @open-menu="menuOpen = true" />
       <main class="page app-shell active" :class="{ 'page--no-nav': hideNav }">
         <RouterView />
       </main>
-      <AppNav v-if="!hideNav" />
+      <AppNav v-if="!hideNav" :menu-open="menuOpen" @open-menu="menuOpen = true" />
+      <AppDrawer :open="menuOpen" @close="menuOpen = false" />
       <LiveBanner />
       <Toast />
       <ConfirmModal />
@@ -20,7 +21,7 @@
 </template>
 
 <script setup>
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { useBandStore } from './stores/band'
@@ -30,6 +31,7 @@ import { useToast } from './composables/useToast'
 import LoginView    from './views/LoginView.vue'
 import AppHeader    from './components/AppHeader.vue'
 import AppNav       from './components/AppNav.vue'
+import AppDrawer    from './components/AppDrawer.vue'
 import LiveBanner   from './components/LiveBanner.vue'
 import Toast        from './components/Toast.vue'
 import ConfirmModal from './components/ConfirmModal.vue'
@@ -41,6 +43,8 @@ const bandStore = useBandStore()
 const practiceStore = usePracticeStore()
 const route = useRoute()
 const router = useRouter()
+const menuOpen = ref(false)
+watch(() => route.fullPath, () => { menuOpen.value = false })
 const { showToast } = useToast()
 
 // Avisar del resultado de una invitación (unido o inválida/expirada).

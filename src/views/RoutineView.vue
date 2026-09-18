@@ -1,44 +1,17 @@
 <template>
   <div class="routine-builder">
     <header class="routine-intro">
-      <div>
-        <span class="routine-eyebrow">Centro de entrenamiento</span>
-        <h2>Mis rutinas</h2>
-        <p>Diseña cada sesión y asígnala a tus días de práctica.</p>
-      </div>
+      <h2>Rutinas</h2>
       <button class="routine-new" aria-label="Nueva rutina" @click="startCreateRoutine">＋</button>
     </header>
 
-    <section class="player-hero" aria-label="Resumen de tu práctica">
-      <div class="player-hero__glow" aria-hidden="true"></div>
-      <div class="player-avatar">
-        <img v-if="playerAvatar" :src="playerAvatar" alt="" @error="$event.target.style.display = 'none'">
-        <span>{{ playerInitial }}</span>
-      </div>
-      <div class="player-identity">
-        <span class="player-kicker">Tu práctica personal</span>
-        <h3>{{ playerName }}</h3>
-        <small>Organiza tus sesiones y mantén visible tu avance.</small>
-      </div>
-      <div class="player-power">
-        <strong>{{ averageMastery }}%</strong>
-        <span>dominio</span>
-      </div>
-      <div class="player-hero__stats">
-        <span><b>{{ store.skills.length }}</b> habilidades</span>
-        <span><b>{{ masteredSkills }}</b> dominadas</span>
-        <span><b>{{ routines.length }}</b> rutinas</span>
-      </div>
-    </section>
-
     <form v-if="creatingRoutine" class="routine-create" @submit.prevent="createNewRoutine">
-      <input ref="routineNameInput" v-model="newRoutineName" class="form-input" maxlength="60" placeholder="Nombre de la rutina">
+      <input ref="routineNameInput" v-model="newRoutineName" class="form-input" maxlength="60" placeholder="Nombre de la rutina" aria-label="Nombre de la nueva rutina">
       <button class="btn btn-primary btn-sm" :disabled="busy || !newRoutineName.trim()">Crear</button>
       <button type="button" class="btn btn-ghost btn-sm" @click="creatingRoutine = false">Cancelar</button>
     </form>
 
-    <div v-if="routines.length" class="mission-heading"><span>Mapa de misiones</span><small>Elige tu entrenamiento</small></div>
-    <nav v-if="routines.length" class="routine-tabs" aria-label="Tus misiones de entrenamiento">
+    <nav v-if="routines.length" class="routine-tabs" aria-label="Tus rutinas">
       <button
         v-for="item in routines"
         :key="item.id"
@@ -56,8 +29,7 @@
         <div class="routine-overview__top">
           <span class="routine-overview__icon">♬</span>
           <div>
-            <label for="routine-name">Misión seleccionada</label>
-            <input id="routine-name" :value="routine.name" maxlength="60" @change="renameRoutine($event.target.value)">
+            <input id="routine-name" :value="routine.name" maxlength="60" aria-label="Nombre de la rutina" @change="renameRoutine($event.target.value)">
           </div>
           <button v-if="routines.length > 1" class="routine-delete" aria-label="Eliminar rutina" @click="removeCurrentRoutine">×</button>
         </div>
@@ -66,12 +38,12 @@
           <span><b>{{ routine.items.length }}</b> ejercicios</span>
           <span><b>{{ routine.sections.length }}</b> secciones</span>
         </div>
-        <button v-if="routine.items.length" class="routine-play" @click="router.push(`/rutina/jugar/${routine.id}`)"><span>▶</span><b>Jugar misión</b><small>{{ totalMinutes }} min · {{ routine.items.length }} habilidades</small></button>
+        <button v-if="routine.items.length" class="routine-play" @click="router.push(`/rutina/jugar/${routine.id}`)"><span>▶</span><b>Iniciar · {{ totalMinutes }} min</b></button>
       </section>
 
       <section class="routine-days-card">
         <div class="routine-block-title">
-          <div><span>Calendario</span><h3>Días de práctica</h3></div>
+          <h3>Días de práctica</h3>
           <small>{{ routine.days.length ? `${routine.days.length} por semana` : 'Sin asignar' }}</small>
         </div>
         <div class="routine-days">
@@ -90,10 +62,10 @@
         <section v-for="(section, sectionIndex) in routine.sections" :key="section.id" class="routine-section">
           <header class="routine-section__head">
             <span class="routine-section__number">{{ String(sectionIndex + 1).padStart(2, '0') }}</span>
-            <div>
-              <span>Fase {{ sectionIndex + 1 }} · {{ sectionMinutes(section) }} min</span>
+            <div class="routine-section__name">
               <input :value="section.name" maxlength="60" aria-label="Nombre de la sección" @change="renameSection(section, $event.target.value)">
             </div>
+            <small class="routine-section__minutes">{{ sectionMinutes(section) }} min</small>
             <button
               v-if="routine.sections.length > 1"
               aria-label="Eliminar sección"
@@ -152,10 +124,10 @@
               </div>
             </article>
           </div>
-          <div v-else class="routine-section__empty"><span>◇</span><strong>Fase sin habilidades</strong><small>Elige una habilidad para comenzar esta misión.</small></div>
+          <div v-else class="routine-section__empty"><strong>Sección vacía</strong></div>
 
           <button v-if="availableSkills.length" class="routine-add-exercise" @click="openSkillPicker(section)">
-            <span>＋</span><b>Elegir habilidad</b><small>Explora tus ejercicios disponibles</small><i>›</i>
+            <span>＋</span><b>Agregar ejercicio</b><i>›</i>
           </button>
           <RouterLink v-else-if="!store.skills.length" class="routine-create-skill" to="/entrenar">＋ Crear ejercicios en Entrenar</RouterLink>
         </section>
@@ -185,7 +157,7 @@
           <section class="skill-picker__sheet">
             <div class="skill-picker__handle"></div>
             <header>
-              <div><span>Inventario de habilidades</span><h2 id="skill-picker-title">¿Qué quieres practicar?</h2><p>Elige una habilidad para la fase “{{ skillPickerSection.name }}”.</p></div>
+              <h2 id="skill-picker-title">Agregar ejercicio</h2>
               <button aria-label="Cerrar" @click="closeSkillPicker">×</button>
             </header>
             <div class="skill-picker__grid">
@@ -211,7 +183,6 @@
 <script setup>
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
 import { usePracticeStore } from '../stores/practice'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
@@ -231,7 +202,6 @@ const BREAK_OPTIONS = [
 ]
 const store = usePracticeStore()
 const router = useRouter()
-const auth = useAuthStore()
 const { showToast } = useToast()
 const { confirm } = useConfirm()
 const routines = computed(() => store.routines || [])
@@ -248,13 +218,6 @@ const availableSkills = computed(() => {
   return store.skills
 })
 const totalMinutes = computed(() => routineMinutes(routine.value))
-const playerName = computed(() => auth.user?.user_metadata?.full_name || auth.user?.email?.split('@')[0] || 'Guitarrista')
-const playerInitial = computed(() => playerName.value.trim().charAt(0).toUpperCase() || 'G')
-const playerAvatar = computed(() => auth.user?.user_metadata?.avatar_url || auth.user?.user_metadata?.picture || '')
-const masteredSkills = computed(() => store.skills.filter(item => skillProgress(item) >= 100).length)
-const averageMastery = computed(() => store.skills.length
-  ? Math.round(store.skills.reduce((sum, item) => sum + skillProgress(item), 0) / store.skills.length)
-  : 0)
 
 function skill(id) { return store.skills.find(item => item.id === id) }
 function part(item) { return skill(item.skill_id)?.parts.find(value => value.id === item.part_id) }
@@ -380,4 +343,57 @@ onMounted(async () => {
 .routine-exercise__settings>label,.routine-part-select { font-size:10px; }.routine-number { height:42px;border-radius:12px; }.routine-number input { font-size:13px; }.routine-number small { font-size:9px; }.routine-break-select :deep(.ui-select__trigger),.routine-part-select :deep(.ui-select__trigger) { min-height:42px;font-size:12px; }.routine-break b { font-size:11px; }.routine-break small { font-size:10px; }.routine-section__empty strong { font-size:13px; }.routine-section__empty small { font-size:11px; }.routine-add-exercise { min-height:62px; }.routine-add-exercise b { font-size:13px; }.routine-add-exercise small { font-size:11px; }.routine-create-skill,.routine-add-section,.routine-loading { font-size:13px; }
 .skill-picker header span { color:var(--jubal-blue-light);font-size:11px; }.skill-picker header h2 { font-size:21px; }.skill-picker header p { font-size:13px; }.skill-picker header button { width:44px;height:44px;flex-basis:44px; }.skill-picker__grid .skill-card { min-height:68px;padding:12px;border-radius:18px; }.skill-picker .skill-card__icon { width:44px;height:44px;flex-basis:44px; }.skill-picker .skill-card__body>small,.skill-picker .skill-card__body em { font-size:10px; }.skill-picker .skill-card__body strong { font-size:14px; }.skill-picker__create { min-height:48px;font-size:13px; }
 @media (max-width:350px) { .routine-days button small { display:block; } }
+
+/* Constructor compacto: una sola jerarquía y sólo metadatos accionables. */
+.routine-builder { gap: 10px; }
+.routine-intro { min-height: 48px; padding: 0 2px; }
+.routine-intro h2 { margin: 0; font-size: 22px; }
+.routine-tabs { padding-top: 0; }
+.routine-overview__top { padding-block: 13px; }
+.routine-overview input { margin: 0; }
+.routine-play {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 11px;
+}
+.routine-play > span { grid-row: auto; }
+.routine-play b { align-self: auto; }
+.routine-block-title { align-items: center; }
+.routine-block-title h3 { margin: 0; }
+.routine-section__name { min-width: 0; flex: 1; }
+.routine-section__minutes { flex-shrink: 0; color: var(--text-muted); font-size: 11px; font-weight: 800; }
+.routine-section__empty { min-height: 44px; padding: 12px 14px 0; align-items: flex-start; text-align: left; }
+.routine-add-exercise {
+  min-height: 52px;
+  grid-template-columns: 32px 1fr auto;
+  grid-template-rows: 1fr;
+  gap: 8px;
+  padding-block: 8px;
+}
+.routine-add-exercise > span,
+.routine-add-exercise i { grid-row: auto; }
+.routine-add-exercise b { align-self: center; }
+.skill-picker header { align-items: center; }
+.skill-picker header h2 { margin: 0; }
+/* Controles del constructor adaptados al uso con una mano. */
+.routine-builder { padding-bottom: 0; gap: 16px; }
+.routine-intro { background: transparent; border: 0; }
+.routine-new { min-width: 44px; min-height: 44px; background: var(--jubal-yellow); color: var(--jubal-navy-dark); box-shadow: none; }
+.routine-tabs button, .routine-overview__icon, .routine-overview, .routine-days-card, .routine-section { box-shadow: none; }
+.routine-tabs button { flex-shrink: 0; }
+.routine-play { background: var(--jubal-yellow); color: var(--jubal-navy-dark); box-shadow: none; }
+.routine-play > span { background: #0001; color: inherit; }
+.routine-delete, .routine-section__head > button, .routine-exercise__remove { min-width: 44px; min-height: 44px; }
+.routine-exercise__order button { width: 44px; height: 44px; }
+.routine-exercise__main { flex-wrap: wrap; }
+.routine-exercise__identity { flex: 1; min-width: 70px; }
+.routine-exercise__settings { margin-left: 0; grid-template-columns: 1fr 1fr; gap: 12px; }
+.routine-exercise__settings > label:last-child { grid-column: 1/-1; }
+.routine-number { height: 48px; }
+.routine-break-select :deep(.ui-select__trigger), .routine-part-select :deep(.ui-select__trigger) { min-height: 48px; font-size: 14px; }
+.routine-create, .routine-section-create { grid-template-columns: 1fr 1fr; gap: 10px; }
+.routine-create input, .routine-section-create input { grid-column: 1/-1; min-width: 0; }
+.routine-section__head { flex-wrap: wrap; }
 </style>

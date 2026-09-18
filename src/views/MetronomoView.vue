@@ -16,7 +16,6 @@
         <template v-else>
           <span class="stage__label">Metrónomo</span>
           <h1 class="stage__title">Práctica libre</h1>
-          <p class="stage__meta">Abre un objetivo para registrar la sesión</p>
         </template>
       </div>
 

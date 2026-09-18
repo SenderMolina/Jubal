@@ -3,7 +3,6 @@
     <div class="songs-header">
       <div>
         <h2 class="songs-header__title">Repertorios</h2>
-        <p class="songs-header__subtitle">Agrupa canciones y prepara cada set antes del ensayo.</p>
       </div>
       <span class="songs-header__count" :aria-label="`${store.repertoires.length} repertorios`">{{ store.repertoires.length }}</span>
     </div>

@@ -23,7 +23,6 @@
     <!-- Header (modo edición) -->
     <div v-else>
       <h1 class="section-title">Editar alabanza</h1>
-      <p class="section-subtitle">Modifica la información de la canción.</p>
     </div>
 
     <!-- Mini menú: navegación entre canciones + Play -->

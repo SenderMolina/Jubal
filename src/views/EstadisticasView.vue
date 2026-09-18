@@ -6,7 +6,6 @@
         <div class="progress-hero__icon" aria-hidden="true">♫</div>
         <div>
           <h2>Tu práctica en números</h2>
-          <p>Tiempo, constancia y avance de tu repertorio.</p>
         </div>
       </div>
     </header>

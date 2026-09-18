@@ -2,9 +2,8 @@
   <div class="band-dashboard">
     <section class="band-hero">
       <div>
-        <span class="band-hero__eyebrow">Dashboard de banda</span>
+        <span class="band-hero__eyebrow">Tu banda</span>
         <h2>{{ band.currentBand?.name }}</h2>
-        <p>Agenda, repertorio y canciones del equipo en un solo lugar.</p>
       </div>
       <span class="band-hero__role">{{ roleLabel }}</span>
     </section>
@@ -16,7 +15,7 @@
       </button>
       <button @click="router.push('/repertorio')">
         <strong>{{ app.repertoires.length }}</strong>
-        <span>Setlists</span>
+        <span>Repertorios</span>
       </button>
       <button @click="router.push('/canciones')">
         <strong>{{ app.songs.length }}</strong>
@@ -129,10 +128,14 @@ function eventMeta(activity) {
 .band-empty { min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface2); color: var(--text-mid); font-size: 11px; }.band-section--compact { padding-bottom: 8px; }.band-upcoming { width: 100%; display: grid; grid-template-columns: 58px 1fr auto; align-items: center; gap: 8px; padding: 10px 0; border: 0; border-top: 1px solid var(--border); background: transparent; color: var(--text); text-align: left; cursor: pointer; }.band-upcoming span { color: var(--accent); font-size: 10px; font-weight: 800; }.band-upcoming strong { font-size: 12px; }.band-upcoming small { color: var(--text-muted); font-size: 10px; }
 @media (max-width:350px) { .band-hero { padding: 15px; } }
 
-/* Escala legible + profundidad game-like del sistema Jubal */
-.band-hero { padding:20px;border:1px solid rgba(142,202,230,.25);border-radius:26px;background:radial-gradient(circle at 14% 5%,rgba(255,255,255,.14),transparent 28%),linear-gradient(135deg,#0e3e50,#137c95 62%,#219ebc);box-shadow:0 8px 0 #0a596c,0 14px 25px rgba(0,0,0,.24),inset 0 2px 0 rgba(255,255,255,.12); }
-.band-hero__eyebrow { color:#ffd15c;font-size:12px; }.band-hero h2 { font-size:24px;line-height:1.15; }.band-hero p { margin-top:7px;font-size:14px; }.band-hero__role { padding:7px 10px;border:1px solid rgba(255,255,255,.22);font-size:12px; }
-.band-stats { gap:9px; }.band-stats button { min-height:76px;border-radius:18px;box-shadow:0 5px 0 #0b2028,0 9px 16px rgba(0,0,0,.16); }.band-stats button:active { transform:translateY(3px);box-shadow:0 2px 0 #0b2028; }.band-stats strong { color:var(--jubal-yellow);font-size:22px; }.band-stats span { font-size:13px;font-weight:800; }
-.band-section { padding:18px;border-radius:24px;box-shadow:var(--shadow); }.band-section::before { width:4px; }.band-section__head { margin-bottom:14px; }.band-section__head span { color:var(--jubal-blue-light);font-size:12px; }.band-section__head h3 { font-size:18px; }.band-section__head a,.band-empty a { color:var(--jubal-blue-light);font-size:14px;font-weight:900; }
-.band-event__body > span { color:var(--jubal-yellow);font-size:12px;font-weight:900; }.band-event__body strong,.band-upcoming strong { font-size:16px; }.band-event__body small { font-size:13px; }.band-empty { min-height:64px;padding:12px 14px;border-radius:16px;font-size:14px; }.band-upcoming { min-height:54px;grid-template-columns:64px 1fr auto; }.band-upcoming span { color:var(--jubal-blue-light);font-size:12px; }.band-upcoming small { font-size:12px; }
+
+.band-dashboard { padding: 0; gap: 18px; }
+.band-hero { padding: 24px; border: 1px solid #355663; border-radius: 24px; background: linear-gradient(130deg,#193442,#245261); box-shadow: none; }
+.band-hero > div { min-width: 0; }.band-hero h2 { font-size: 28px; line-height: 1.15; letter-spacing: -.03em; overflow-wrap: anywhere; }
+.band-hero__eyebrow { color: var(--jubal-blue-light); font-size: 11px; }.band-hero__role { font-size: 11px; }
+.band-stats { gap: 10px; }.band-stats button { min-height: 86px; border-radius: 16px; box-shadow: none; }.band-stats strong { color: var(--jubal-blue-light); font-size: 25px; }.band-stats span { font-size: 12px; }
+.band-section { padding: 18px; border-radius: 20px; box-shadow: none; }.band-section::before { display: none; }
+.band-section__head { align-items: center; }.band-section__head span { color: var(--text-muted); font-size: 11px; }.band-section__head h3 { font-size: 18px; }.band-section__head a, .band-empty a { display: inline-flex; align-items: center; min-height: 44px; color: var(--jubal-blue-light); font-size: 12px; }
+.band-event { min-height: 80px; }.band-event__date { color: var(--jubal-yellow); }.band-event__body > span { color: var(--jubal-yellow); font-size: 11px; }.band-event__body strong { font-size: 16px; }.band-event__body small { font-size: 13px; }.band-empty { flex-wrap: wrap; font-size: 14px; }
+.band-upcoming { min-height: 60px; grid-template-columns: 55px minmax(0,1fr) auto; }.band-upcoming strong { font-size: 14px; }.band-upcoming span, .band-upcoming small { font-size: 11px; }
 </style>

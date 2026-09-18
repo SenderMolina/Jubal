@@ -49,6 +49,9 @@ const routes = [
 const router = createRouter({
   history: createWebHashHistory(),
   routes,
+  scrollBehavior(to, from, savedPosition) {
+    return savedPosition || (to.path !== from.path ? { top: 0 } : undefined)
+  },
 })
 
 // Rutas exclusivas de banda: sin banda activa, al dashboard de práctica.

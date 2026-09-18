@@ -1,7 +1,6 @@
 <template>
   <div class="band-manage">
     <h1 class="section-title">{{ band.currentBand?.name || 'Banda' }}</h1>
-    <p class="section-subtitle">Miembros e invitaciones de tu banda.</p>
 
     <!-- Miembros -->
     <div class="bm-section-head">

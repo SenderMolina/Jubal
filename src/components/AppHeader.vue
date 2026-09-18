@@ -1,31 +1,31 @@
 <template>
   <header class="app-header">
     <div class="app-header__left">
-      <button class="app-header__menu" aria-label="Menú" @click="drawerOpen = true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <button class="app-header__context" :aria-expanded="menuOpen" aria-haspopup="dialog" aria-controls="app-menu" aria-label="Cambiar espacio o abrir menú" @click="$emit('open-menu')">
+        <span class="app-header__brand" aria-hidden="true">♪</span>
+        <span>{{ band.personalMode ? 'Mi espacio' : band.currentBand?.name || 'Jubal' }}</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 10 4 4 4-4"/></svg>
       </button>
-      <span class="app-header__mark" aria-hidden="true">♪</span>
       <h1 class="app-header__title">{{ pageTitle }}</h1>
     </div>
-
-    <RouterLink class="app-header__user" to="/perfil" aria-label="Perfil">
+    <RouterLink class="app-header__user" to="/perfil" aria-label="Ver mi perfil">
       <img v-if="avatarUrl" :src="avatarUrl" class="app-header__avatar" alt="">
       <span v-else class="app-header__avatar app-header__avatar--ph">{{ initial }}</span>
     </RouterLink>
   </header>
-
-  <AppDrawer :open="drawerOpen" @close="drawerOpen = false" />
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import AppDrawer from './AppDrawer.vue'
+import { useBandStore } from '../stores/band'
 
 const route = useRoute()
 const auth = useAuthStore()
-const drawerOpen = ref(false)
+const band = useBandStore()
+defineProps({ menuOpen: Boolean })
+defineEmits(['open-menu'])
 
 const pageTitle = computed(() => {
   const path = route.path
@@ -37,8 +37,8 @@ const pageTitle = computed(() => {
   if (path.startsWith('/tipos')) return 'Tipos'
   if (path.startsWith('/banda')) return 'Banda'
   if (path.startsWith('/perfil')) return 'Perfil'
-  if (path.startsWith('/entrenar') || path.startsWith('/skill/')) return 'Tracker de práctica'
-  if (path.startsWith('/estadisticas')) return 'Estadística'
+  if (path.startsWith('/entrenar') || path.startsWith('/skill/')) return 'Mis objetivos'
+  if (path.startsWith('/estadisticas')) return 'Mi progreso'
   if (path.startsWith('/rutina')) return 'Rutina'
   if (path.startsWith('/metronomo')) return 'Metrónomo'
   if (path.startsWith('/agregar')) return 'Canciones'
@@ -53,30 +53,12 @@ const initial = computed(() => {
 </script>
 
 <style scoped>
-.app-header__left { min-width: 0; display: flex; align-items: center; gap: 9px; }
-.app-header__menu {
-  width: 44px; height: 44px; flex: 0 0 44px; background: var(--surface2); border: 1px solid var(--border); cursor: pointer; padding: 10px;
-  border-radius: 14px; box-shadow: 0 3px 0 #091b22;
-  color: var(--text); display: flex; align-items: center;
-}
-.app-header__menu svg { width: 20px; height: 20px; }
-.app-header__menu:active { transform: translateY(2px); box-shadow: 0 1px 0 #091b22; }
-.app-header__mark { width: 30px; height: 30px; flex: 0 0 30px; display: grid; place-items: center; border-radius: 10px; background: linear-gradient(145deg, var(--jubal-yellow), var(--jubal-orange)); color: var(--jubal-navy-dark); font-size: 18px; font-weight: 900; box-shadow: 0 3px 0 #ad5b00, inset 0 2px 0 rgba(255,255,255,.28); transform: rotate(-4deg); }
-
-.app-header__user {
-  background: none; border: none; cursor: pointer; padding: 0;
-  border-radius: 50%; -webkit-tap-highlight-color: transparent;
-}
-.app-header__avatar {
-  width: 44px; height: 44px; border-radius: 50%; object-fit: cover; display: block;
-  border: 3px solid rgba(142,202,230,.5); box-shadow: 0 3px 0 #091b22;
-}
-.app-header__avatar--ph {
-  display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(145deg, var(--accent), var(--accent2)); color: #fff; font-weight: 900; font-size: 1rem;
-}
-
-@media (max-width: 359px) {
-  .app-header__mark { display: none; }
-}
+.app-header__left { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 0; }
+.app-header__context { display: flex; align-items: center; gap: 7px; max-width: 100%; min-height: 44px; margin-block: -8px -2px; border: 0; background: transparent; color: var(--text-muted); font-size: 12px; cursor: pointer; }
+.app-header__context > span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-header__context svg { width: 16px; height: 16px; flex-shrink: 0; }
+.app-header__brand { color: var(--jubal-yellow); font-size: 20px; }
+.app-header__user { flex-shrink: 0; border-radius: 50%; text-decoration: none; }
+.app-header__avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; display: block; border: 1px solid var(--border); }
+.app-header__avatar--ph { display: grid; place-items: center; background: var(--accent-soft); color: var(--jubal-blue-light); font-weight: 800; }
 </style>

@@ -6,7 +6,6 @@
       <div class="songs-header">
         <div>
           <h2 class="songs-header__title">Cancionero</h2>
-          <p class="songs-header__subtitle">Tonos, BPM, letras y acordes listos para tu banda.</p>
         </div>
         <span class="songs-header__count" :aria-label="`${store.songs.length} canciones`">{{ store.songs.length }}</span>
       </div>
@@ -26,6 +25,7 @@
           class="search-box__input"
           type="text"
           placeholder="Buscar por nombre, tono o tempo…"
+          aria-label="Buscar canciones"
           v-model="query"
         >
       </div>
@@ -36,9 +36,10 @@
           :key="t.id"
           class="type-pill"
           :class="{ active: activeTypes.includes(String(t.id)) }"
+          :aria-pressed="activeTypes.includes(String(t.id))"
           @click="toggleType(String(t.id))"
         >{{ t.name }}</button>
-        <button v-if="activeTypes.length" class="type-pill type-pill--clear" @click="activeTypes = []">✕</button>
+        <button v-if="activeTypes.length" class="type-pill type-pill--clear" aria-label="Limpiar filtros" @click="activeTypes = []">✕</button>
       </div>
 
       <div class="list-toolbar">
@@ -101,7 +102,6 @@
     <template v-else>
       <div class="sf-head">
         <h1 class="section-title">Nueva canción</h1>
-        <p class="sf-intro">Con el título basta para guardar. El tono y la letra ayudan a la banda; puedes completarlos después.</p>
       </div>
 
       <!-- Título -->

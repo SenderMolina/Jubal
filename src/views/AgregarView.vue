@@ -1,7 +1,6 @@
 <template>
   <div>
     <h1 class="section-title">Añadir alabanza</h1>
-    <p class="section-subtitle">Agrega una nueva canción al repertorio.</p>
 
     <div class="form-row">
       <div class="form-group">

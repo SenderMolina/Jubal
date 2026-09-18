@@ -1,78 +1,37 @@
 <template>
-  <!-- Modo práctica personal -->
-  <nav v-if="band.personalMode" class="bottom-nav">
-    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/practica') }" to="/practica">
-      <JubalNavIcon class="bottom-nav__icon" name="home" />
-      <span class="bottom-nav__label">Inicio</span>
+  <nav v-if="band.personalMode || band.currentBand" class="bottom-nav" aria-label="Navegación principal">
+    <RouterLink v-for="item in items" :key="item.to" :to="item.to" class="bottom-nav__item" :class="{ active: isActive(item) }" :aria-current="isActive(item) ? 'page' : undefined">
+      <JubalNavIcon class="bottom-nav__icon" :name="item.icon" />
+      <span class="bottom-nav__label">{{ item.label }}</span>
     </RouterLink>
-    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/entrenar') || isActive('/skill/') }" to="/entrenar">
-      <JubalNavIcon class="bottom-nav__icon" name="tracker" />
-      <span class="bottom-nav__label">Tracker</span>
-    </RouterLink>
-
-    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/canciones') }" to="/canciones">
-      <JubalNavIcon class="bottom-nav__icon" name="songs" />
-      <span class="bottom-nav__label">Canciones</span>
-    </RouterLink>
-
-    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/repertorio') }" to="/repertorio">
-      <JubalNavIcon class="bottom-nav__icon" name="repertoire" />
-      <span class="bottom-nav__label">Repertorio</span>
-    </RouterLink>
-
-    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/metronomo') }" to="/metronomo">
-      <JubalNavIcon class="bottom-nav__icon" name="metronome" />
-      <span class="bottom-nav__label">Metrónomo</span>
-    </RouterLink>
-
-    <!-- Estadística y Perfil quedan en el drawer/header: 5 items es el tope del tab bar -->
-  </nav>
-
-  <!-- Modo banda -->
-  <nav v-else-if="band.currentBand" class="bottom-nav">
-    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/inicio') }" to="/inicio">
-      <JubalNavIcon class="bottom-nav__icon" name="home" />
-      <span class="bottom-nav__label">Inicio</span>
-    </RouterLink>
-    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/actividades') }" to="/actividades">
-      <JubalNavIcon class="bottom-nav__icon" name="activities" />
-      <span class="bottom-nav__label">Actividades</span>
-    </RouterLink>
-
-    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/repertorio') }" to="/repertorio">
-      <JubalNavIcon class="bottom-nav__icon" name="repertoire" />
-      <span class="bottom-nav__label">Repertorios</span>
-    </RouterLink>
-
-    <RouterLink class="bottom-nav__item" :class="{ active: isActive('/canciones') }" to="/canciones">
-      <JubalNavIcon class="bottom-nav__icon" name="songs" />
-      <span class="bottom-nav__label">Canciones</span>
-    </RouterLink>
-
-    <template v-if="roleStore.isLeader">
-      <RouterLink class="bottom-nav__item" :class="{ active: isActive('/banda') }" to="/banda">
-        <JubalNavIcon class="bottom-nav__icon" name="band" />
-        <span class="bottom-nav__label">Banda</span>
-      </RouterLink>
-    </template>
-
+    <button class="bottom-nav__item" :class="{ active: menuOpen || secondaryActive }" :aria-expanded="menuOpen" aria-haspopup="dialog" aria-controls="app-menu" @click="$emit('open-menu')">
+      <JubalNavIcon class="bottom-nav__icon" name="more" />
+      <span class="bottom-nav__label">Más</span>
+    </button>
   </nav>
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useRoleStore } from '../stores/role'
 import { useBandStore } from '../stores/band'
 import JubalNavIcon from './JubalNavIcon.vue'
 
-const route     = useRoute()
-const roleStore = useRoleStore()
-const band      = useBandStore()
-
-function isActive(path) {
-  if (path === '/actividades') {
-    return route.path.startsWith('/actividades') || route.path.startsWith('/actividad/')
-  }
-  return route.path.startsWith(path)
-}
+defineProps({ menuOpen: Boolean })
+defineEmits(['open-menu'])
+const route = useRoute()
+const band = useBandStore()
+const items = computed(() => band.personalMode ? [
+  { to: '/practica', label: 'Inicio', icon: 'home' },
+  { to: '/entrenar', label: 'Practicar', icon: 'tracker', paths: ['/skill/'] },
+  { to: '/rutina', label: 'Rutinas', icon: 'activities' },
+  { to: '/canciones', label: 'Canciones', icon: 'songs', paths: ['/agregar'] },
+] : [
+  { to: '/inicio', label: 'Inicio', icon: 'home' },
+  { to: '/actividades', label: 'Agenda', icon: 'activities', paths: ['/actividad/'] },
+  { to: '/repertorio', label: 'Repertorios', icon: 'repertoire' },
+  { to: '/canciones', label: 'Canciones', icon: 'songs', paths: ['/agregar'] },
+])
+function isActive(item) { return [item.to, ...(item.paths || [])].some(path => route.path.startsWith(path)) }
+const secondaryActive = computed(() => !items.value.some(isActive))
 </script>

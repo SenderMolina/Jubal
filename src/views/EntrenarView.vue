@@ -1,15 +1,27 @@
 <template>
   <div class="entrenar">
-    <section class="practice-overview">
-      <div>
-        <span class="practice-overview__eyebrow">Tu camino musical</span>
-        <h1>Tracker de práctica</h1>
-        <p>Guarda canciones, solos, riffs y licks desde que te inspiran hasta que los dominas.</p>
+    <section class="tracker-controls" aria-label="Resumen y filtros del tracker">
+      <h2 class="tracker-controls__title">¿Qué quieres aprender?</h2>
+      <div class="tracker-summary">
+        <span><strong>{{ activeCount }}</strong><small>En práctica</small></span>
+        <span><strong>{{ wishlistCount }}</strong><small>Deseos</small></span>
+        <span><strong>{{ weekLabel }}</strong><small>Semana</small></span>
+        <RouterLink to="/rutina"><strong>☷</strong><small>Rutina</small></RouterLink>
       </div>
-      <div class="practice-overview__stats">
-        <span><strong>{{ activeCount }}</strong> en práctica</span>
-        <span><strong>{{ wishlistCount }}</strong> por aprender</span>
-        <span><strong>{{ weekLabel }}</strong> esta semana</span>
+
+      <div v-if="store.skills.length" class="skill-tools">
+        <label class="skill-search">
+          <span aria-hidden="true">⌕</span>
+          <input v-model="query" type="search" placeholder="Buscar canción, lick, solo…" aria-label="Buscar objetivos">
+        </label>
+        <div class="skill-filters" role="group" aria-label="Filtrar por tipo">
+          <button
+            v-for="option in filterOptions"
+            :key="option.value"
+            :class="{ active: typeFilter === option.value }"
+            @click="typeFilter = option.value"
+          >{{ option.label }}</button>
+        </div>
       </div>
     </section>
 
@@ -59,10 +71,10 @@
       />
       <div class="skill-create__destination" role="group" aria-label="Estado inicial">
         <button :class="{ active: form.status === 'learning' }" @click="form.status = 'learning'">
-          <span>☆</span><strong>Lista de deseos</strong><small>Para aprender después</small>
+          <span>☆</span><strong>Lista de deseos</strong>
         </button>
         <button :class="{ active: form.status === 'practicing' }" @click="form.status = 'practicing'">
-          <span>▶</span><strong>En práctica</strong><small>Empezar ahora</small>
+          <span>▶</span><strong>En práctica</strong>
         </button>
       </div>
       <div class="skill-create__actions">
@@ -91,25 +103,9 @@
         </button>
       </div>
     </section>
-    <RouterLink v-else class="rutina-hoy__link" to="/rutina">Mi rutina ›</RouterLink>
-
-    <div v-if="store.skills.length" class="skill-tools">
-      <label class="skill-search">
-        <span aria-hidden="true">⌕</span>
-        <input v-model="query" type="search" placeholder="Buscar canción, lick, solo…" aria-label="Buscar objetivos">
-      </label>
-      <div class="skill-filters" role="group" aria-label="Filtrar por tipo">
-        <button
-          v-for="option in filterOptions"
-          :key="option.value"
-          :class="{ active: typeFilter === option.value }"
-          @click="typeFilter = option.value"
-        >{{ option.label }}</button>
-      </div>
-    </div>
 
     <div v-if="store.ready && !store.skills.length" class="activity-empty">
-      <strong>Tu tracker está listo.</strong>
+      <strong>Tu próximo objetivo empieza aquí.</strong>
       Agrega esa canción, riff o solo que llevas tiempo queriendo aprender.
     </div>
     <div v-else-if="store.ready && store.skills.length && !filteredSkills.length" class="activity-empty">
@@ -309,17 +305,44 @@ onMounted(async () => {
 <style scoped>
 .entrenar { max-width: 620px; margin: 0 auto; padding: 10px 0 96px; }
 
-.practice-overview {
-  padding: 18px; margin-bottom: 16px; border-radius: 22px; color: #fff;
-  background: linear-gradient(145deg, #093949, #08788a);
-  box-shadow: 0 14px 30px rgba(6, 73, 85, .2);
+.tracker-controls {
+  padding: 11px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 4px 0 #0b2028;
 }
-.practice-overview__eyebrow { color: #9be7eb; font-size: 9px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
-.practice-overview h1 { margin: 4px 0 5px; font-size: 22px; }
-.practice-overview p { max-width: 470px; margin: 0; color: rgba(255,255,255,.7); font-size: 12px; line-height: 1.45; }
-.practice-overview__stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 16px; }
-.practice-overview__stats span { padding: 8px 6px; border-radius: 12px; background: rgba(255,255,255,.09); color: rgba(255,255,255,.68); font-size: 9px; text-align: center; }
-.practice-overview__stats strong { display: block; color: #fff; font-size: 15px; font-variant-numeric: tabular-nums; }
+.tracker-controls__title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.tracker-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.tracker-summary > span,
+.tracker-summary > a {
+  min-width: 0;
+  min-height: 54px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 6px 3px;
+  border: 1px solid rgba(142, 202, 230, .14);
+  border-radius: 13px;
+  background: var(--surface2);
+  color: var(--text-mid);
+  text-align: center;
+  text-decoration: none;
+}
+.tracker-summary strong { color: #fff; font-size: 15px; line-height: 1; font-variant-numeric: tabular-nums; }
+.tracker-summary small { overflow: hidden; max-width: 100%; font-size: 9px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.tracker-summary > a { border-color: rgba(255, 183, 3, .34); background: rgba(255, 183, 3, .09); color: var(--jubal-yellow); }
+.tracker-summary > a strong { color: var(--jubal-yellow); font-size: 19px; }
 
 .skill-create {
   background: var(--surface); border: 1px solid var(--border);
@@ -340,7 +363,7 @@ onMounted(async () => {
 .skill-create__notes { min-height: 70px; resize: vertical; font: inherit; }
 .skill-create__destination { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .skill-create__destination button { display: grid; grid-template-columns: auto 1fr; column-gap: 7px; padding: 10px; text-align: left; cursor: pointer; color: var(--text-mid); background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; }
-.skill-create__destination button > span { grid-row: 1 / 3; align-self: center; color: var(--accent2); font-size: 18px; }
+.skill-create__destination button > span { align-self: center; color: var(--accent2); font-size: 18px; }
 .skill-create__destination button strong { font-size: 11px; }
 .skill-create__destination button small { color: var(--text-muted); font-size: 9px; }
 .skill-create__destination button.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent2); }
@@ -366,13 +389,8 @@ onMounted(async () => {
 }
 .rutina-hoy__play svg { width: 18px; height: 18px; }
 
-.rutina-hoy__link {
-  display: block; margin-bottom: 16px; font-size: 13px; font-weight: 600;
-  color: var(--text-mid); text-decoration: none;
-}
-
-.skill-tools { margin-bottom: 16px; }
-.skill-search { display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface); }
+.skill-tools { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.skill-search { display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface2); }
 .skill-search > span { color: var(--text-muted); font-size: 20px; transform: rotate(-15deg); }
 .skill-search input { width: 100%; padding: 11px 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 13px; }
 .skill-filters { display: flex; gap: 6px; padding-top: 8px; overflow-x: auto; scrollbar-width: none; }
@@ -419,12 +437,52 @@ onMounted(async () => {
 .skill-progress__bar { height: 100%; border-radius: 999px; background: var(--accent); transition: width .2s; }
 
 @media (max-width: 420px) {
-  .practice-overview__stats span { font-size: 8px; }
+  .tracker-summary small { font-size: 8px; }
   .skill-card__meta { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 
-.practice-overview { padding:20px;border:1px solid rgba(142,202,230,.26);border-radius:28px;background:radial-gradient(circle at 12% 4%,rgba(255,255,255,.14),transparent 30%),linear-gradient(145deg,#0c5264,#219ebc);box-shadow:0 8px 0 #0a596c,0 14px 25px rgba(0,0,0,.24); }.practice-overview__eyebrow { color:#ffd15c;font-size:12px; }.practice-overview h1 { font-size:26px; }.practice-overview p { font-size:14px; }.practice-overview__stats span { font-size:11px; }.practice-overview__stats strong { font-size:18px; }
 .skill-create { padding:18px;border-radius:24px;box-shadow:var(--shadow); }.skill-create__heading span,.form-label { font-size:12px; }.skill-create__heading strong { font-size:17px; }.skill-create__destination button { min-height:64px; }.skill-create__destination button strong { font-size:13px; }.skill-create__destination button small { font-size:11px; }
 .skill-group__title { margin-bottom:10px;font-size:12px; }.skill-card { min-height:86px;padding:15px 16px;margin-bottom:11px;border-radius:20px;box-shadow:0 5px 0 #0b2028,0 9px 16px rgba(0,0,0,.16); }.skill-card:active { transform:translateY(3px);box-shadow:0 2px 0 #0b2028; }.skill-card__name { font-size:15px;font-weight:900; }.skill-card__name i { width:38px;height:38px;flex-basis:38px;border-radius:12px;font-size:17px;box-shadow:inset 0 2px 0 rgba(255,255,255,.09),0 3px 0 rgba(0,0,0,.13); }.skill-card__type { padding:5px 9px;font-size:11px;font-weight:800; }.skill-card__meta { font-size:12px; }.skill-card__percent { font-size:11px; }.skill-card__practice { width:42px;height:42px;flex-basis:42px;font-size:12px;box-shadow:0 4px 0 #126f85; }.skill-progress { height:12px; }
-@media (max-width:420px) { .practice-overview__stats span { font-size:10px; }.skill-card__meta { max-width:108px; } }
+@media (max-width:420px) { .tracker-summary strong { font-size:14px; }.skill-card__meta { max-width:108px; } }
+
+/* Cada estado funciona como una lista continua, no como tarjetas aisladas. */
+.skill-group {
+  overflow: hidden;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 4px 0 #0b2028;
+}
+.skill-group__title {
+  min-height: 40px;
+  margin: 0;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+.skill-card {
+  min-height: 70px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: none;
+}
+.skill-card:last-child { border-bottom: 0; }
+.skill-card:hover { border-color: var(--border); background: rgba(255,255,255,.025); transform: none; }
+.skill-card:active { transform: none; box-shadow: none; }
+.skill-card__name i { width: 34px; height: 34px; flex-basis: 34px; }
+.skill-card__practice { width: 36px; height: 36px; flex-basis: 36px; box-shadow: 0 3px 0 #126f85; }
+.skill-progress { height: 8px; }
+.entrenar { padding-bottom: 0; }
+.tracker-summary > span, .tracker-summary > a { min-height: 68px; gap: 6px; }
+.tracker-summary strong { font-size: 18px; }.tracker-summary small { font-size: 11px; }
+.skill-group, .skill-card__name i { box-shadow: none; }
+.skill-card__practice { width: 44px; height: 44px; flex-basis: 44px; box-shadow: none; background: var(--accent-soft); color: var(--jubal-blue-light); }
+.skill-create__heading > button { min-width: 44px; min-height: 44px; }
+.skill-filters { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+.skill-filters button { min-height: 44px; flex-shrink: 0; font-size: 12px; }
+.skill-search input { font-size: 16px; }
 </style>
