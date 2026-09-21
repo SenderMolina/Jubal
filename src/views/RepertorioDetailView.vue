@@ -1,9 +1,7 @@
 <template>
-  <div>
-    <!-- ── Header ── -->
-    <div class="activity-detail-header">
-      <button class="back-btn" @click="router.push('/repertorio')">←</button>
-      <div class="activity-detail-info">
+  <div class="repertoire-detail">
+    <header class="repertoire-heading">
+      <div class="repertoire-heading__info">
         <div v-if="!editingName" class="activity-detail-title" @click="roleStore.isLeader && startEditName()">
           {{ repertoire?.name }}
         </div>
@@ -16,116 +14,141 @@
           @keydown.escape="editingName = false"
           @blur="confirmEditName"
         >
-        <div class="activity-detail-meta">{{ (repertoire?.songs || []).length }} canciones</div>
+        <div class="activity-detail-meta">
+          {{ (repertoire?.songs || []).length }} canción{{ (repertoire?.songs || []).length === 1 ? '' : 'es' }}
+        </div>
       </div>
-    </div>
+      <button
+        v-if="roleStore.isLeader"
+        class="repertoire-heading__add"
+        type="button"
+        aria-label="Agregar canciones"
+        @click="openSongPicker"
+      >+</button>
+    </header>
 
     <template v-if="repertoire">
-      <!-- ── Canciones del repertorio ── -->
-      <div class="editor-panel-header" style="margin-top:16px">
-        Canciones en este repertorio
-      </div>
+      <section class="repertoire-section" aria-label="Canciones del repertorio">
+        <div v-if="!songObjects.length" class="repertoire-empty">
+          Aún no hay canciones en este repertorio.
+        </div>
 
-      <div v-if="!(repertoire.songs || []).length" class="songs-empty" style="padding:24px">
-        <span class="songs-empty__icon">🎵</span>
-        <p>Agrega canciones desde la biblioteca</p>
-      </div>
-
-      <draggable
-        v-else
-        :model-value="songObjects"
-        @update:model-value="onReorder"
-        item-key="id"
-        handle=".drag-handle"
-        ghost-class="drag-ghost"
-        class="songs-grid"
-      >
-        <template #item="{ element: song, index }">
-          <div class="song-card repertorio-song-card">
-            <span v-if="roleStore.isLeader" class="drag-handle">⠿</span>
-            <span class="repertorio-song-num">{{ index + 1 }}</span>
-            <div class="song-card__body" style="cursor:pointer" @click="router.push('/cancion/' + song.id + '?rep=' + repertoire.id)">
-              <div class="song-card__title" style="font-size:16px">{{ song.title }}</div>
-              <div class="song-card__meta" style="margin-top:4px">
-                <span v-if="song.author" style="font-size:13px;color:var(--color-text-muted)">{{ song.author }}</span>
-                <span v-if="song.key" class="song-card__tag song-card__tag--key">♪ {{ song.key }}</span>
+        <draggable
+          v-else
+          :model-value="songObjects"
+          @update:model-value="onReorder"
+          item-key="id"
+          handle=".drag-handle"
+          ghost-class="drag-ghost"
+          class="repertoire-song-list"
+        >
+          <template #item="{ element: song, index }">
+            <div class="repertoire-song-row">
+              <div class="repertoire-song-row__main">
+                <span v-if="roleStore.isLeader" class="drag-handle" aria-label="Reordenar">⠿</span>
+                <span class="repertoire-song-row__number">{{ index + 1 }}</span>
+                <button
+                  class="repertoire-song-row__content"
+                  type="button"
+                  @click="router.push('/cancion/' + song.id + '?rep=' + repertoire.id)"
+                >
+                  <strong>{{ song.title }}</strong>
+                  <small>{{ [song.author, song.key && `Tono ${song.key}`].filter(Boolean).join(' · ') || 'Sin datos adicionales' }}</small>
+                </button>
+                <button
+                  v-if="roleStore.isLeader"
+                  class="repertoire-song-row__remove"
+                  type="button"
+                  :aria-label="`Quitar ${song.title}`"
+                  @click="removeSong(song.id)"
+                >×</button>
               </div>
-              <div v-if="songReadiness(song.id).length" class="readiness-summary" :title="readinessTitle(song.id)">
-                <span class="readiness-avatars">
-                  <i v-for="entry in songReadiness(song.id).slice(0, 4)" :key="entry.id" :class="`status-${entry.status}`">
-                    {{ (entry.profile?.display_name || '?').charAt(0).toUpperCase() }}
-                  </i>
-                </span>
-                <span>{{ readinessLabel(song.id) }}</span>
-              </div>
-              <div v-if="songAssignments(song.id).length" class="assignment-list" @click.stop>
-                <span v-for="assignment in songAssignments(song.id)" :key="assignment.id">
-                  <b>{{ assignment.profile?.display_name || 'Músico' }}</b> · {{ assignment.responsibility }}
-                  <button v-if="roleStore.isLeader" aria-label="Quitar asignación" @click="removeAssignment(assignment)">×</button>
-                </span>
-              </div>
-              <button v-if="roleStore.isLeader" class="assignment-toggle" @click.stop="toggleAssignment(song.id)">
-                + Asignar músico o responsabilidad
-              </button>
+
             </div>
-            <button v-if="roleStore.isLeader" class="btn btn-danger btn-sm icon-btn" @click="removeSong(song.id)">✕</button>
-            <div v-if="assignmentSongId === song.id" class="assignment-form" @click.stop>
-              <UiSelect v-model="assignmentForm.user_id" :options="memberOptions" placeholder="Músico" aria-label="Músico asignado" />
-              <input v-model="assignmentForm.responsibility" class="form-input" maxlength="60" placeholder="Ej: Guitarra, voz principal, solo…">
-              <button class="btn btn-primary btn-sm" :disabled="!assignmentForm.user_id || !assignmentForm.responsibility.trim()" @click="saveAssignment(song.id)">Guardar</button>
-              <button class="btn btn-sm" @click="assignmentSongId = null">Cancelar</button>
-            </div>
-          </div>
-        </template>
-      </draggable>
-
-      <!-- ── Biblioteca para agregar ── -->
-      <template v-if="roleStore.isLeader">
-        <div class="editor-panel-header" style="margin-top:28px">
-          Agregar canciones
-        </div>
-
-        <div class="search-box" style="margin-top:8px">
-          <span class="search-box__icon">🔍</span>
-          <input
-            class="search-box__input"
-            type="text"
-            placeholder="Buscar canción…"
-            v-model="libQuery"
-          >
-        </div>
-
-        <div v-if="availableSongs.length === 0" style="text-align:center;padding:20px;color:var(--color-text-muted);font-size:0.9rem">
-          {{ libQuery ? 'Sin resultados' : 'Todas las canciones ya están en el repertorio' }}
-        </div>
-
-        <div class="songs-grid">
-          <div
-            v-for="song in availableSongs"
-            :key="song.id"
-            class="song-card repertorio-add-card"
-            @click="addSong(song.id)"
-          >
-            <div class="song-card__body">
-              <div class="song-card__title" style="font-size:15px">{{ song.title }}</div>
-              <div style="font-size:13px;color:var(--color-text-muted)">{{ [song.author, song.key].filter(Boolean).join(' · ') }}</div>
-            </div>
-            <span class="repertorio-add-icon">+</span>
-          </div>
-        </div>
-      </template>
+          </template>
+        </draggable>
+      </section>
     </template>
+
+    <Teleport to="body">
+      <Transition name="song-picker">
+        <div v-if="pickerOpen" class="song-picker-overlay" @click.self="closeSongPicker" @keydown.esc="closeSongPicker">
+          <section class="song-picker" role="dialog" aria-modal="true" aria-labelledby="song-picker-title">
+            <div class="song-picker__handle" aria-hidden="true"></div>
+
+            <header class="song-picker__head">
+              <div>
+                <span>Repertorio</span>
+                <h2 id="song-picker-title">Agregar canciones</h2>
+              </div>
+              <button type="button" aria-label="Cerrar" @click="closeSongPicker">×</button>
+            </header>
+
+            <div class="search-box song-picker__search">
+              <span class="search-box__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>
+                </svg>
+              </span>
+              <input
+                ref="pickerSearch"
+                v-model="libQuery"
+                class="search-box__input"
+                type="search"
+                placeholder="Buscar canción…"
+                aria-label="Buscar canción"
+              >
+            </div>
+
+            <div class="song-picker__summary">
+              <span>{{ selectedSongIds.size }} seleccionada{{ selectedSongIds.size === 1 ? '' : 's' }}</span>
+              <button v-if="selectedSongIds.size" type="button" @click="clearSongSelection">Limpiar</button>
+            </div>
+
+            <div class="song-picker__list">
+              <button
+                v-for="song in pickerSongs"
+                :key="song.id"
+                class="song-picker__row"
+                :class="{ selected: selectedSongIds.has(song.id) }"
+                type="button"
+                :aria-pressed="selectedSongIds.has(song.id)"
+                @click="toggleSongSelection(song.id)"
+              >
+                <span class="song-picker__row-body">
+                  <strong>{{ song.title }}</strong>
+                  <small>{{ [song.author, song.key && `Tono ${song.key}`].filter(Boolean).join(' · ') || 'Sin datos adicionales' }}</small>
+                </span>
+                <span class="song-picker__status" aria-hidden="true">
+                  {{ selectedSongIds.has(song.id) ? '✓' : '+' }}
+                </span>
+              </button>
+
+              <div v-if="!pickerSongs.length" class="song-picker__empty">
+                {{ libQuery ? 'No se encontraron canciones' : 'Todas las canciones ya están en el repertorio' }}
+              </div>
+            </div>
+
+            <footer class="song-picker__actions">
+              <button class="btn btn-ghost" type="button" @click="closeSongPicker">Cancelar</button>
+              <button class="btn btn-primary" type="button" :disabled="!selectedSongIds.size" @click="acceptSongSelection">
+                Aceptar<span v-if="selectedSongIds.size"> ({{ selectedSongIds.size }})</span>
+              </button>
+            </footer>
+          </section>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, nextTick, onMounted } from 'vue'
+import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useRoleStore } from '../stores/role'
 import { useToast } from '../composables/useToast'
 import draggable from 'vuedraggable'
-import UiSelect from '../components/UiSelect.vue'
 
 const route     = useRoute()
 const router    = useRouter()
@@ -134,101 +157,115 @@ const roleStore = useRoleStore()
 const { showToast } = useToast()
 
 const libQuery    = ref('')
+const pickerOpen = ref(false)
+const pickerSearch = ref(null)
+const selectedSongIds = ref(new Set())
+const linkedSongs = ref([])
 const editingName = ref(false)
 const editName    = ref('')
 const nameInput   = ref(null)
-const members = ref([])
-const assignmentSongId = ref(null)
-const assignmentForm = ref({ user_id: '', responsibility: '' })
-const memberOptions = computed(() => members.value.map(member => ({
-  value: member.user_id,
-  label: member.profile?.display_name || member.profile?.email || 'Músico',
-})))
+let songSaveRunning = false
+let songSaveQueued = false
+let previousBodyOverflow = ''
 
 const repertoire = computed(() =>
   store.repertoires.find(r => r.id === Number(route.params.id))
 )
 
+const songById = computed(() => new Map(
+  [...store.songs, ...linkedSongs.value].map(song => [String(song.id), song])
+))
+
 const songObjects = computed(() =>
-  (repertoire.value?.songs || []).map(id => store.songs.find(s => s.id === id)).filter(Boolean)
+  (repertoire.value?.songs || []).map(id => songById.value.get(String(id))).filter(Boolean)
 )
 
-const availableSongs = computed(() => {
-  const inSet = new Set(repertoire.value?.songs || [])
-  const q = libQuery.value.toLowerCase()
+const pickerSongs = computed(() => {
+  const inSet = new Set((repertoire.value?.songs || []).map(String))
+  const q = libQuery.value.trim().toLowerCase()
   return store.songs.filter(s => {
-    if (inSet.has(s.id)) return false
+    if (inSet.has(String(s.id))) return false
     if (!q) return true
     return s.title.toLowerCase().includes(q) ||
       (s.author || '').toLowerCase().includes(q) ||
       (s.key || '').toLowerCase().includes(q)
-  })
+  }).sort((a, b) => a.title.localeCompare(b.title, 'es', { sensitivity: 'base' }))
 })
+
+function openSongPicker() {
+  libQuery.value = ''
+  selectedSongIds.value = new Set()
+  previousBodyOverflow = document.body.style.overflow
+  document.body.style.overflow = 'hidden'
+  pickerOpen.value = true
+  nextTick(() => pickerSearch.value?.focus())
+}
+
+function closeSongPicker() {
+  pickerOpen.value = false
+  selectedSongIds.value = new Set()
+  document.body.style.overflow = previousBodyOverflow
+}
+
+function toggleSongSelection(songId) {
+  const next = new Set(selectedSongIds.value)
+  if (next.has(songId)) next.delete(songId)
+  else next.add(songId)
+  selectedSongIds.value = next
+}
+
+function clearSongSelection() {
+  selectedSongIds.value = new Set()
+}
+
+function acceptSongSelection() {
+  if (!selectedSongIds.value.size || !repertoire.value) return
+  const existing = new Set((repertoire.value.songs || []).map(String))
+  const additions = [...selectedSongIds.value].filter(id => !existing.has(String(id)))
+  if (additions.length) {
+    repertoire.value.songs = [...(repertoire.value.songs || []), ...additions]
+    queueSongSave()
+  }
+  closeSongPicker()
+}
 
 async function save() {
   try { await store.saveRepertoires(); return true }
   catch (reason) { showToast(reason.message || 'No se pudo guardar el repertorio'); return false }
 }
 
-function songReadiness(songId) {
-  return store.readiness.filter(entry => Number(entry.song_id) === Number(songId))
+function queueSongSave() {
+  songSaveQueued = true
+  if (!songSaveRunning) flushSongSave()
 }
 
-function readinessLabel(songId) {
-  const entries = songReadiness(songId)
-  const mastered = entries.filter(entry => entry.status === 'mastered').length
-  const average = Math.round(entries.reduce((total, entry) => total + Number(entry.progress || 0), 0) / entries.length)
-  return `${mastered}/${entries.length} listos · ${average}% promedio`
-}
-
-function readinessTitle(songId) {
-  const labels = { learning: 'por aprender', practicing: 'practicando', mastered: 'dominada' }
-  return songReadiness(songId).map(entry =>
-    `${entry.profile?.display_name || 'Músico'}: ${labels[entry.status] || entry.status} (${entry.progress}%)`).join('\n')
-}
-
-function songAssignments(songId) {
-  return store.assignments.filter(item => Number(item.song_id) === Number(songId))
-}
-
-function toggleAssignment(songId) {
-  assignmentSongId.value = assignmentSongId.value === songId ? null : songId
-  assignmentForm.value = { user_id: '', responsibility: '' }
-}
-
-async function saveAssignment(songId) {
-  try {
-    await store.addSongAssignment({ song_id: songId, ...assignmentForm.value, responsibility: assignmentForm.value.responsibility.trim() })
-    assignmentSongId.value = null
-    showToast('Responsabilidad asignada')
-  } catch (reason) { showToast(reason.message || 'No se pudo crear la asignación') }
-}
-
-async function removeAssignment(assignment) {
-  try { await store.removeSongAssignment(assignment.id); showToast('Asignación eliminada') }
-  catch (reason) { showToast(reason.message || 'No se pudo eliminar') }
-}
-
-async function addSong(songId) {
-  if (!repertoire.value.songs) repertoire.value.songs = []
-  if (!repertoire.value.songs.includes(songId)) {
-    repertoire.value.songs.push(songId)
-    if (!await save()) { repertoire.value.songs = repertoire.value.songs.filter(id => id !== songId); return }
-    const title = store.songs.find(s => s.id === songId)?.title
-    showToast(`"${title}" agregada`)
+async function flushSongSave() {
+  if (songSaveRunning) return
+  songSaveRunning = true
+  while (songSaveQueued) {
+    songSaveQueued = false
+    const current = repertoire.value
+    if (!current) break
+    try {
+      await store.saveRepertoireSongs(current.id, current.songs || [])
+    } catch (reason) {
+      songSaveQueued = false
+      showToast(reason.message || 'No se pudieron guardar las canciones')
+      await store.loadRepertoires()
+      break
+    }
   }
+  songSaveRunning = false
 }
 
-async function removeSong(songId) {
-  const previous = [...repertoire.value.songs]
-  repertoire.value.songs = repertoire.value.songs.filter(id => id !== songId)
-  if (!await save()) repertoire.value.songs = previous
+function removeSong(songId) {
+  repertoire.value.songs = repertoire.value.songs.filter(id => String(id) !== String(songId))
+  queueSongSave()
 }
 
-async function onReorder(newList) {
-  const previous = [...repertoire.value.songs]
+function onReorder(newList) {
   repertoire.value.songs = newList.map(s => s.id)
-  if (!await save()) repertoire.value.songs = previous
+  queueSongSave()
 }
 
 function startEditName() {
@@ -247,13 +284,93 @@ async function confirmEditName() {
   editingName.value = false
 }
 
-onMounted(async () => { if (roleStore.isLeader) members.value = await roleStore.loadMembers() })
+onMounted(async () => {
+  await store.loadSongs()
+  linkedSongs.value = await store.getSongsByIds(repertoire.value?.songs || [])
+})
+onBeforeUnmount(() => {
+  if (pickerOpen.value) document.body.style.overflow = previousBodyOverflow
+})
 </script>
 
 <style scoped>
-.repertorio-song-card { flex-wrap: wrap; }
-.readiness-summary { display: flex; align-items: center; gap: 7px; margin-top: 7px; color: var(--color-text-secondary); font-size: 10px; font-weight: 700; }
-.readiness-avatars { display: flex; padding-left: 4px; }.readiness-avatars i { width: 20px; height: 20px; display: grid; place-items: center; margin-left: -4px; border: 2px solid var(--color-surface); border-radius: 50%; background: var(--color-surface-secondary); color: var(--color-text-secondary); font-size: 7px; font-style: normal; }.readiness-avatars i.status-practicing { background: var(--color-accent-soft); color: var(--color-accent-text); }.readiness-avatars i.status-mastered { background: var(--color-success-soft); color: var(--color-success); }
-.assignment-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }.assignment-list > span { display: inline-flex; align-items: center; gap: 3px; padding: 3px 6px; border-radius: 999px; background: var(--color-surface-secondary); color: var(--color-text-secondary); font-size: 8px; }.assignment-list button { border: 0; background: transparent; color: var(--color-danger); cursor: pointer; font-size: 12px; line-height: 1; }.assignment-toggle { margin-top: 6px; padding: 0; border: 0; background: transparent; color: var(--color-link); font: inherit; font-size: 9px; font-weight: 700; cursor: pointer; }.assignment-form { flex: 0 0 100%; display: grid; grid-template-columns: minmax(120px,.8fr) minmax(150px,1fr) auto auto; gap: 7px; padding: 10px; border-top: 1px solid var(--color-border); }.assignment-form .form-input { min-width: 0; }.assignment-form :deep(.ui-select) { min-width: 0; }
-@media (max-width:600px) { .assignment-form { grid-template-columns: 1fr 1fr; }.assignment-form .ui-select,.assignment-form .form-input { grid-column: 1 / -1; } }
+.repertoire-detail { display: flex; flex-direction: column; gap: 0; }
+
+.repertoire-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 4px 2px 16px;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+}
+
+.repertoire-heading__info { min-width: 0; flex: 1; }
+.repertoire-heading__add { width: 42px; height: 42px; flex: 0 0 42px; display: grid; place-items: center; border: 0; border-radius: 13px; background: var(--color-primary); color: var(--color-text-on-primary); font-size: 24px; cursor: pointer; }
+.repertoire-heading__add:active { background: var(--color-primary-pressed); transform: scale(.97); }
+.activity-detail-title { cursor: pointer; }
+.activity-detail-meta { margin-top: 4px; color: var(--color-text-secondary); font-size: 13px; }
+.repertorio-name-input { width: 100%; }
+
+.repertoire-section { min-width: 0; }
+
+.repertoire-song-list {
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.repertoire-song-row { border-bottom: 1px solid var(--color-border); background: var(--color-surface); }
+.repertoire-song-row:last-child { border-bottom: 0; }
+.repertoire-song-row__main { min-height: 66px; display: flex; align-items: center; gap: 8px; padding: 9px 10px; }
+.drag-handle { width: 22px; flex: 0 0 22px; display: grid; place-items: center; color: var(--color-text-muted); font-size: 17px; cursor: grab; touch-action: none; }
+.drag-handle:active { cursor: grabbing; }
+.repertoire-song-row__number { width: 22px; flex: 0 0 22px; color: var(--color-primary); font-family: var(--font-display); font-size: 14px; font-weight: 600; text-align: center; }
+.repertoire-song-row__content { min-width: 0; flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 3px 2px; border: 0; background: transparent; color: var(--color-text-primary); text-align: left; cursor: pointer; }
+.repertoire-song-row__content strong { max-width: 100%; overflow: hidden; font-size: 14px; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+.repertoire-song-row__content small { max-width: 100%; overflow: hidden; color: var(--color-text-secondary); font-size: 12px; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+.repertoire-song-row__remove { width: 34px; height: 34px; flex: 0 0 34px; border: 0; border-radius: 10px; background: var(--color-danger-soft); color: var(--color-danger); font-size: 18px; cursor: pointer; }
+.repertoire-song-row__remove:active { background: var(--color-danger); color: var(--color-text-on-primary); }
+
+.song-picker-overlay { position: fixed; z-index: 1300; inset: 0; display: flex; align-items: flex-end; justify-content: center; padding-top: 54px; background: var(--color-overlay); }
+.song-picker { width: min(100%, 600px); height: min(82dvh, 760px); display: flex; flex-direction: column; overflow: hidden; padding: 8px 16px calc(14px + env(safe-area-inset-bottom)); border: 1px solid var(--color-border); border-bottom: 0; border-radius: 24px 24px 0 0; background: var(--color-background); box-shadow: var(--shadow-modal); }
+.song-picker__handle { width: 42px; height: 4px; flex: 0 0 4px; margin: 0 auto 10px; border-radius: 999px; background: var(--color-border-strong); }
+.song-picker__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 2px 2px 14px; border: 0; background: transparent; }
+.song-picker__head span { color: var(--color-accent); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.song-picker__head h2 { margin-top: 2px; font-size: 21px; }
+.song-picker__head button { width: 40px; height: 40px; flex: 0 0 40px; border: 1px solid var(--color-border); border-radius: 50%; background: var(--color-surface); color: var(--color-text-primary); font-size: 22px; cursor: pointer; }
+.song-picker__search { flex: 0 0 auto; }
+.song-picker__search svg { width: 18px; height: 18px; }
+.song-picker__summary { min-height: 38px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 2px; color: var(--color-text-secondary); font-size: 12px; }
+.song-picker__summary button { padding: 6px 0; border: 0; background: transparent; color: var(--color-link); font-size: 12px; cursor: pointer; }
+.song-picker__list { min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; margin-top: 3px; border: 1px solid var(--color-border); border-radius: 16px; background: var(--color-surface); }
+.song-picker__row { width: 100%; min-height: 62px; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 0; border-bottom: 1px solid var(--color-border); background: transparent; color: var(--color-text-primary); text-align: left; cursor: pointer; transition: background .15s ease; }
+.song-picker__row:last-of-type { border-bottom: 0; }
+.song-picker__row:hover { background: var(--color-surface-hover); }
+.song-picker__row.selected { background: var(--color-secondary-soft); }
+.song-picker__row-body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.song-picker__row-body strong { max-width: 100%; overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.song-picker__row-body small { max-width: 100%; overflow: hidden; color: var(--color-text-secondary); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.song-picker__status { width: 34px; height: 34px; flex: 0 0 34px; display: grid; place-items: center; border-radius: 50%; background: var(--color-secondary-soft); color: var(--color-primary); font-family: var(--font-display); font-size: 20px; }
+.song-picker__row.selected .song-picker__status { background: var(--color-success); color: var(--color-text-on-primary); font-size: 16px; }
+.song-picker__empty { display: grid; place-items: center; min-height: 150px; padding: 20px; color: var(--color-text-secondary); font-size: 13px; text-align: center; }
+.song-picker__actions { display: grid; grid-template-columns: 1fr 1.35fr; gap: 10px; padding-top: 12px; }
+.song-picker__actions .btn { width: 100%; }
+
+.song-picker-enter-active, .song-picker-leave-active { transition: opacity .2s ease; }
+.song-picker-enter-active .song-picker, .song-picker-leave-active .song-picker { transition: transform .25s ease; }
+.song-picker-enter-from, .song-picker-leave-to { opacity: 0; }
+.song-picker-enter-from .song-picker, .song-picker-leave-to .song-picker { transform: translateY(100%); }
+
+.repertoire-empty { padding: 26px 4px; background: transparent; color: var(--color-text-secondary); font-size: 13px; text-align: center; }
+.drag-ghost { background: var(--color-primary-soft); opacity: .55; }
+
+@media (max-width: 360px) {
+  .repertoire-song-row__main { gap: 5px; padding-inline: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .song-picker-enter-active, .song-picker-leave-active,
+  .song-picker-enter-active .song-picker, .song-picker-leave-active .song-picker { transition: none; }
+}
 </style>

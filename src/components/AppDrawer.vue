@@ -1,9 +1,11 @@
 <template>
   <Teleport to="body">
-    <dialog id="app-menu" ref="dialog" class="drawer-dialog" aria-labelledby="menu-title" @cancel.prevent="$emit('close')" @click="($event.target === dialog) && $emit('close')">
+    <dialog id="app-menu" ref="dialog" class="drawer-dialog" aria-label="Menú de Jubal" @cancel.prevent="$emit('close')" @click="($event.target === dialog) && $emit('close')">
       <div class="drawer">
         <div class="drawer-heading">
-          <div><span>JUBAL</span><h2 id="menu-title">Tu música, en orden</h2></div>
+          <div class="drawer-logo-wrap">
+            <img class="drawer-logo" :src="logoText" alt="Jubal">
+          </div>
           <button class="drawer-close" aria-label="Cerrar menú" autofocus @click="$emit('close')">×</button>
         </div>
         <div class="drawer-content">
@@ -37,6 +39,7 @@ import { ref, nextTick, watch, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBandStore } from '../stores/band'
 import JubalNavIcon from './JubalNavIcon.vue'
+import logoText from '../../logo_text.png'
 
 const props = defineProps({ open: Boolean })
 const emit  = defineEmits(['close'])
@@ -91,8 +94,8 @@ function goBand(id) {
 .drawer-dialog::backdrop { background: var(--color-overlay); backdrop-filter: blur(5px); }
 .drawer { display: flex; flex-direction: column; height: 100%; border: 0; border-radius: inherit; box-shadow: var(--shadow-modal); }
 .drawer-heading { display: flex; justify-content: space-between; align-items: center; padding: calc(14px + env(safe-area-inset-top)) 18px 14px; gap: 12px; border-bottom: 1px solid var(--color-border); }
-.drawer-heading span { color: var(--color-primary); font-size: 10px; letter-spacing: .18em; }
-.drawer-heading h2 { margin-top: 3px; font-size: 20px; }
+.drawer-logo-wrap { position: relative; width: 170px; height: 52px; overflow: hidden; }
+.drawer-logo { position: absolute; top: -11px; left: -30px; width: 220px; max-width: none; height: auto; display: block; }
 .drawer-close { width: 44px; height: 44px; flex-shrink: 0; border: 1px solid var(--color-border); border-radius: 50%; background: var(--color-surface-secondary); color: var(--color-text-primary); font-size: 26px; cursor: pointer; }
 .drawer-content { padding: 4px 14px calc(20px + env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; }
 .drawer-section { margin: 22px 8px 8px; color: var(--color-text-muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }

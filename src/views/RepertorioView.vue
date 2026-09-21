@@ -29,27 +29,20 @@
     </div>
 
     <!-- ── Lista de repertorios ── -->
-    <div v-else class="songs-grid">
+    <div v-else class="repertoire-list">
       <div
-        v-for="(r, i) in store.repertoires"
+        v-for="r in store.repertoires"
         :key="r.id"
-        :class="['song-card', i % 2 ? '' : 'song-card--alt']"
+        class="repertoire-card"
         @click="router.push('/repertorio/' + r.id)"
         @contextmenu.prevent="roleStore.isLeader && openCtx($event, r)"
       >
-        <div class="song-card__body">
-          <div class="song-card__title">{{ r.name }}</div>
-          <div class="song-card__author">{{ (r.songs || []).length }} canciones</div>
-          <div class="song-card__meta">
-            <span
-              v-for="songId in (r.songs || []).slice(0, 3)"
-              :key="songId"
-              class="song-card__tag song-card__tag--type"
-            >{{ songTitle(songId) }}</span>
-            <span v-if="(r.songs || []).length > 3" class="song-card__tag song-card__tag--type">+{{ r.songs.length - 3 }}</span>
+        <div>
+          <div class="repertoire-card__name">{{ r.name }}</div>
+          <div class="repertoire-card__count">
+            {{ (r.songs || []).length }} canción{{ (r.songs || []).length === 1 ? '' : 'es' }}
           </div>
         </div>
-        <span class="song-card__chevron">›</span>
       </div>
     </div>
 
@@ -84,10 +77,6 @@ const creating    = ref(false)
 const newName     = ref('')
 const createInput = ref(null)
 const ctx         = ref({ visible: false, x: 0, y: 0, item: null })
-
-function songTitle(id) {
-  return store.songs.find(s => s.id === id)?.title || '?'
-}
 
 function startCreate() {
   creating.value = true
@@ -134,3 +123,26 @@ async function deleteFromCtx() {
   showToast('Repertorio eliminado')
 }
 </script>
+
+<style scoped>
+.repertoire-list {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  background: var(--color-surface);
+}
+
+.repertoire-card {
+  min-height: 72px;
+  padding: 15px 17px;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background .15s ease;
+}
+
+.repertoire-card:last-child { border-bottom: 0; }
+.repertoire-card:hover { background: var(--color-surface-hover); }
+.repertoire-card:active { background: var(--color-primary-soft); }
+.repertoire-card__name { color: var(--color-text-primary); font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+.repertoire-card__count { margin-top: 3px; color: var(--color-text-secondary); font-size: 13px; }
+</style>

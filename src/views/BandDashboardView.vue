@@ -46,12 +46,14 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 
 const router = useRouter()
 const app = useAppStore()
+
+onMounted(() => app.loadActivities())
 
 function localDateKey(date = new Date()) {
   const pad = number => String(number).padStart(2, '0')

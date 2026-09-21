@@ -1415,6 +1415,7 @@ header {
   transition: transform 0.3s ease;
   z-index: 999;
   box-shadow: 0 4px 20px rgba(var(--color-success-rgb),0.2);
+  pointer-events: none;
 }
 .success-toast::before { content: '✓'; margin-right: 7px; font-weight: 900; }
 .success-toast.show { transform: translateX(-50%) translateY(0); }

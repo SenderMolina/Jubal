@@ -1,7 +1,7 @@
 <template>
   <div class="activity-form-page">
     <RouterLink class="activity-form-back" :to="returnPath" :aria-label="editing ? 'Volver a la actividad' : 'Volver a la agenda'">
-      <span aria-hidden="true">←</span> Volver
+      <span aria-hidden="true">←</span> {{ editing ? 'Volver a la actividad' : 'Volver a la agenda' }}
     </RouterLink>
 
     <div v-if="loading" class="activity-form-state" role="status">Cargando actividad…</div>
@@ -16,11 +16,11 @@
     <form v-else class="activity-form" novalidate :aria-busy="saving" @submit.prevent="save">
       <fieldset :disabled="saving" aria-label="Datos de la actividad">
         <div class="activity-form-field">
-          <label class="form-label" for="activity-title">Nombre <span aria-hidden="true">*</span></label>
+          <label class="form-label" for="activity-title">Nombre <span class="activity-required" aria-hidden="true">*</span></label>
           <input
             id="activity-title" ref="titleInput" v-model="form.title" class="form-input"
             :class="{ 'form-input--error': errors.title }" type="text" required maxlength="120"
-            placeholder="Ej. Ensayo del domingo" autocomplete="off" enterkeyhint="next"
+            placeholder="Ej. Ensayo general" autocomplete="off" enterkeyhint="next"
             :aria-invalid="Boolean(errors.title)" :aria-describedby="errors.title ? 'activity-title-error' : undefined"
             @input="errors.title = ''"
           >
@@ -30,7 +30,7 @@
         <div class="activity-form-field">
           <div class="activity-date-grid">
             <div>
-              <label class="form-label" for="activity-date">Fecha <span aria-hidden="true">*</span></label>
+              <label class="form-label" for="activity-date">Fecha <span class="activity-required" aria-hidden="true">*</span></label>
               <input
                 id="activity-date" ref="dateInput" v-model="form.date" class="form-input"
                 :class="{ 'form-input--error': errors.date }" type="date" required max="9999-12-31"
@@ -40,21 +40,17 @@
               <p v-if="errors.date" id="activity-date-error" class="activity-field-error">{{ errors.date }}</p>
             </div>
             <div>
-              <label class="form-label" for="activity-time">Hora <span class="activity-optional">Opcional</span></label>
+              <label class="form-label" for="activity-time">Hora <span class="activity-optional">(opcional)</span></label>
               <input id="activity-time" v-model="form.time" class="form-input" type="time">
             </div>
-          </div>
-          <div class="activity-date-shortcuts" role="group" aria-label="Elegir una fecha rápida">
-            <button type="button" :aria-pressed="form.date === localDate(0)" @click="setDate(0)">Hoy</button>
-            <button type="button" :aria-pressed="form.date === localDate(1)" @click="setDate(1)">Mañana</button>
           </div>
         </div>
 
         <div class="activity-form-field">
-          <label class="form-label" for="activity-description">Notas <span class="activity-optional">Opcional</span></label>
+          <label class="form-label" for="activity-description">Notas <span class="activity-optional">(opcional)</span></label>
           <textarea
-            id="activity-description" v-model="form.description" class="form-textarea" rows="2" maxlength="2000"
-            placeholder="Lugar o indicaciones."
+            id="activity-description" v-model="form.description" class="form-textarea" rows="3" maxlength="2000"
+            placeholder="Lugar, dirección o indicaciones"
           />
         </div>
       </fieldset>
@@ -65,7 +61,7 @@
         <button class="btn btn-primary" type="submit" :disabled="saving">
           {{ saving ? 'Guardando…' : editing ? 'Guardar cambios' : 'Crear actividad' }}
         </button>
-        <button class="btn btn-ghost" type="button" :disabled="saving" @click="router.push(returnPath)">Cancelar</button>
+        <button class="activity-form-cancel" type="button" :disabled="saving" @click="router.push(returnPath)">Cancelar</button>
       </div>
     </form>
   </div>
@@ -102,18 +98,6 @@ const editing = computed(() => Boolean(route.params.id))
 const returnPath = computed(() => editing.value ? `/actividad/${route.params.id}` : '/actividades')
 const canEdit = computed(() => band.isLeader && band.currentBandId && band.currentBandId === sourceBandId.value)
 const dirty = computed(() => original.value && JSON.stringify(form) !== original.value)
-
-function localDate(offset) {
-  const date = new Date()
-  date.setDate(date.getDate() + offset)
-  const pad = value => String(value).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
-}
-
-function setDate(offset) {
-  form.date = localDate(offset)
-  errors.date = ''
-}
 
 async function initialize() {
   const version = ++loadVersion
@@ -192,26 +176,27 @@ onBeforeRouteUpdate(canLeave)
 </script>
 
 <style scoped>
-.activity-form-page { max-width: 560px; margin-inline: auto; }
-.activity-form-back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin: -10px 0 8px; color: var(--color-text-muted); font-size: 13px; text-decoration: none; }
-.activity-form-back span { font-size: 18px; }
-.activity-form { display: flex; flex-direction: column; gap: 16px; }
-.activity-form fieldset { display: grid; gap: 14px; min-width: 0; padding: 0; border: 0; }
+.activity-form-page { max-width: 560px; margin-inline: auto; font-family: var(--font-body); }
+.activity-form-back { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; margin: -9px 0 12px; color: var(--color-link); font-family: var(--font-body); font-size: 14px; font-weight: 600; text-decoration: none; }
+.activity-form-back span { font-size: 18px; line-height: 1; }
+.activity-form { display: flex; flex-direction: column; gap: 20px; }
+.activity-form fieldset { display: grid; gap: 18px; min-width: 0; padding: 0; border: 0; }
 .activity-form-field { min-width: 0; }
-.activity-form .form-label { display: flex; align-items: baseline; gap: 5px; margin-bottom: 6px; font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; }
-.activity-form .form-input, .activity-form .form-textarea { display: block; width: 100%; min-width: 0; max-width: 100%; min-height: 44px; padding: 9px 10px; border-radius: 8px; font-size: 16px; font-weight: 400; }
-.activity-form .form-textarea { min-height: 80px; resize: vertical; line-height: 1.4; }
-.activity-optional { color: var(--color-text-muted); font-size: 11px; font-weight: 600; }
-.activity-date-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 12px; }
+.activity-form .form-label { display: flex; align-items: baseline; gap: 4px; margin-bottom: 8px; color: var(--color-text-secondary); font-family: var(--font-body); font-size: 16px; font-weight: 600; line-height: 1.3; letter-spacing: 0; text-transform: none; }
+.activity-required { color: var(--color-danger); }
+.activity-form .form-input, .activity-form .form-textarea { display: block; width: 100%; min-width: 0; max-width: 100%; min-height: 50px; padding: 12px 14px; border-radius: 14px; background: var(--color-surface); font-family: var(--font-body); font-size: 17px; font-weight: 500; line-height: 1.35; }
+.activity-form .form-textarea { min-height: 104px; resize: vertical; line-height: 1.45; }
+.activity-optional { color: var(--color-text-muted); font-size: 14px; font-weight: 500; }
+.activity-date-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .95fr); gap: 12px; }
 .activity-date-grid > div { min-width: 0; }
-.activity-date-shortcuts { display: flex; gap: 8px; margin-top: 2px; }
-.activity-date-shortcuts button { min-height: 44px; padding: 6px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--color-text-muted); font-size: 12px; font-weight: 600; cursor: pointer; }
-.activity-date-shortcuts button[aria-pressed='true'] { color: var(--color-primary); text-decoration: underline; text-underline-offset: 4px; }
-.activity-form-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; padding-bottom: env(safe-area-inset-bottom); }
-.activity-form-actions .btn { min-height: 44px; padding: 10px 14px; border-radius: 8px; font-size: 14px; font-weight: 700; box-shadow: none; }
+.activity-form-actions { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 10px; padding-bottom: env(safe-area-inset-bottom); }
+.activity-form-actions .btn { width: 100%; min-height: 50px; padding: 12px 16px; border-radius: 14px; font-family: var(--font-display); font-size: 15px; font-weight: 600; box-shadow: none; }
+.activity-form-cancel { min-height: 50px; padding: 12px 14px; border: 1px solid var(--color-danger); border-radius: 14px; background: var(--color-danger); color: var(--color-text-on-primary); font-family: var(--font-display); font-size: 15px; font-weight: 600; cursor: pointer; }
+.activity-form-cancel:active:not(:disabled) { transform: scale(.98); }
+.activity-form-cancel:disabled { border-color: var(--color-disabled-border); background: var(--color-disabled-background); color: var(--color-disabled-text); }
 .activity-field-error { margin-top: 8px; color: var(--color-danger); font-size: 13px; line-height: 1.4; }
 .activity-form .form-input--error { border-color: var(--color-danger); }
 .activity-save-error { color: var(--color-danger); font-size: 13px; line-height: 1.5; }
 .activity-form-state { display: grid; gap: 12px; padding-block: 12px; color: var(--color-text-secondary); font-size: 14px; line-height: 1.5; }
-@media (max-width: 359px) { .activity-date-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; } }
+@media (max-width: 359px) { .activity-date-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; } }
 </style>

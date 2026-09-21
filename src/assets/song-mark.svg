@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Canción</title>
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="#E5F6F8"/>
+  <path d="M31 13v30" fill="none" stroke="#083B59" stroke-width="6" stroke-linecap="round"/>
+  <path d="M32 14c9 2 15 7 15 16-4-4-9-7-15-8Z" fill="#083B59"/>
+  <ellipse cx="23" cy="44" rx="10" ry="8" transform="rotate(-18 23 44)" fill="#083B59"/>
+</svg>

@@ -35,12 +35,50 @@ export const useAppStore = defineStore('app', () => {
   // Acota una consulta al ámbito activo.
   const inScope = (q) => band.currentBandId ? q.eq('band_id', band.currentBandId) : q.is('band_id', null)
   let channels = []
+  let repertoireReloadTimer = null
+  let repertoireWriteCount = 0
+  let repertoireStateVersion = 0
+
+  function scheduleRepertoireReload() {
+    clearTimeout(repertoireReloadTimer)
+    repertoireReloadTimer = setTimeout(() => {
+      if (repertoireWriteCount) {
+        scheduleRepertoireReload()
+        return
+      }
+      loadRepertoires()
+    }, 250)
+  }
+
+  function beginRepertoireWrite() {
+    repertoireWriteCount += 1
+    repertoireStateVersion += 1
+    clearTimeout(repertoireReloadTimer)
+    repertoireReloadTimer = null
+  }
+
+  function endRepertoireWrite() {
+    repertoireWriteCount = Math.max(0, repertoireWriteCount - 1)
+    if (!repertoireWriteCount) scheduleRepertoireReload()
+  }
 
   // ---------- Cargas (filtradas por ámbito) ----------
   async function loadSongs() {
     if (!scoped()) { songs.value = []; return }
-    const { data } = await inScope(supabase.from('songs').select('*')).order('id')
+    const requestedScope = band.currentBandId || '__personal__'
+    const { data, error } = await inScope(supabase.from('songs').select('*')).order('id')
+    const currentScope = band.currentBandId || '__personal__'
+    if (requestedScope !== currentScope) return
+    if (error) { console.error('Error cargando canciones:', error); return }
     songs.value = data || []
+  }
+
+  async function getSongsByIds(songIds) {
+    const ids = [...new Set((songIds || []).filter(id => id !== null && id !== undefined))]
+    if (!ids.length) return []
+    const { data, error } = await supabase.from('songs').select('*').in('id', ids)
+    if (error) { console.error('Error cargando canciones del repertorio:', error); return [] }
+    return data || []
   }
 
   async function loadSongTypes() {
@@ -51,12 +89,16 @@ export const useAppStore = defineStore('app', () => {
 
   async function loadActivities() {
     const b = bid(); if (!b) { activities.value = []; return }  // solo banda
-    const { data } = await supabase.from('activities').select('*').eq('band_id', b).order('id')
+    const { data, error } = await supabase.from('activities').select('*').eq('band_id', b).order('date').order('time')
+    if (bid() !== b) return
+    if (error) { console.error('Error cargando actividades:', error); return }
     activities.value = (data || []).map(a => ({ ...a, tiempos: a.tiempos || [] }))
   }
 
   async function loadRepertoires() {
     if (!scoped()) { repertoires.value = []; return }
+    const requestedVersion = repertoireStateVersion
+    const requestedScope = band.currentBandId || '__personal__'
     const { data: reps } = await inScope(supabase.from('repertoires').select('*')).order('id')
     const repIds = (reps || []).map(r => r.id)
     let links = []
@@ -65,6 +107,8 @@ export const useAppStore = defineStore('app', () => {
         .from('repertoire_songs').select('*').in('repertoire_id', repIds).order('position')
       links = data || []
     }
+    const currentScope = band.currentBandId || '__personal__'
+    if (requestedVersion !== repertoireStateVersion || requestedScope !== currentScope) return
     repertoires.value = (reps || []).map(r => ({
       ...r,
       songs: links
@@ -171,20 +215,47 @@ export const useAppStore = defineStore('app', () => {
 
   async function saveRepertoires() {
     const b = bid()
-    await syncTable('repertoires', b, repertoires.value.map(r => ({ id: r.id, name: r.name, band_id: b })))
-    const results = await Promise.all(repertoires.value.map(repertoire =>
-      supabase.rpc('replace_repertoire_songs', {
-        p_repertoire_id: repertoire.id,
-        p_song_ids: repertoire.songs || [],
-      })))
-    const failed = results.find(result => result.error)
-    if (failed) throw failed.error
+    // Capturar el estado antes del primer await evita que una recarga realtime
+    // cambie las canciones que se están guardando durante la operación.
+    const snapshot = repertoires.value.map(repertoire => ({
+      id: repertoire.id,
+      name: repertoire.name,
+      songs: [...(repertoire.songs || [])],
+    }))
+    beginRepertoireWrite()
+    try {
+      await syncTable('repertoires', b, snapshot.map(r => ({ id: r.id, name: r.name, band_id: b })))
+      const results = await Promise.all(snapshot.map(repertoire =>
+        supabase.rpc('replace_repertoire_songs', {
+          p_repertoire_id: repertoire.id,
+          p_song_ids: repertoire.songs,
+        })))
+      const failed = results.find(result => result.error)
+      if (failed) throw failed.error
+    } finally {
+      endRepertoireWrite()
+    }
+  }
+
+  async function saveRepertoireSongs(repertoireId, songIds) {
+    beginRepertoireWrite()
+    try {
+      const { error } = await supabase.rpc('replace_repertoire_songs', {
+        p_repertoire_id: repertoireId,
+        p_song_ids: [...songIds],
+      })
+      if (error) throw error
+    } finally {
+      endRepertoireWrite()
+    }
   }
 
   // ---------- Realtime (solo en banda: en personal nadie más escribe) ----------
   function unsubscribe() {
     channels.forEach(c => supabase.removeChannel(c))
     channels = []
+    clearTimeout(repertoireReloadTimer)
+    repertoireReloadTimer = null
   }
 
   function subscribe() {
@@ -199,9 +270,9 @@ export const useAppStore = defineStore('app', () => {
       supabase.channel(`activities-${b}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'activities', filter }, loadActivities).subscribe(),
       supabase.channel(`repertoires-${b}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'repertoires', filter }, loadRepertoires)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'repertoires', filter }, scheduleRepertoireReload)
         // repertoire_songs no tiene band_id; RLS limita la visibilidad y recargamos.
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'repertoire_songs' }, loadRepertoires)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'repertoire_songs' }, scheduleRepertoireReload)
         .subscribe(),
       supabase.channel(`readiness-${b}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'song_readiness', filter }, loadReadiness)
@@ -217,7 +288,7 @@ export const useAppStore = defineStore('app', () => {
 
   return {
     songs, activities, songTypes, repertoires, readiness, assignments,
-    saveSongs, saveActivities, saveActivity, getActivity, saveSongTypes, saveRepertoires,
+    saveSongs, saveActivities, saveActivity, getActivity, saveSongTypes, saveRepertoires, saveRepertoireSongs, loadSongs, getSongsByIds, loadActivities, loadRepertoires,
     addSongAssignment, removeSongAssignment,
   }
 })

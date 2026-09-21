@@ -169,7 +169,8 @@ const { showToast } = useToast()
 const { confirm }   = useConfirm()
 
 // Compatibilidad con enlaces antiguos durante la restauración de la sesión.
-onMounted(() => {
+onMounted(async () => {
+  await store.loadActivities()
   if (route.query.nueva && roleStore.isLeader) {
     router.replace({ path: '/actividades/nueva', query: route.query.fecha ? { fecha: route.query.fecha } : {} })
   }

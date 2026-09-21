@@ -7,7 +7,7 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/apple-touch-icon.png'],
+      includeAssets: ['icons/jubal-apple-touch-icon.png'],
       manifest: {
         name: 'Jubal - Repertorio de Alabanzas',
         short_name: 'Jubal',
@@ -21,17 +21,17 @@ export default defineConfig({
         theme_color: '#219EBC',
         icons: [
           {
-            src: '/icons/pwa-192x192.png',
+            src: '/icons/jubal-192x192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: '/icons/pwa-512x512.png',
+            src: '/icons/jubal-512x512.png',
             sizes: '512x512',
             type: 'image/png',
           },
           {
-            src: '/icons/maskable-512x512.png',
+            src: '/icons/jubal-maskable-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',

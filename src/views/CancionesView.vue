@@ -60,11 +60,8 @@
           @click="router.push('/cancion/' + s.id)"
           @contextmenu.prevent="roleStore.isLeader && openContextMenu($event, s)"
         >
-          <span class="song-item__badge" :class="{ 'song-item__badge--empty': !s.key }">
-            <span v-if="s.key" class="song-item__key">{{ fmtKey(s.key) }}</span>
-            <svg v-else class="song-item__note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
-            </svg>
+          <span class="song-item__badge">
+            <img class="song-item__mark" :src="songMark" alt="">
           </span>
           <span class="song-item__main">
             <span class="song-item__title">{{ s.title }}</span>
@@ -178,9 +175,8 @@
 
       <!-- Acciones -->
       <div class="sf-actions">
-        <span class="sf-cancel-link" @click="toggleForm">Cancelar</span>
-        <button class="btn btn-ghost" @click="saveAndAnother">Guardar y agregar otra</button>
-        <button class="sf-save-btn" @click="saveSong">Guardar canción</button>
+        <button class="sf-save-btn" type="button" @click="saveSong">Guardar</button>
+        <button class="sf-cancel-btn" type="button" @click="toggleForm">Cancelar</button>
       </div>
     </template>
 
@@ -196,6 +192,7 @@ import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import { parseDuration } from '../utils/duration'
 import UiCombobox from '../components/UiCombobox.vue'
+import songMark from '../assets/song-mark.svg'
 
 const router    = useRouter()
 const store     = useAppStore()
@@ -274,12 +271,6 @@ function saveSong() {
   if (!_doSave()) return
   showToast('Canción guardada ✓')
   showForm.value = false
-  form.value = emptyForm()
-}
-
-function saveAndAnother() {
-  if (!_doSave()) return
-  showToast('Canción guardada ✓')
   form.value = emptyForm()
 }
 
@@ -409,16 +400,13 @@ async function deleteSongFromCtx() {
   width: 38px;
   height: 38px;
   border-radius: 11px;
-  background: var(--color-primary-soft);
-  color: var(--color-primary-hover);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
 }
-.song-item__badge--empty { background: var(--color-surface-secondary); color: var(--color-text-muted); }
-.song-item__key { font-size: .9rem; font-weight: 800; letter-spacing: -0.01em; }
-.song-item__note { width: 17px; height: 17px; }
+.song-item__mark { width: 34px; height: 34px; display: block; }
 
 .song-item__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .song-item__title {
@@ -438,6 +426,29 @@ async function deleteSongFromCtx() {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.sf-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 10px;
+}
+.sf-actions .sf-save-btn,
+.sf-actions .sf-cancel-btn {
+  width: 100%;
+  min-height: 50px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.sf-actions .sf-cancel-btn {
+  border: 1px solid var(--color-danger);
+  background: var(--color-danger);
+  color: var(--color-text-on-primary);
+  cursor: pointer;
+}
+.sf-actions .sf-cancel-btn:active { transform: scale(.98); }
 .song-item__dot { margin: 0 5px; opacity: 0.6; }
 .song-item__arrow { width: 15px; height: 15px; flex-shrink: 0; color: var(--color-text-muted); }
 
