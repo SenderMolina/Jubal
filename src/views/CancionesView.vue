@@ -3,12 +3,6 @@
 
     <!-- ── Lista de canciones ── -->
     <template v-if="!showForm">
-      <div class="songs-header">
-        <div>
-          <h2 class="songs-header__title">Cancionero</h2>
-        </div>
-        <span class="songs-header__count" :aria-label="`${store.songs.length} canciones`">{{ store.songs.length }}</span>
-      </div>
       <div v-if="roleStore.isLeader" class="page-actions">
         <button class="btn-pill btn-pill--primary" @click="openForm">
           <span class="btn-pill__icon">+</span> Agregar canción
@@ -375,12 +369,16 @@ async function deleteSongFromCtx() {
 /* Icono de búsqueda como SVG (a juego con la nav), reemplaza el emoji */
 .search-box__svg { width: 18px; height: 18px; display: block; }
 
-/* ── LISTA DE CANCIONES: tarjetas legibles en banda y espacio personal ── */
+/* ── LISTA DE CANCIONES: una superficie continua con divisores claros ── */
 .song-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding-bottom: 24px;
+  gap: 0;
+  overflow: hidden;
+  margin-bottom: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
 }
 
 .song-item {
@@ -388,19 +386,22 @@ async function deleteSongFromCtx() {
   align-items: center;
   gap: 9px;
   width: 100%;
+  margin: 0;
   text-align: left;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
   font-family: var(--font);
-  padding: 8px 10px;
-  border-radius: 13px;
-  box-shadow: var(--shadow);
+  padding: 10px;
+  border-radius: 0;
+  box-shadow: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
+  transition: background .18s ease;
 }
-.song-item:active { background: var(--accent-soft); transform: scale(.99); }
-.song-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.song-item:last-child { border-bottom: 0; }
+.song-item:active { background: var(--color-primary-soft); }
+.song-item:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
 
 /* El tono funciona como ancla visual compacta. */
 .song-item__badge {
@@ -408,14 +409,14 @@ async function deleteSongFromCtx() {
   width: 38px;
   height: 38px;
   border-radius: 11px;
-  background: var(--accent-soft);
-  color: var(--accent2);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-hover);
   display: flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
 }
-.song-item__badge--empty { background: var(--surface2); color: var(--text-muted); }
+.song-item__badge--empty { background: var(--color-surface-secondary); color: var(--color-text-muted); }
 .song-item__key { font-size: .9rem; font-weight: 800; letter-spacing: -0.01em; }
 .song-item__note { width: 17px; height: 17px; }
 
@@ -423,7 +424,7 @@ async function deleteSongFromCtx() {
 .song-item__title {
   font-size: 0.82rem;
   font-weight: 700;
-  color: var(--text);
+  color: var(--color-text-primary);
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -432,16 +433,16 @@ async function deleteSongFromCtx() {
 }
 .song-item__sub {
   font-size: 0.68rem;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .song-item__dot { margin: 0 5px; opacity: 0.6; }
-.song-item__arrow { width: 15px; height: 15px; flex-shrink: 0; color: var(--text-muted); }
+.song-item__arrow { width: 15px; height: 15px; flex-shrink: 0; color: var(--color-text-muted); }
 
 @media (hover: hover) {
-  .song-item:hover { border-color: rgba(var(--brand-rgb), .35); box-shadow: var(--shadow-hover); transform: translateY(-1px); }
+  .song-item:hover { background: var(--color-surface-hover); box-shadow: none; transform: none; }
 }
 
 @media (max-width: 380px) {
@@ -451,41 +452,41 @@ async function deleteSongFromCtx() {
 }
 
 /* Estado vacío con icono SVG en vez de emoji */
-.songs-empty__svg { width: 40px; height: 40px; color: var(--text-muted); opacity: 0.7; margin: 0 auto 14px; display: block; }
-.songs-empty__hint { display: block; font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; }
+.songs-empty__svg { width: 40px; height: 40px; color: var(--color-text-muted); opacity: 0.7; margin: 0 auto 14px; display: block; }
+.songs-empty__hint { display: block; font-size: 0.8rem; color: var(--color-text-muted); margin-top: 6px; }
 
 /* ── FORMULARIO: encabezado amable ── */
 .sf-head { margin-bottom: 18px; }
-.sf-intro { font-size: 0.85rem; color: var(--text-mid); margin-top: 6px; line-height: 1.45; max-width: 46ch; }
-.sf-title-input--error { border-bottom-color: var(--red); }
-.sf-error { color: var(--red); font-size: 0.78rem; margin-top: 6px; }
+.sf-intro { font-size: 0.85rem; color: var(--color-text-secondary); margin-top: 6px; line-height: 1.45; max-width: 46ch; }
+.sf-title-input--error { border-bottom-color: var(--color-danger); }
+.sf-error { color: var(--color-danger); font-size: 0.78rem; margin-top: 6px; }
 
 /* ── FORMULARIO: teclado de tonos (la firma) ── */
 .key-picker { display: flex; flex-wrap: wrap; gap: 7px; }
 .key-chip {
   min-width: 42px;
   padding: 9px 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 11px;
-  background: var(--surface);
-  color: var(--text);
-  font-family: var(--font);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-family: var(--font-display);
   font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
-.key-chip:hover { border-color: var(--accent); color: var(--accent); }
+.key-chip:hover { border-color: var(--color-primary); color: var(--color-primary); }
 .key-chip.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-  box-shadow: var(--shadow-hover);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-on-primary);
+  box-shadow: var(--shadow-medium);
 }
-.key-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.key-chip--none { color: var(--text-muted); font-weight: 600; }
-.key-chip--none.active { background: var(--text-mid); border-color: var(--text-mid); color: #fff; }
+.key-chip:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.key-chip--none { color: var(--color-text-muted); font-weight: 600; }
+.key-chip--none.active { background: var(--color-text-secondary); border-color: var(--color-text-secondary); color: var(--color-text-on-primary); }
 
 /* ── FORMULARIO: tempo con unidad ── */
 .sf-bpm-wrap { position: relative; }
@@ -493,7 +494,7 @@ async function deleteSongFromCtx() {
 .sf-bpm-unit {
   position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
   font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em;
-  color: var(--text-muted); pointer-events: none;
+  color: var(--color-text-muted); pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

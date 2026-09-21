@@ -18,6 +18,10 @@ export const useBandStore = defineStore('band', () => {
     bands.value.find(b => b.id === currentBandId.value) || null)
 
   const myRole     = computed(() => currentBand.value?.role || null)
+  const isOwner    = computed(() => {
+    const auth = useAuthStore()
+    return Boolean(currentBand.value && auth.user?.id === currentBand.value.owner_id)
+  })
   // En el espacio personal el músico es dueño de sus datos: mismas vistas, permisos de líder.
   const isLeader   = computed(() => myRole.value === 'leader' || personalMode.value)
   const isMusico   = computed(() => myRole.value === 'musician')
@@ -29,13 +33,13 @@ export const useBandStore = defineStore('band', () => {
 
     const { data, error } = await supabase
       .from('band_members')
-      .select('role, band:bands(id, name, owner_id)')
+      .select('role, band:bands(*)')
       .eq('user_id', auth.user.id)
 
     if (error) console.error('Error cargando bandas:', error)
     bands.value = (data || [])
       .filter(r => r.band)
-      .map(r => ({ id: r.band.id, name: r.band.name, owner_id: r.band.owner_id, role: r.role }))
+      .map(r => ({ ...r.band, role: r.role }))
   }
 
   // Cargar bandas y, si hay una invitación pendiente, canjearla.
@@ -59,6 +63,87 @@ export const useBandStore = defineStore('band', () => {
     await loadBands()
     selectBand(data.id)
     return data
+  }
+
+  function updateCurrentBand(record) {
+    const index = bands.value.findIndex(band => band.id === record.id)
+    if (index < 0) return
+    bands.value[index] = { ...bands.value[index], ...record }
+  }
+
+  async function updateBandName(name) {
+    const id = currentBandId.value
+    const cleanName = name.trim()
+    if (!id || !cleanName) throw new Error('Escribe un nombre para la banda.')
+    const { data, error } = await supabase
+      .from('bands')
+      .update({ name: cleanName })
+      .eq('id', id)
+      .select('*')
+      .single()
+    if (error) throw error
+    updateCurrentBand(data)
+    return data
+  }
+
+  function imageStoragePath(url) {
+    if (!url) return ''
+    const marker = '/band-images/'
+    const path = url.split(marker)[1]
+    return path ? decodeURIComponent(path.split('?')[0]) : ''
+  }
+
+  async function updateBandImage(file) {
+    const id = currentBandId.value
+    if (!id || !file) throw new Error('Selecciona una imagen.')
+    const extension = ({
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+    })[file.type]
+    if (!extension) throw new Error('Usa una imagen JPG, PNG o WebP.')
+    if (file.size > 4 * 1024 * 1024) throw new Error('La imagen debe pesar menos de 4 MB.')
+
+    const previousPath = imageStoragePath(currentBand.value?.avatar_url)
+    const path = `${id}/${crypto.randomUUID()}.${extension}`
+    const { error: uploadError } = await supabase.storage
+      .from('band-images')
+      .upload(path, file, { cacheControl: '3600', contentType: file.type })
+    if (uploadError) throw uploadError
+
+    const { data: publicData } = supabase.storage.from('band-images').getPublicUrl(path)
+    const avatarUrl = publicData.publicUrl
+    const { data, error } = await supabase
+      .from('bands')
+      .update({ avatar_url: avatarUrl })
+      .eq('id', id)
+      .select('*')
+      .single()
+
+    if (error) {
+      await supabase.storage.from('band-images').remove([path])
+      throw error
+    }
+
+    updateCurrentBand(data)
+    if (previousPath && previousPath !== path) {
+      await supabase.storage.from('band-images').remove([previousPath])
+    }
+    return data
+  }
+
+  async function deleteBand() {
+    const id = currentBandId.value
+    if (!id) return
+    const imagePath = imageStoragePath(currentBand.value?.avatar_url)
+    if (imagePath) await supabase.storage.from('band-images').remove([imagePath])
+
+    const { error } = await supabase.from('bands').delete().eq('id', id)
+    if (error) throw error
+
+    bands.value = bands.value.filter(band => band.id !== id)
+    if (bands.value.length) selectBand(bands.value[0].id)
+    else enterPersonal()
   }
 
   function selectBand(id) {
@@ -168,8 +253,9 @@ export const useBandStore = defineStore('band', () => {
   return {
     bands, currentBandId, currentBand, ready, pendingInvite, inviteResult,
     personalMode, enterPersonal,
-    myRole, isLeader, isMusico, isCantante,
-    loadBands, init, createBand, selectBand, redeemPending, changeRole, reset,
+    myRole, isOwner, isLeader, isMusico, isCantante,
+    loadBands, init, createBand, updateBandName, updateBandImage, deleteBand,
+    selectBand, redeemPending, changeRole, reset,
     loadMembers, updateMemberRole, removeMember,
     loadInvites, createInvite, revokeInvite, inviteLink,
   }

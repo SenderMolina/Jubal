@@ -47,7 +47,7 @@
             <div class="song-card__body" style="cursor:pointer" @click="router.push('/cancion/' + song.id + '?rep=' + repertoire.id)">
               <div class="song-card__title" style="font-size:16px">{{ song.title }}</div>
               <div class="song-card__meta" style="margin-top:4px">
-                <span v-if="song.author" style="font-size:13px;color:var(--text-muted)">{{ song.author }}</span>
+                <span v-if="song.author" style="font-size:13px;color:var(--color-text-muted)">{{ song.author }}</span>
                 <span v-if="song.key" class="song-card__tag song-card__tag--key">♪ {{ song.key }}</span>
               </div>
               <div v-if="songReadiness(song.id).length" class="readiness-summary" :title="readinessTitle(song.id)">
@@ -95,7 +95,7 @@
           >
         </div>
 
-        <div v-if="availableSongs.length === 0" style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.9rem">
+        <div v-if="availableSongs.length === 0" style="text-align:center;padding:20px;color:var(--color-text-muted);font-size:0.9rem">
           {{ libQuery ? 'Sin resultados' : 'Todas las canciones ya están en el repertorio' }}
         </div>
 
@@ -108,7 +108,7 @@
           >
             <div class="song-card__body">
               <div class="song-card__title" style="font-size:15px">{{ song.title }}</div>
-              <div style="font-size:13px;color:var(--text-muted)">{{ [song.author, song.key].filter(Boolean).join(' · ') }}</div>
+              <div style="font-size:13px;color:var(--color-text-muted)">{{ [song.author, song.key].filter(Boolean).join(' · ') }}</div>
             </div>
             <span class="repertorio-add-icon">+</span>
           </div>
@@ -252,8 +252,8 @@ onMounted(async () => { if (roleStore.isLeader) members.value = await roleStore.
 
 <style scoped>
 .repertorio-song-card { flex-wrap: wrap; }
-.readiness-summary { display: flex; align-items: center; gap: 7px; margin-top: 7px; color: var(--text-mid); font-size: 10px; font-weight: 700; }
-.readiness-avatars { display: flex; padding-left: 4px; }.readiness-avatars i { width: 20px; height: 20px; display: grid; place-items: center; margin-left: -4px; border: 2px solid var(--surface); border-radius: 50%; background: var(--surface2); color: var(--text-mid); font-size: 7px; font-style: normal; }.readiness-avatars i.status-practicing { background: var(--action-soft); color: var(--action2); }.readiness-avatars i.status-mastered { background: var(--green-soft); color: var(--green); }
-.assignment-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }.assignment-list > span { display: inline-flex; align-items: center; gap: 3px; padding: 3px 6px; border-radius: 999px; background: var(--surface2); color: var(--text-mid); font-size: 8px; }.assignment-list button { border: 0; background: transparent; color: var(--red); cursor: pointer; font-size: 12px; line-height: 1; }.assignment-toggle { margin-top: 6px; padding: 0; border: 0; background: transparent; color: var(--accent2); font: inherit; font-size: 9px; font-weight: 700; cursor: pointer; }.assignment-form { flex: 0 0 100%; display: grid; grid-template-columns: minmax(120px,.8fr) minmax(150px,1fr) auto auto; gap: 7px; padding: 10px; border-top: 1px solid var(--border); }.assignment-form .form-input { min-width: 0; }.assignment-form :deep(.ui-select) { min-width: 0; }
+.readiness-summary { display: flex; align-items: center; gap: 7px; margin-top: 7px; color: var(--color-text-secondary); font-size: 10px; font-weight: 700; }
+.readiness-avatars { display: flex; padding-left: 4px; }.readiness-avatars i { width: 20px; height: 20px; display: grid; place-items: center; margin-left: -4px; border: 2px solid var(--color-surface); border-radius: 50%; background: var(--color-surface-secondary); color: var(--color-text-secondary); font-size: 7px; font-style: normal; }.readiness-avatars i.status-practicing { background: var(--color-accent-soft); color: var(--color-accent-text); }.readiness-avatars i.status-mastered { background: var(--color-success-soft); color: var(--color-success); }
+.assignment-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }.assignment-list > span { display: inline-flex; align-items: center; gap: 3px; padding: 3px 6px; border-radius: 999px; background: var(--color-surface-secondary); color: var(--color-text-secondary); font-size: 8px; }.assignment-list button { border: 0; background: transparent; color: var(--color-danger); cursor: pointer; font-size: 12px; line-height: 1; }.assignment-toggle { margin-top: 6px; padding: 0; border: 0; background: transparent; color: var(--color-link); font: inherit; font-size: 9px; font-weight: 700; cursor: pointer; }.assignment-form { flex: 0 0 100%; display: grid; grid-template-columns: minmax(120px,.8fr) minmax(150px,1fr) auto auto; gap: 7px; padding: 10px; border-top: 1px solid var(--color-border); }.assignment-form .form-input { min-width: 0; }.assignment-form :deep(.ui-select) { min-width: 0; }
 @media (max-width:600px) { .assignment-form { grid-template-columns: 1fr 1fr; }.assignment-form .ui-select,.assignment-form .form-input { grid-column: 1 / -1; } }
 </style>

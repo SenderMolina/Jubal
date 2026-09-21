@@ -10,7 +10,7 @@
       <main class="page app-shell active" :class="{ 'page--no-nav': hideNav }">
         <RouterView />
       </main>
-      <AppNav v-if="!hideNav" :menu-open="menuOpen" @open-menu="menuOpen = true" />
+      <AppNav v-if="!hideNav" />
       <AppDrawer :open="menuOpen" @close="menuOpen = false" />
       <LiveBanner />
       <Toast />
@@ -83,6 +83,6 @@ const isFullscreen = computed(() =>
 
 // Canción y sesión en vivo ocultan la navegación inferior (pantalla completa)
 const hideNav = computed(() =>
-  route.path.startsWith('/cancion/') || route.path.startsWith('/live') || route.path.startsWith('/rutina/jugar/')
+  route.meta.activityForm || route.path.startsWith('/cancion/') || route.path.startsWith('/live') || route.path.startsWith('/rutina/jugar/')
 )
 </script>

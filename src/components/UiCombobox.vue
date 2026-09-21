@@ -131,5 +131,5 @@ onBeforeUnmount(close)
 </script>
 
 <style scoped>
-.ui-combobox { position: relative; width: 100%; }.ui-combobox__input { padding-right: 36px; }.ui-combobox__chevron { position: absolute; top: 50%; right: 12px; width: 14px; height: 14px; pointer-events: none; fill: none; stroke: var(--text-muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transform: translateY(-50%); transition: transform .15s; }.ui-combobox--open .ui-combobox__chevron { transform: translateY(-50%) rotate(180deg); }
+.ui-combobox { position: relative; width: 100%; }.ui-combobox__input { padding-right: 36px; }.ui-combobox__chevron { position: absolute; top: 50%; right: 12px; width: 14px; height: 14px; pointer-events: none; fill: none; stroke: var(--color-text-muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transform: translateY(-50%); transition: transform .15s; }.ui-combobox--open .ui-combobox__chevron { transform: translateY(-50%) rotate(180deg); }
 </style>

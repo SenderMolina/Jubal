@@ -138,6 +138,37 @@ export const useAppStore = defineStore('app', () => {
     })))
   }
 
+  async function getActivity(id) {
+    const b = bid()
+    if (!b) throw new Error('Selecciona una banda para ver esta actividad.')
+    const { data, error } = await supabase.from('activities').select('*')
+      .eq('id', id).eq('band_id', b).maybeSingle()
+    if (error) throw error
+    return data
+  }
+
+  // El formulario guarda solo esta actividad y conserva su repertorio al editar.
+  async function saveActivity(fields, id = null) {
+    const b = bid()
+    if (!b || !band.isLeader) throw new Error('Solo el líder puede guardar actividades.')
+    const values = {
+      title: fields.title.trim(), date: fields.date,
+      time: fields.time || null, description: fields.description.trim(),
+    }
+    const query = id === null
+      ? supabase.from('activities').insert({ id: Date.now(), ...values, band_id: b, tiempos: [] })
+      : supabase.from('activities').update(values).eq('id', id).eq('band_id', b)
+    const { data, error } = await query.select('*').single()
+    if (error) throw error
+    const activity = { ...data, tiempos: data.tiempos || [] }
+    if (bid() === b) {
+      const index = activities.value.findIndex(item => item.id === activity.id)
+      if (index === -1) activities.value.push(activity)
+      else activities.value[index] = activity
+    }
+    return activity
+  }
+
   async function saveRepertoires() {
     const b = bid()
     await syncTable('repertoires', b, repertoires.value.map(r => ({ id: r.id, name: r.name, band_id: b })))
@@ -186,7 +217,7 @@ export const useAppStore = defineStore('app', () => {
 
   return {
     songs, activities, songTypes, repertoires, readiness, assignments,
-    saveSongs, saveActivities, saveSongTypes, saveRepertoires,
+    saveSongs, saveActivities, saveActivity, getActivity, saveSongTypes, saveRepertoires,
     addSongAssignment, removeSongAssignment,
   }
 })

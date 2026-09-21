@@ -4,6 +4,7 @@ import { useBandStore } from '../stores/band'
 // Cada pantalla se carga al entrar en su ruta. Reduce el arranque de la PWA y
 // evita enviar de una vez los editores, estadísticas y modo en vivo.
 const ActividadesView = () => import('../views/ActividadesView.vue')
+const ActivityFormView = () => import('../views/ActivityFormView.vue')
 const ActividadDetailView = () => import('../views/ActividadDetailView.vue')
 const CancionesView = () => import('../views/CancionesView.vue')
 const AgregarView = () => import('../views/AgregarView.vue')
@@ -28,12 +29,15 @@ const routes = [
   { path: '/inicio',          component: BandDashboardView },
   { path: '/practica',        component: HomeView },
   { path: '/actividades',     component: ActividadesView },
+  { path: '/actividades/nueva', component: ActivityFormView, meta: { activityForm: true, title: 'Nueva actividad' } },
+  { path: '/actividades/:id/editar', component: ActivityFormView, meta: { activityForm: true, title: 'Editar actividad' } },
   { path: '/actividad/:id',   component: ActividadDetailView },
   { path: '/repertorio',      component: RepertorioView },
   { path: '/repertorio/:id',  component: RepertorioDetailView },
   { path: '/canciones',       component: CancionesView },
   { path: '/agregar',         component: AgregarView },
-  { path: '/tipos',           component: TiposView },
+  { path: '/configuracion',   component: TiposView, meta: { title: 'Configuraciones' } },
+  { path: '/tipos',           redirect: '/configuracion' },
   { path: '/banda',           component: BandManageView },
   { path: '/live',            component: LiveView },
   { path: '/perfil',          component: ProfileView },
@@ -56,7 +60,7 @@ const router = createRouter({
 
 // Rutas exclusivas de banda: sin banda activa, al dashboard de práctica.
 // (canciones/repertorios NO están aquí: existen también en el espacio personal)
-const BAND_ONLY = ['/inicio', '/actividad', '/banda', '/live']
+const BAND_ONLY = ['/inicio', '/actividad', '/banda', '/configuracion', '/live']
 // Rutas exclusivas del espacio personal: activan el modo personal
 // (ej. recarga o re-login directo en /entrenar).
 const PERSONAL_ONLY = ['/practica', '/entrenar', '/skill', '/estadisticas', '/rutina', '/metronomo']
@@ -70,6 +74,12 @@ router.beforeEach((to) => {
   }
   if (BAND_ONLY.some(p => to.path.startsWith(p)) && !band.currentBandId) {
     return '/practica'
+  }
+  if (to.meta.activityForm && !band.isLeader) return '/actividades'
+  if (to.path === '/banda' && !band.isLeader) return '/inicio'
+  if (to.path === '/configuracion' && !band.isLeader) return '/inicio'
+  if (to.path === '/actividades' && to.query.nueva && band.isLeader) {
+    return { path: '/actividades/nueva', query: to.query.fecha ? { fecha: to.query.fecha } : {} }
   }
   if (PERSONAL_ONLY.some(p => to.path.startsWith(p)) && !band.personalMode) {
     band.enterPersonal()

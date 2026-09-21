@@ -105,10 +105,10 @@ function traducir(msg = '') {
 <style scoped>
 .auth-box {
   width: min(380px, 92vw);
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-small);
   padding: 28px 24px 24px;
 }
 .auth-box .role-logo { width: min(260px, 80%); height: auto; margin-bottom: 8px; }
@@ -116,39 +116,39 @@ function traducir(msg = '') {
 .auth-google {
   display: flex; align-items: center; justify-content: center; gap: 10px;
   width: 100%; padding: 12px; border-radius: 10px;
-  background: var(--surface); color: var(--text); font-weight: 600; font-size: .95rem;
-  border: 1px solid var(--border); cursor: pointer; transition: all .15s;
+  background: var(--color-surface); color: var(--color-text-primary); font-weight: 600; font-size: .95rem;
+  border: 1px solid var(--color-border); cursor: pointer; transition: all .15s;
 }
-.auth-google:hover { border-color: var(--teal); box-shadow: var(--shadow); }
+.auth-google:hover { border-color: var(--color-primary); box-shadow: var(--shadow-small); }
 .auth-google:disabled { opacity: .6; cursor: default; }
 
 .auth-divider {
   display: flex; align-items: center; gap: 12px;
-  color: var(--text-muted); margin: 18px 0; font-size: 13px;
+  color: var(--color-text-muted); margin: 18px 0; font-size: 13px;
 }
 .auth-divider::before, .auth-divider::after {
-  content: ''; flex: 1; height: 1px; background: var(--border);
+  content: ''; flex: 1; height: 1px; background: var(--color-border);
 }
 
 .auth-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
 .auth-tabs button {
-  flex: 1; padding: 9px; border: 1px solid var(--border); cursor: pointer;
-  background: var(--surface2); color: var(--text-mid);
+  flex: 1; padding: 9px; border: 1px solid var(--color-border); cursor: pointer;
+  background: var(--color-surface-secondary); color: var(--color-text-secondary);
   border-radius: 10px; font-weight: 600; font-size: .88rem; transition: all .15s;
 }
-.auth-tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.auth-tabs button.active { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-text-on-primary); }
 
 .auth-form { display: flex; flex-direction: column; gap: 4px; text-align: left; }
-.form-label { font-size: .8rem; color: var(--text-mid); font-weight: 600; margin-top: 6px; }
+.form-label { font-size: .8rem; color: var(--color-text-secondary); font-weight: 600; margin-top: 6px; }
 .auth-form input {
   width: 100%; padding: 11px 12px; margin-bottom: 6px;
-  border-radius: 10px; border: 1px solid var(--border);
-  background: var(--surface2); color: var(--text); font-size: 15px; outline: none;
+  border-radius: 10px; border: 1px solid var(--color-border);
+  background: var(--color-surface-secondary); color: var(--color-text-primary); font-size: 15px; outline: none;
 }
-.auth-form input:focus { border-color: var(--teal); }
+.auth-form input:focus { border-color: var(--color-primary); }
 .auth-form .btn-primary { width: 100%; justify-content: center; padding: 12px; margin-top: 10px; }
 
 .auth-msg { margin-top: 14px; font-size: 13px; }
-.auth-msg--error { color: var(--red); }
-.auth-msg--info  { color: var(--teal); }
+.auth-msg--error { color: var(--color-danger); }
+.auth-msg--info  { color: var(--color-primary); }
 </style>

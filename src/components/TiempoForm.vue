@@ -41,6 +41,6 @@ onMounted(() => nameInput.value?.focus())
   gap: 4px;
   font-size: .76rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
 }
 </style>

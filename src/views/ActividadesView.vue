@@ -1,10 +1,5 @@
 <template>
   <div>
-    <div class="acts-heading">
-      <span class="acts-heading__eyebrow">Agenda musical</span>
-      <h2 class="acts-heading__band">{{ band.currentBand?.name || 'Jubal' }}</h2>
-    </div>
-
     <div class="page-actions cal-anchor">
       <button
         class="btn-pill"
@@ -20,9 +15,9 @@
           Pasadas
         </template>
       </button>
-      <button v-if="roleStore.isLeader" class="btn-pill btn-pill--primary" @click="modal?.open()">
-        <span class="btn-pill__icon">+</span> Agregar
-      </button>
+      <RouterLink v-if="roleStore.isLeader" class="btn-pill btn-pill--primary" :to="{ path: '/actividades/nueva', query: selectedDate ? { fecha: selectedDate } : {} }">
+        <span class="btn-pill__icon">+</span> Nueva actividad
+      </RouterLink>
 
       <!-- CALENDARIO (popover sobre la lista) -->
       <Teleport to="body">
@@ -90,7 +85,7 @@
         <svg class="setlist-empty__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         <p>
           Nada en la agenda todavía.
-          <template v-if="roleStore.isLeader"><br>Crea la primera actividad con “Agregar”.</template>
+          <template v-if="roleStore.isLeader"><br>Toca “Nueva actividad” para agregarla a tu agenda.</template>
         </p>
       </div>
 
@@ -152,38 +147,31 @@
       </template>
     </template>
 
-    <ActivityModal ref="modal" />
     <ActionSheet ref="sheet" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useRoleStore } from '../stores/role'
-import { useBandStore } from '../stores/band'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
-import ActivityModal from '../components/ActivityModal.vue'
 import ActionSheet from '../components/ActionSheet.vue'
 
 const router    = useRouter()
 const route     = useRoute()
 const store     = useAppStore()
 const roleStore = useRoleStore()
-const band      = useBandStore()
-const modal     = ref(null)
 const sheet     = ref(null)
 const { showToast } = useToast()
 const { confirm }   = useConfirm()
 
-// Acción rápida desde Inicio: /actividades?nueva=1 abre el modal de creación.
-onMounted(async () => {
+// Compatibilidad con enlaces antiguos durante la restauración de la sesión.
+onMounted(() => {
   if (route.query.nueva && roleStore.isLeader) {
-    await nextTick()
-    modal.value?.open()
-    router.replace('/actividades')
+    router.replace({ path: '/actividades/nueva', query: route.query.fecha ? { fecha: route.query.fecha } : {} })
   }
 })
 
@@ -191,7 +179,7 @@ function openMenu(a) {
   sheet.value?.open({
     title: a.title,
     actions: [
-      { label: 'Editar actividad', icon: 'edit', onSelect: () => modal.value?.openEdit(a) },
+      { label: 'Editar actividad', icon: 'edit', onSelect: () => router.push(`/actividades/${a.id}/editar`) },
       { label: 'Eliminar actividad', icon: 'trash', danger: true, onSelect: () => deleteActivity(a) },
     ],
   })
@@ -325,60 +313,52 @@ const selectedDayActivities = computed(() =>
 </script>
 
 <style scoped>
-.acts-heading { padding: 10px 2px 2px; margin: 2px 0 14px; }
-.acts-heading__eyebrow { color:var(--jubal-blue-light);font-size:12px;font-weight:900;letter-spacing:.1em;text-transform:uppercase; }
-.acts-heading__band {
-  font-weight: 900; font-size: 1.75rem;
-  line-height: 1.15; color: var(--text); margin: 2px 0 0;
-}
-.acts-heading p { margin-top:5px;color:var(--text-muted);font-size:14px;line-height:1.45; }
-
 .btn-pill__cal { width: 15px; height: 15px; display: block; }
 
 /* ── HERO: la próxima actividad (firma de la pantalla) ── */
 .next-hero {
   position: relative;
   border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: linear-gradient(135deg, var(--accent-soft) 0%, var(--action-soft) 100%);
+  border: 1px solid var(--color-border);
+  background: var(--color-secondary-soft);
   padding: 16px 18px 18px;
   margin-bottom: 22px;
   cursor: pointer;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-small);
   transition: transform .18s ease, box-shadow .18s ease;
   -webkit-tap-highlight-color: transparent;
 }
-.next-hero:hover { transform: translateY(-1px); box-shadow: var(--shadow-hover); }
+.next-hero:hover { transform: translateY(-1px); box-shadow: var(--shadow-medium); }
 .next-hero:active { transform: scale(.995); }
-.next-hero:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.next-hero:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .next-hero__top { display: flex; align-items: center; margin-bottom: 9px; }
 .next-hero__eyebrow {
   font-size: .68rem; font-weight: 700; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--text-mid);
+  text-transform: uppercase; color: var(--color-text-secondary);
 }
 .next-hero__count {
   margin-left: auto;
-  background: var(--action); color: #fff;
+  background: var(--color-info-soft); color: var(--color-info-text);
   font-size: .7rem; font-weight: 700;
   padding: 3px 11px; border-radius: 999px;
 }
 .next-hero__title {
   font-size: 1.4rem; font-weight: 700; line-height: 1.15;
-  color: var(--text); padding-right: 30px;
+  color: var(--color-text-primary); padding-right: 30px;
 }
-.next-hero__when { font-size: .88rem; font-weight: 600; color: var(--text-mid); margin-top: 5px; }
-.next-hero__summary { font-size: .8rem; color: var(--text-muted); margin-top: 6px; }
+.next-hero__when { font-size: .88rem; font-weight: 600; color: var(--color-text-secondary); margin-top: 5px; }
+.next-hero__summary { font-size: .8rem; color: var(--color-text-muted); margin-top: 6px; }
 .next-hero__menu { position: absolute; top: 10px; right: 8px; }
 
 /* Icono del estado vacío como SVG (a juego con la nav), reemplaza el emoji */
-.setlist-empty__svg { width: 40px; height: 40px; color: var(--text-muted); opacity: .6; margin: 0 auto 12px; display: block; }
+.setlist-empty__svg { width: 40px; height: 40px; color: var(--color-text-muted); opacity: .6; margin: 0 auto 12px; display: block; }
 
 @media (prefers-reduced-motion: reduce) {
   .next-hero { transition: none; }
   .next-hero:hover, .next-hero:active { transform: none; }
 }
 
-.next-hero { padding:20px;margin-bottom:28px;border:1px solid rgba(142,202,230,.28);border-radius:28px;background:radial-gradient(circle at 14% 6%,rgba(255,255,255,.16),transparent 30%),linear-gradient(145deg,#27b5d5,var(--jubal-blue));box-shadow:0 8px 0 #126f85,0 14px 24px rgba(0,0,0,.24),inset 0 2px 0 rgba(255,255,255,.14); }
-.next-hero:hover { transform:translateY(-2px);box-shadow:0 9px 0 #126f85,0 16px 26px rgba(0,0,0,.25); }.next-hero:active { transform:translateY(5px);box-shadow:0 3px 0 #126f85,0 7px 12px rgba(0,0,0,.2); }
-.next-hero__eyebrow { color:rgba(255,255,255,.78);font-size:12px;font-weight:900; }.next-hero__count { padding:6px 12px;background:var(--jubal-orange);font-size:12px;font-weight:900;box-shadow:0 3px 0 #a95600; }.next-hero__title { color:#fff;font-size:24px;font-weight:900; }.next-hero__when { color:#fff;font-size:14px; }.next-hero__summary { color:rgba(255,255,255,.76);font-size:13px;font-weight:700; }
+.next-hero { padding:20px;margin-bottom:28px;border:1px solid var(--color-border);border-radius:28px;background:var(--color-surface);box-shadow:var(--shadow-small); }
+.next-hero:hover { transform:translateY(-2px);box-shadow:var(--shadow-medium); }.next-hero:active { transform:scale(.99);box-shadow:var(--shadow-small); }
+.next-hero__eyebrow { color:var(--color-info-text);font-size:12px;font-weight:900; }.next-hero__count { padding:6px 12px;background:var(--color-info-soft);color:var(--color-info-text);font-size:12px;font-weight:900;box-shadow:none; }.next-hero__title { color:var(--color-text-primary);font-size:24px;font-weight:900; }.next-hero__when { color:var(--color-text-secondary);font-size:14px; }.next-hero__summary { color:var(--color-text-muted);font-size:13px;font-weight:700; }
 </style>

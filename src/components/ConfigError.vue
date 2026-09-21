@@ -18,33 +18,33 @@
 .config-error {
   width: min(420px, 92vw);
   padding: 24px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-small);
   text-align: left;
 }
 
 .config-error h1 {
   margin: 0 0 10px;
-  color: var(--text);
+  color: var(--color-text-primary);
   font-size: 1.25rem;
 }
 
 .config-error p {
   margin: 0;
-  color: var(--text-mid);
+  color: var(--color-text-secondary);
   font-size: 0.92rem;
   line-height: 1.45;
 }
 
 .config-error code {
-  color: var(--accent);
+  color: var(--color-primary);
   font-weight: 700;
 }
 
 .config-error__hint {
   margin-top: 12px;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
 }
 </style>

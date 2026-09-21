@@ -27,13 +27,13 @@ const plain = computed(() => props.pairs.map(p => p.text).join(''))
 }
 .cp-pair { display: inline-flex; flex-direction: column; vertical-align: bottom; }
 .cp-chord {
-  color: var(--accent);
+  color: var(--color-primary);
   font-weight: 600;
   font-size: 0.78em;
   min-height: 1.25em;
   line-height: 1.25;
   white-space: pre;
 }
-.cp-text { color: var(--text); white-space: pre-wrap; line-height: 1.6; }
-.cp-line--plain { white-space: pre-wrap; color: var(--text); line-height: 2; }
+.cp-text { color: var(--color-text-primary); white-space: pre-wrap; line-height: 1.6; }
+.cp-line--plain { white-space: pre-wrap; color: var(--color-text-primary); line-height: 2; }
 </style>

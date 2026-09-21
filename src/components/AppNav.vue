@@ -4,10 +4,6 @@
       <JubalNavIcon class="bottom-nav__icon" :name="item.icon" />
       <span class="bottom-nav__label">{{ item.label }}</span>
     </RouterLink>
-    <button class="bottom-nav__item" :class="{ active: menuOpen || secondaryActive }" :aria-expanded="menuOpen" aria-haspopup="dialog" aria-controls="app-menu" @click="$emit('open-menu')">
-      <JubalNavIcon class="bottom-nav__icon" name="more" />
-      <span class="bottom-nav__label">Más</span>
-    </button>
   </nav>
 </template>
 
@@ -17,8 +13,6 @@ import { useRoute } from 'vue-router'
 import { useBandStore } from '../stores/band'
 import JubalNavIcon from './JubalNavIcon.vue'
 
-defineProps({ menuOpen: Boolean })
-defineEmits(['open-menu'])
 const route = useRoute()
 const band = useBandStore()
 const items = computed(() => band.personalMode ? [
@@ -33,5 +27,4 @@ const items = computed(() => band.personalMode ? [
   { to: '/canciones', label: 'Canciones', icon: 'songs', paths: ['/agregar'] },
 ])
 function isActive(item) { return [item.to, ...(item.paths || [])].some(path => route.path.startsWith(path)) }
-const secondaryActive = computed(() => !items.value.some(isActive))
 </script>

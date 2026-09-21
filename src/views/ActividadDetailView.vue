@@ -41,7 +41,6 @@
         <div v-if="banner" class="top-banner">{{ banner }}</div>
       </Transition>
     </Teleport>
-    <ActivityModal ref="modal" />
     <ActionSheet ref="sheet" />
 
     <!-- ══════════ VISTA LÍDER ══════════ -->
@@ -261,7 +260,6 @@ import { useLiveStore } from '../stores/live'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import draggable from 'vuedraggable'
-import ActivityModal from '../components/ActivityModal.vue'
 import ActionSheet from '../components/ActionSheet.vue'
 import TiempoForm from '../components/TiempoForm.vue'
 
@@ -281,7 +279,6 @@ async function startLive(tiempo) {
 const { showToast } = useToast()
 const { confirm }   = useConfirm()
 
-const modal             = ref(null)
 const sheet             = ref(null)
 const selectedTiempoId  = ref(null)
 const tiempoForm        = ref(null)   // { id?, name, start, end } — null = cerrado
@@ -512,7 +509,7 @@ function openMenu() {
   sheet.value?.open({
     title: activity.value?.title,
     actions: [
-      { label: 'Editar actividad', icon: 'edit', onSelect: () => modal.value?.openEdit(activity.value) },
+      { label: 'Editar actividad', icon: 'edit', onSelect: () => router.push(`/actividades/${activity.value.id}/editar`) },
       { label: 'Eliminar actividad', icon: 'trash', danger: true, onSelect: handleDelete },
     ],
   })
@@ -530,7 +527,7 @@ async function handleDelete() {
 
 <style scoped>
 /* Estado vacío con icono SVG en vez de emoji */
-.setlist-empty__svg { width: 40px; height: 40px; color: var(--text-muted); opacity: .6; margin: 0 auto 12px; display: block; }
+.setlist-empty__svg { width: 40px; height: 40px; color: var(--color-text-muted); opacity: .6; margin: 0 auto 12px; display: block; }
 
 /* ── ORDEN DEL SERVICIO: tiempos encadenados en un riel (la firma) ── */
 .orden { list-style: none; margin: 10px 0 0; padding: 0; padding-bottom: 24px; }
@@ -543,7 +540,7 @@ async function handleDelete() {
   position: absolute;
   left: 4px; top: 7px; bottom: -18px;
   width: 2px;
-  background: var(--border);
+  background: var(--color-border);
 }
 .orden__movt:last-child::before { display: none; }
 /* El nodo de cada tiempo, sentado sobre el riel */
@@ -552,15 +549,15 @@ async function handleDelete() {
   left: 0; top: 5px;
   width: 10px; height: 10px;
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 3px var(--bg);
+  background: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-background);
 }
 
 .orden__head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 9px; }
-.orden__name { font-weight: 700; font-size: 1.05rem; color: var(--text); }
-.orden__count { font-size: .72rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+.orden__name { font-weight: 700; font-size: 1.05rem; color: var(--color-text-primary); }
+.orden__count { font-size: .72rem; font-weight: 600; color: var(--color-text-muted); white-space: nowrap; }
 .orden__time {
-  font-size: .76rem; font-weight: 700; color: var(--accent);
+  font-size: .76rem; font-weight: 700; color: var(--color-primary);
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 
@@ -570,7 +567,7 @@ async function handleDelete() {
   margin: 3px 0 0;
   font-size: .78rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
   letter-spacing: .01em;
 }
@@ -581,12 +578,12 @@ async function handleDelete() {
   margin: -4px -6px 0 4px;
   display: grid; place-items: center;
   border: none; background: transparent;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
   border-radius: 8px;
   cursor: pointer;
   transition: color .15s, background .15s;
 }
-.tiempo-menu-btn:hover { color: var(--text); background: var(--surface2); }
+.tiempo-menu-btn:hover { color: var(--color-text-primary); background: var(--color-surface-secondary); }
 .tiempo-menu-btn svg { width: 20px; height: 20px; }
 
 /* Acción primaria: una sola, clara, en acento (no rojo) */
@@ -597,18 +594,18 @@ async function handleDelete() {
   padding: 11px;
   border: none;
   border-radius: 12px;
-  background: var(--action);
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
   font-size: .9rem; font-weight: 700;
-  box-shadow: 0 2px 10px rgba(251,133,0,0.30);
+  box-shadow: var(--shadow-small);
   cursor: pointer;
   transition: background .15s, transform .05s;
 }
 .tiempo-live-btn svg { width: 15px; height: 15px; }
-.tiempo-live-btn:hover { background: var(--action2); }
+.tiempo-live-btn:hover { background: var(--color-primary-hover); }
 .tiempo-live-btn:active { transform: translateY(1px); }
 
-.orden__empty { font-size: .82rem; color: var(--text-muted); padding: 2px 2px 4px; }
+.orden__empty { font-size: .82rem; color: var(--color-text-muted); padding: 2px 2px 4px; }
 
 .orden__songs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .orden__song {
@@ -620,9 +617,9 @@ async function handleDelete() {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.orden__song + .orden__song { border-top: 1px solid var(--border); }
-.orden__song:active { background: var(--accent-soft); }
-.orden__song:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.orden__song + .orden__song { border-top: 1px solid var(--color-border); }
+.orden__song:active { background: var(--color-primary-soft); }
+.orden__song:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
 
 .orden__num {
   flex-shrink: 0;
@@ -630,16 +627,16 @@ async function handleDelete() {
   text-align: center;
   font-size: .8rem;
   font-weight: 700;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
 .orden__song-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .orden__song-title {
-  font-size: .92rem; font-weight: 600; color: var(--text);
+  font-size: .92rem; font-weight: 600; color: var(--color-text-primary);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .orden__song-author {
-  font-size: .76rem; color: var(--text-muted);
+  font-size: .76rem; color: var(--color-text-muted);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 /* Mismo distintivo de tono que en la lista de canciones */
@@ -647,8 +644,8 @@ async function handleDelete() {
   flex-shrink: 0;
   min-width: 30px;
   text-align: center;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
   font-size: .8rem;
   font-weight: 800;
   letter-spacing: -.01em;
@@ -657,6 +654,6 @@ async function handleDelete() {
 }
 
 @media (hover: hover) {
-  .orden__song:hover { background: var(--accent-soft); }
+  .orden__song:hover { background: var(--color-primary-soft); }
 }
 </style>

@@ -50,46 +50,46 @@ async function signOut() {
 
 .profile-card {
   display: flex; flex-direction: column; align-items: center; text-align: center;
-  padding: 28px 20px; background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); box-shadow: var(--shadow); margin: 8px 0 20px;
+  padding: 28px 20px; background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius); box-shadow: var(--shadow-small); margin: 8px 0 20px;
 }
 .profile-avatar {
   width: 84px; height: 84px; border-radius: 50%; object-fit: cover;
-  border: 1px solid var(--border); margin-bottom: 14px;
+  border: 1px solid var(--color-border); margin-bottom: 14px;
 }
 .profile-avatar--ph {
   display: flex; align-items: center; justify-content: center;
-  background: var(--accent); color: #fff; font-weight: 700; font-size: 2rem;
+  background: var(--color-primary); color: var(--color-text-on-primary); font-weight: 700; font-size: 2rem;
 }
 .profile-name {
   font-family: var(--font); font-weight: 900; font-size: 1.4rem;
-  color: var(--text); margin: 0;
+  color: var(--color-text-primary); margin: 0;
 }
-.profile-email { color: var(--text-muted); font-size: .88rem; margin: 4px 0 0; }
+.profile-email { color: var(--color-text-muted); font-size: .88rem; margin: 4px 0 0; }
 
 .profile-meta { display: flex; gap: 8px; align-items: center; margin-top: 14px; flex-wrap: wrap; justify-content: center; }
 .profile-band {
   font-size: 13px; padding: 4px 12px; border-radius: 999px;
-  background: var(--surface2); color: var(--text-mid); font-weight: 600;
+  background: var(--color-surface-secondary); color: var(--color-text-secondary); font-weight: 600;
 }
 .profile-role {
   font-size: 13px; padding: 4px 12px; border-radius: 999px;
-  background: var(--surface2); color: var(--text-mid); font-weight: 600;
+  background: var(--color-surface-secondary); color: var(--color-text-secondary); font-weight: 600;
 }
-.profile-role.role-leader { background: var(--accent); color: #fff; }
+.profile-role.role-leader { background: var(--color-role-leader); color: var(--color-text-on-primary); }
 
 .profile-actions { display: flex; flex-direction: column; gap: 10px; }
 .profile-btn {
   display: flex; align-items: center; gap: 12px; width: 100%;
-  padding: 14px 16px; background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); box-shadow: var(--shadow);
-  color: var(--text); font-weight: 600; font-size: .95rem; cursor: pointer;
+  padding: 14px 16px; background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius); box-shadow: var(--shadow-small);
+  color: var(--color-text-primary); font-weight: 600; font-size: .95rem; cursor: pointer;
   font-family: inherit; text-align: left; transition: all .15s;
 }
-.profile-btn svg { width: 20px; height: 20px; color: var(--accent); flex-shrink: 0; }
+.profile-btn svg { width: 20px; height: 20px; color: var(--color-primary); flex-shrink: 0; }
 .profile-btn span:not(.profile-btn__arrow) { flex: 1; }
-.profile-btn__arrow { color: var(--text-muted); font-size: 1.4rem; line-height: 1; }
-.profile-btn:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: var(--shadow-hover); }
-.profile-btn--danger { color: var(--red); }
-.profile-btn--danger svg { color: var(--red); }
+.profile-btn__arrow { color: var(--color-text-muted); font-size: 1.4rem; line-height: 1; }
+.profile-btn:hover { border-color: var(--color-primary); transform: translateY(-1px); box-shadow: var(--shadow-medium); }
+.profile-btn--danger { color: var(--color-danger); }
+.profile-btn--danger svg { color: var(--color-danger); }
 </style>

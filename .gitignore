@@ -12,3 +12,5 @@ supabase/.temp/
 # Export de datos de Firebase usado para la migración (contiene datos reales)
 *-rtdb-export.json
 firebase-export.json
+.vercel
+.env*

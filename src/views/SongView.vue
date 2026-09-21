@@ -126,7 +126,7 @@
           <div v-else :class="line.type">{{ line.text }}</div>
         </template>
       </template>
-      <div v-else style="text-align:center;padding:40px;color:var(--text-muted)">
+      <div v-else style="text-align:center;padding:40px;color:var(--color-text-muted)">
         Esta canción aún no tiene letra.
         <span v-if="roleStore.isLeader" style="display:block;margin-top:8px">
           <button class="btn btn-ghost btn-sm" @click="startEdit">Agregar letra</button>

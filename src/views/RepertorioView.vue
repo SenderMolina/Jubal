@@ -1,11 +1,5 @@
 <template>
   <div>
-    <div class="songs-header">
-      <div>
-        <h2 class="songs-header__title">Repertorios</h2>
-      </div>
-      <span class="songs-header__count" :aria-label="`${store.repertoires.length} repertorios`">{{ store.repertoires.length }}</span>
-    </div>
     <!-- ── Crear nuevo repertorio ── -->
     <div v-if="roleStore.isLeader && !creating" class="page-actions">
       <button class="btn-pill btn-pill--primary" @click="startCreate">
