@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import './styles/main.css'
+import './styles/motion.css'
 
 // Capturar invitación (#/join/TOKEN) antes de que el router procese la ruta.
 const inviteMatch = window.location.hash.match(/^#\/join\/([^/?#]+)/)

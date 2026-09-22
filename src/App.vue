@@ -8,7 +8,11 @@
     <template v-else>
       <AppHeader v-if="!isFullscreen" :menu-open="menuOpen" @open-menu="menuOpen = true" />
       <main class="page app-shell active" :class="{ 'page--no-nav': hideNav }">
-        <RouterView />
+        <RouterView v-slot="{ Component, route: viewRoute }">
+          <Transition name="route-view" mode="out-in">
+            <component :is="Component" :key="viewRoute.path" />
+          </Transition>
+        </RouterView>
       </main>
       <AppNav v-if="!hideNav" />
       <AppDrawer :open="menuOpen" @close="menuOpen = false" />

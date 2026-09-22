@@ -99,15 +99,16 @@ function goBand(id) {
 .drawer-close { width: 44px; height: 44px; flex-shrink: 0; border: 1px solid var(--color-border); border-radius: 50%; background: var(--color-surface-secondary); color: var(--color-text-primary); font-size: 26px; cursor: pointer; }
 .drawer-content { padding: 4px 14px calc(20px + env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; }
 .drawer-section { margin: 22px 8px 8px; color: var(--color-text-muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-.drawer-item { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 50px; padding: 10px 12px; border: 1px solid transparent; border-radius: 12px; background: transparent; color: var(--color-text-primary); text-align: left; font-size: 14px; cursor: pointer; }
+.drawer-item { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 50px; padding: 10px 12px; border: 1px solid transparent; border-radius: 12px; background: transparent; color: var(--color-text-primary); text-align: left; font-size: 14px; cursor: pointer; transition: transform var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) ease, border-color var(--motion-fast) ease; }
 .drawer-item__label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .drawer-item svg { color: var(--color-text-muted); width: 22px; height: 22px; }
 .drawer-band-image { width: 26px; height: 26px; flex: 0 0 26px; border-radius: 8px; object-fit: cover; }
 .drawer-item small { color: var(--color-text-muted); font-size: 11px; }
 .drawer-item:hover { background: var(--color-surface-hover); }
+.drawer-item:active { transform: scale(.98); }
 .drawer-item.active { background: var(--color-secondary-soft); border-color: var(--color-secondary); border-left: 3px solid var(--color-secondary); color: var(--color-primary); }
 .drawer-item.active svg { color: var(--color-primary); }
 .drawer-selected { width: 20px; height: 20px; flex: 0 0 20px; display: grid; place-items: center; border-radius: 50%; background: var(--color-primary); color: var(--color-text-on-primary); font-size: 11px; font-weight: 900; }
 .drawer-chevron { margin-left: auto; color: var(--color-text-muted); font-size: 22px; }
-@media (prefers-reduced-motion: no-preference) { .drawer-dialog[open] { animation: menu-slide .2s ease-out; } @keyframes menu-slide { from { opacity: 0; transform: translateX(-100%); } to { opacity: 1; transform: translateX(0); } } }
+@media (prefers-reduced-motion: no-preference) { .drawer-dialog[open] { animation: menu-slide var(--motion-slow) var(--motion-ease); } .drawer-dialog[open]::backdrop { animation: menu-backdrop var(--motion-base) ease-out; } .drawer-dialog[open] .drawer-item { animation: menu-item-in 300ms var(--motion-ease) both; } .drawer-dialog[open] .drawer-item:nth-of-type(2) { animation-delay: 35ms; } .drawer-dialog[open] .drawer-item:nth-of-type(3) { animation-delay: 70ms; } .drawer-dialog[open] .drawer-item:nth-of-type(4) { animation-delay: 105ms; } @keyframes menu-slide { from { opacity: 0; transform: translateX(-100%); } to { opacity: 1; transform: translateX(0); } } @keyframes menu-backdrop { from { opacity: 0; } to { opacity: 1; } } @keyframes menu-item-in { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } } }
 </style>

@@ -1,0 +1,206 @@
+/* Motion layer: shared timing keeps navigation and feedback feeling coherent. */
+:root {
+  --motion-fast: 140ms;
+  --motion-base: 220ms;
+  --motion-slow: 360ms;
+  --motion-ease: cubic-bezier(.22, 1, .36, 1);
+  --motion-spring: cubic-bezier(.2, 1.45, .45, 1);
+}
+
+/* Route changes */
+.route-view-enter-active {
+  animation: route-enter var(--motion-slow) var(--motion-ease) both;
+}
+
+.route-view-leave-active {
+  animation: route-leave var(--motion-fast) ease both;
+  pointer-events: none;
+}
+
+.route-view-enter-active > :is(header, section, article, div, ul):nth-child(1) {
+  animation: content-rise 380ms 35ms var(--motion-ease) both;
+}
+
+.route-view-enter-active > :is(header, section, article, div, ul):nth-child(2) {
+  animation: content-rise 380ms 75ms var(--motion-ease) both;
+}
+
+.route-view-enter-active > :is(header, section, article, div, ul):nth-child(3) {
+  animation: content-rise 380ms 115ms var(--motion-ease) both;
+}
+
+.route-view-enter-active > :is(header, section, article, div, ul):nth-child(4) {
+  animation: content-rise 380ms 155ms var(--motion-ease) both;
+}
+
+@keyframes route-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes route-leave {
+  to { opacity: 0; transform: translateY(-5px); }
+}
+
+@keyframes content-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Primary navigation */
+.bottom-nav,
+.app-header {
+  transition: box-shadow var(--motion-base) ease, background-color var(--motion-base) ease;
+}
+
+.bottom-nav__item {
+  transition:
+    color var(--motion-base) ease,
+    background-color var(--motion-base) ease,
+    transform var(--motion-fast) var(--motion-spring);
+}
+
+.bottom-nav__item::before {
+  transform: scaleX(0);
+  transition: transform var(--motion-base) var(--motion-spring), background-color var(--motion-base) ease;
+}
+
+.bottom-nav__item.active::before,
+.bottom-nav__item[aria-current='page']::before {
+  transform: scaleX(1);
+}
+
+.bottom-nav__icon {
+  transition: transform var(--motion-base) var(--motion-spring);
+}
+
+.bottom-nav__item.active .bottom-nav__icon,
+.bottom-nav__item[aria-current='page'] .bottom-nav__icon {
+  animation: nav-icon-pop 320ms var(--motion-spring);
+  transform: translateY(-1px) scale(1.08);
+}
+
+@keyframes nav-icon-pop {
+  0% { transform: scale(.82); }
+  65% { transform: translateY(-2px) scale(1.14); }
+  100% { transform: translateY(-1px) scale(1.08); }
+}
+
+/* Tactile controls */
+:where(.btn, .btn-pill, .sf-save-btn, .icon-circle-btn, .dots-btn, .song-nav-btn,
+  .player-ctrl-btn, .library-add-btn, .app-header__menu, .app-header__user,
+  .drawer-close, .drawer-item, .sheet-item, .type-pill, .cal-nav) {
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    background-color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease,
+    opacity var(--motion-fast) ease;
+}
+
+:where(.btn, .btn-pill, .sf-save-btn, .icon-circle-btn, .dots-btn, .song-nav-btn,
+  .player-ctrl-btn, .library-add-btn, .app-header__menu, .app-header__user,
+  .drawer-close, .drawer-item, .sheet-item, .type-pill, .cal-nav):active:not(:disabled) {
+  transform: scale(.96);
+}
+
+.app-header__menu svg {
+  transition: transform var(--motion-base) var(--motion-spring);
+}
+
+.app-header__menu.active svg {
+  transform: rotate(90deg) scale(.92);
+}
+
+.app-header__user:hover .app-header__avatar {
+  transform: translateY(-1px) scale(1.04);
+  border-color: var(--color-secondary);
+}
+
+.app-header__avatar {
+  transition: transform var(--motion-base) var(--motion-spring), border-color var(--motion-base) ease;
+}
+
+/* Interactive content */
+:where(.activity-card, .song-card, .song-item, .setlist-card, .skill-card,
+  .routine-card, .next-hero, .song-row) {
+  transition:
+    transform var(--motion-base) var(--motion-ease),
+    border-color var(--motion-base) ease,
+    background-color var(--motion-base) ease,
+    box-shadow var(--motion-base) ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :where(.activity-card, .song-card, .song-item, .setlist-card, .skill-card,
+    .routine-card, .next-hero, .song-row):hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-small);
+  }
+}
+
+:where(.activity-card, .song-card, .song-item, .setlist-card, .skill-card,
+  .routine-card, .next-hero, .song-row):active {
+  transform: scale(.985);
+}
+
+/* Dynamic values and progress */
+:where([class*='progress__bar'], [class*='progress-bar'], [class$='__fill'], .player-progress__bar) {
+  transition: width 480ms var(--motion-ease), transform 480ms var(--motion-ease);
+}
+
+:where(.activity-date-badge, .song-item__badge, .songs-header__count, .skill-identity__icon) {
+  transition: transform var(--motion-base) var(--motion-spring), background-color var(--motion-base) ease;
+}
+
+:where(.activity-card, .song-item, .skill-card):hover
+  :where(.activity-date-badge, .song-item__badge, .skill-identity__icon) {
+  transform: rotate(-2deg) scale(1.04);
+}
+
+/* Overlays and notifications */
+.sheet-enter-active .sheet-handle {
+  animation: sheet-handle-in 420ms 100ms var(--motion-spring) both;
+}
+
+@keyframes sheet-handle-in {
+  from { opacity: 0; transform: scaleX(.45); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
+.success-toast {
+  opacity: 0;
+  transition:
+    transform var(--motion-slow) var(--motion-spring),
+    opacity var(--motion-base) ease;
+}
+
+.success-toast.show {
+  opacity: 1;
+  animation: toast-settle 420ms var(--motion-spring);
+}
+
+@keyframes toast-settle {
+  0% { transform: translateX(-50%) translateY(80px) scale(.92); }
+  70% { transform: translateX(-50%) translateY(-4px) scale(1.015); }
+  100% { transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-view-enter-active,
+  .route-view-leave-active,
+  .route-view-enter-active > *,
+  .bottom-nav__item.active .bottom-nav__icon,
+  .bottom-nav__item[aria-current='page'] .bottom-nav__icon,
+  .sheet-enter-active .sheet-handle,
+  .success-toast.show {
+    animation: none !important;
+  }
+
+  .route-view-enter-from,
+  .route-view-leave-to {
+    opacity: 1;
+    transform: none;
+  }
+}
