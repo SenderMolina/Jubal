@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1 class="section-title">Añadir alabanza</h1>
+    <PageBackHeader eyebrow="Canciones" title="Añadir alabanza" to="/canciones" back-label="Volver a canciones" />
 
     <div class="form-row">
       <div class="form-group">
@@ -76,6 +76,7 @@ import { useAppStore } from '../stores/app'
 import { useToast } from '../composables/useToast'
 import { parseDuration } from '../utils/duration'
 import UiSelect from '../components/UiSelect.vue'
+import PageBackHeader from '../components/PageBackHeader.vue'
 
 const router = useRouter()
 const store  = useAppStore()

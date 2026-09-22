@@ -1,5 +1,10 @@
 <template>
   <div class="band-manage">
+    <header class="bm-page-heading">
+      <span class="bm-eyebrow">Equipo</span>
+      <h1>Administrar banda</h1>
+    </header>
+
     <section class="bm-profile" aria-label="Datos de la banda">
       <div class="bm-profile__image-wrap">
         <img v-if="bandImage && !imageBroken" :src="bandImage" class="bm-profile__image" alt="Imagen de la banda" @error="imageBroken = true">
@@ -316,6 +321,9 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .band-manage { max-width: 760px; margin: 0 auto; padding-bottom: 24px; }
+.bm-page-heading { margin-bottom: 20px; }
+.bm-page-heading .bm-eyebrow { font-size: 10px; }
+.bm-page-heading h1 { margin: 4px 0 0; color: var(--color-text-primary); font-family: var(--font-display); font-size: 24px; line-height: 1.2; }
 .bm-profile { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 18px; padding-bottom: 20px; border-bottom: 1px solid var(--color-border); }
 .bm-profile__image-wrap { position: relative; width: 104px; height: 104px; }
 .bm-profile__image { width: 104px; height: 104px; display: block; border: 1px solid var(--color-border); border-radius: 24px; object-fit: cover; }

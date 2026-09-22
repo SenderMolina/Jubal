@@ -1,8 +1,11 @@
 <template>
   <div class="activity-form-page">
-    <RouterLink class="activity-form-back" :to="returnPath" :aria-label="editing ? 'Volver a la actividad' : 'Volver a la agenda'">
-      <span aria-hidden="true">←</span> {{ editing ? 'Volver a la actividad' : 'Volver a la agenda' }}
-    </RouterLink>
+    <PageBackHeader
+      eyebrow="Agenda"
+      :title="editing ? 'Editar actividad' : 'Nueva actividad'"
+      :to="returnPath"
+      :back-label="editing ? 'Volver a la actividad' : 'Volver a la agenda'"
+    />
 
     <div v-if="loading" class="activity-form-state" role="status">Cargando actividad…</div>
     <div v-else-if="loadError" class="activity-form-state" role="alert">
@@ -74,6 +77,7 @@ import { useAppStore } from '../stores/app'
 import { useBandStore } from '../stores/band'
 import { useConfirm } from '../composables/useConfirm'
 import { useToast } from '../composables/useToast'
+import PageBackHeader from '../components/PageBackHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -177,8 +181,6 @@ onBeforeRouteUpdate(canLeave)
 
 <style scoped>
 .activity-form-page { max-width: 560px; margin-inline: auto; font-family: var(--font-body); }
-.activity-form-back { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; margin: -9px 0 12px; color: var(--color-link); font-family: var(--font-body); font-size: 14px; font-weight: 600; text-decoration: none; }
-.activity-form-back span { font-size: 18px; line-height: 1; }
 .activity-form { display: flex; flex-direction: column; gap: 20px; }
 .activity-form fieldset { display: grid; gap: 18px; min-width: 0; padding: 0; border: 0; }
 .activity-form-field { min-width: 0; }

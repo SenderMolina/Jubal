@@ -91,9 +91,7 @@
 
     <!-- ── Formulario nueva canción ── -->
     <template v-else>
-      <div class="sf-head">
-        <h1 class="section-title">Nueva canción</h1>
-      </div>
+      <PageBackHeader eyebrow="Canciones" title="Nueva canción" back-label="Volver a canciones" @back="toggleForm" />
 
       <!-- Título -->
       <div class="sf-block">
@@ -192,6 +190,7 @@ import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import { parseDuration } from '../utils/duration'
 import UiCombobox from '../components/UiCombobox.vue'
+import PageBackHeader from '../components/PageBackHeader.vue'
 import songMark from '../assets/song-mark.svg'
 
 const router    = useRouter()
@@ -467,8 +466,6 @@ async function deleteSongFromCtx() {
 .songs-empty__hint { display: block; font-size: 0.8rem; color: var(--color-text-muted); margin-top: 6px; }
 
 /* ── FORMULARIO: encabezado amable ── */
-.sf-head { margin-bottom: 18px; }
-.sf-intro { font-size: 0.85rem; color: var(--color-text-secondary); margin-top: 6px; line-height: 1.45; max-width: 46ch; }
 .sf-title-input--error { border-bottom-color: var(--color-danger); }
 .sf-error { color: var(--color-danger); font-size: 0.78rem; margin-top: 6px; }
 

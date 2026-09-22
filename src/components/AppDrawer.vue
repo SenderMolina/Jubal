@@ -6,7 +6,11 @@
           <div class="drawer-logo-wrap">
             <img class="drawer-logo" :src="logoText" alt="Jubal">
           </div>
-          <button class="drawer-close" aria-label="Cerrar menú" autofocus @click="$emit('close')">×</button>
+          <button class="drawer-close" aria-label="Cerrar menú" autofocus @click="$emit('close')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+              <path d="M7 7l10 10M17 7 7 17"/>
+            </svg>
+          </button>
         </div>
         <div class="drawer-content">
           <p class="drawer-section">Espacios</p>
@@ -96,7 +100,8 @@ function goBand(id) {
 .drawer-heading { display: flex; justify-content: space-between; align-items: center; padding: calc(14px + env(safe-area-inset-top)) 18px 14px; gap: 12px; border-bottom: 1px solid var(--color-border); }
 .drawer-logo-wrap { position: relative; width: 170px; height: 52px; overflow: hidden; }
 .drawer-logo { position: absolute; top: -11px; left: -30px; width: 220px; max-width: none; height: auto; display: block; }
-.drawer-close { width: 44px; height: 44px; flex-shrink: 0; border: 1px solid var(--color-border); border-radius: 50%; background: var(--color-surface-secondary); color: var(--color-text-primary); font-size: 26px; cursor: pointer; }
+.drawer-close { width: 44px; height: 44px; flex-shrink: 0; display: grid; place-items: center; padding: 0; border: 1px solid var(--color-border); border-radius: 50%; background: var(--color-surface-secondary); color: var(--color-text-primary); cursor: pointer; }
+.drawer-close svg { width: 16px; height: 16px; display: block; }
 .drawer-content { padding: 4px 14px calc(20px + env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; }
 .drawer-section { margin: 22px 8px 8px; color: var(--color-text-muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .drawer-item { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 50px; padding: 10px 12px; border: 1px solid transparent; border-radius: 12px; background: transparent; color: var(--color-text-primary); text-align: left; font-size: 14px; cursor: pointer; transition: transform var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) ease, border-color var(--motion-fast) ease; }

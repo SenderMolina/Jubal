@@ -1,12 +1,14 @@
 <template>
   <section class="settings-section" aria-labelledby="song-types-title">
-    <RouterLink class="settings-back" to="/banda" aria-label="Volver a administrar banda">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-      <span>Volver a administrar banda</span>
-    </RouterLink>
+    <PageBackHeader
+      eyebrow="Configuraciones"
+      title="Tipos de canción"
+      title-id="song-types-title"
+      to="/banda"
+      back-label="Volver a administrar banda"
+    />
 
     <div class="settings-heading">
-      <h2 id="song-types-title">Tipos de canción</h2>
       <p>Define las categorías disponibles para organizar el cancionero de la banda.</p>
     </div>
 
@@ -42,6 +44,7 @@
 import { ref } from 'vue'
 import { useAppStore } from '../stores/app'
 import { useToast } from '../composables/useToast'
+import PageBackHeader from '../components/PageBackHeader.vue'
 
 const store = useAppStore()
 const { showToast } = useToast()
@@ -71,12 +74,8 @@ function deleteType(t) {
 
 <style scoped>
 .settings-section { max-width: 560px; margin-inline: auto; }
-.settings-back { display: inline-flex; align-items: center; gap: 5px; min-height: 44px; margin: -8px 0 10px; color: var(--color-link); font-size: .8rem; font-weight: 700; text-decoration: none; }
-.settings-back:hover { color: var(--color-link-hover); }
-.settings-back svg { width: 18px; height: 18px; }
 .settings-heading { margin-bottom: 18px; }
-.settings-heading h2 { margin: 0; color: var(--color-text-primary); font-size: 1.15rem; }
-.settings-heading p { margin-top: 5px; color: var(--color-text-muted); font-size: .84rem; line-height: 1.5; }
+.settings-heading p { margin: -10px 0 0 58px; color: var(--color-text-muted); font-size: .84rem; line-height: 1.5; }
 .settings-add { margin-bottom: 18px; }
 .settings-add__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; margin-top: 7px; }
 .settings-add__row .btn { min-height: 48px; }

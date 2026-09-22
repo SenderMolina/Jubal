@@ -1718,52 +1718,6 @@ header {
   justify-content: center;
 }
 
-/* Importar repertorio en actividad */
-.repertorio-import-section {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--color-border);
-}
-.repertorio-import-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-text-muted);
-  margin-bottom: 8px;
-}
-.repertorio-import-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.repertorio-import-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 10px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  cursor: pointer;
-  transition: all 0.18s ease;
-  font-family: var(--font);
-}
-.repertorio-import-btn:hover {
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-small);
-}
-.repertorio-import-btn__name {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-.repertorio-import-btn__count {
-  font-size: 0.72rem;
-  color: var(--color-text-muted);
-  margin-top: 2px;
-}
-
 /* ── RESPONSIVE ── */
 @media (max-width: 600px) {
   .page { padding: 4px 16px 80px; }

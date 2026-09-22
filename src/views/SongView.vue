@@ -22,7 +22,7 @@
 
     <!-- Header (modo edición) -->
     <div v-else>
-      <h1 class="section-title">Editar alabanza</h1>
+      <PageBackHeader eyebrow="Canciones" title="Editar alabanza" back-label="Volver a la canción" @back="cancelEdit" />
     </div>
 
     <!-- Mini menú: navegación entre canciones + Play -->
@@ -192,6 +192,7 @@ import ActionSheet from '../components/ActionSheet.vue'
 import ChordLine from '../components/ChordLine.vue'
 import UiSelect from '../components/UiSelect.vue'
 import UiCombobox from '../components/UiCombobox.vue'
+import PageBackHeader from '../components/PageBackHeader.vue'
 
 const route     = useRoute()
 const router    = useRouter()
