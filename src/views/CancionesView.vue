@@ -91,91 +91,8 @@
 
     <!-- ── Formulario nueva canción ── -->
     <template v-else>
-      <PageBackHeader eyebrow="Canciones" title="Nueva canción" back-label="Volver a canciones" @back="toggleForm" />
-
-      <!-- Título -->
-      <div class="sf-block">
-        <input
-          class="sf-title-input"
-          :class="{ 'sf-title-input--error': titleError }"
-          v-model="form.title"
-          type="text"
-          placeholder="¿Cómo se llama la canción?"
-          autofocus
-          @input="titleError = false"
-        >
-        <div v-if="titleError" class="sf-error">Ponle un nombre para poder guardarla.</div>
-      </div>
-
-      <!-- Tono: teclado de acordes (mismo lenguaje que la lista) -->
-      <div class="sf-block">
-        <div class="sf-block-label">Tono</div>
-        <div class="key-picker">
-          <button type="button" class="key-chip key-chip--none" :class="{ active: !form.key }" @click="form.key = ''">—</button>
-          <button
-            v-for="k in keys"
-            :key="k"
-            type="button"
-            class="key-chip"
-            :class="{ active: form.key === k }"
-            @click="form.key = k"
-          >{{ fmtKey(k) }}</button>
-        </div>
-      </div>
-
-      <!-- Autor -->
-      <div class="sf-block">
-        <div class="sf-field">
-          <label class="sf-label" for="sf-author">Autor o artista</label>
-          <UiCombobox v-model="form.author" :options="authorSuggestions" placeholder="Ej: Marcos Witt" aria-label="Autor o artista" />
-        </div>
-      </div>
-
-      <!-- Duración + Tempo -->
-      <div class="sf-inline-row">
-        <div class="sf-field">
-          <label class="sf-label" for="sf-dur">Duración</label>
-          <div class="sf-bpm-wrap">
-            <input id="sf-dur" class="form-input sf-bpm-input" v-model="form.durationText" type="text" inputmode="numeric" placeholder="4:30">
-            <span class="sf-bpm-unit">m:ss</span>
-          </div>
-        </div>
-        <div class="sf-field">
-          <label class="sf-label" for="sf-bpm">Tempo</label>
-          <div class="sf-bpm-wrap">
-            <input id="sf-bpm" class="form-input sf-bpm-input" v-model.number="form.bpm" type="number" inputmode="numeric" placeholder="75" min="40" max="200">
-            <span class="sf-bpm-unit">BPM</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tipo -->
-      <div v-if="store.songTypes.length" class="sf-block">
-        <div class="sf-block-label">Tipo</div>
-        <div class="type-pills type-pills--form">
-          <button
-            v-for="t in store.songTypes"
-            :key="t.id"
-            type="button"
-            class="type-pill"
-            :class="{ active: form.types.includes(t.id) }"
-            @click="toggleFormType(t.id)"
-          >{{ t.name }}</button>
-        </div>
-      </div>
-
-      <!-- Letra y acordes -->
-      <div class="sf-block">
-        <div class="sf-block-label">Letra y acordes</div>
-        <textarea class="sf-lyrics" v-model="form.lyrics" :placeholder="lyricsPlaceholder"></textarea>
-        <div class="form-hint">Escribe los acordes en su propia línea y la letra debajo. Marca las partes con [Intro], [Verso], [Coro] o [Puente]. Para que avancen solas en vivo, ponle a cada una cuánto dura: [Coro 0:30] = el coro dura 30 segundos.</div>
-      </div>
-
-      <!-- Acciones -->
-      <div class="sf-actions">
-        <button class="sf-save-btn" type="button" @click="saveSong">Guardar</button>
-        <button class="sf-cancel-btn" type="button" @click="toggleForm">Cancelar</button>
-      </div>
+      <PageBackHeader eyebrow="Canciones" title="Nueva canción" back-label="Volver a canciones" @back="showForm = false" />
+      <SongForm :busy="saving" @submit="saveSong" @cancel="showForm = false" />
     </template>
 
   </div>
@@ -188,8 +105,7 @@ import { useAppStore } from '../stores/app'
 import { useBandStore } from '../stores/band'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
-import { parseDuration } from '../utils/duration'
-import UiCombobox from '../components/UiCombobox.vue'
+import SongForm from '../components/SongForm.vue'
 import PageBackHeader from '../components/PageBackHeader.vue'
 import songMark from '../assets/song-mark.svg'
 
@@ -202,80 +118,18 @@ const { confirm }   = useConfirm()
 const query       = ref('')
 const activeTypes = ref([])
 const showForm   = ref(false)
-const titleError = ref(false)
 const ctxMenu    = ref({ visible: false, x: 0, y: 0, song: null })
-const keys = ['A','A#/Bb','B','C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab']
-
-const lyricsPlaceholder = `[Intro]
-G  Em  C  D
-
-[Verso 1]
-G              Em
-Cuán grande es Él
-C             D
-Su amor sin fin
-
-[Coro]
-G    D    Em   C
-Santo, Santo, Santo...`
-
-const emptyForm = () => ({
-  title:  '',
-  author: localStorage.getItem('lastSongAuthor') || '',
-  key:    localStorage.getItem('lastSongKey')    || '',
-  bpm:    null,
-  durationText: '',
-  types:  [],
-  lyrics: '',
-})
-const form = ref(emptyForm())
-
-const authorSuggestions = computed(() =>
-  [...new Set(store.songs.map(s => s.author).filter(Boolean))]
-)
+const saving     = ref(false)
 
 function openForm() {
-  form.value = emptyForm()
-  titleError.value = false
   showForm.value = true
 }
 
-function toggleForm() {
-  showForm.value = !showForm.value
-  if (!showForm.value) {
-    form.value = emptyForm()
-    titleError.value = false
-  }
-}
-
-async function saveSong() {
-  if (!form.value.title.trim()) { titleError.value = true; return }
-  if (form.value.key)    localStorage.setItem('lastSongKey',    form.value.key)
-  if (form.value.author) localStorage.setItem('lastSongAuthor', form.value.author.trim())
-  const ok = await attempt(() => store.createSong({
-    title:  form.value.title.trim(),
-    author: form.value.author.trim(),
-    key:    form.value.key,
-    bpm:    form.value.bpm || null,
-    duration: parseDuration(form.value.durationText),
-    types:  form.value.types.length ? form.value.types : [],
-    lyrics: form.value.lyrics.trim() || '',
-  }), { success: 'Canción guardada', error: 'No se pudo guardar la canción.' })
-  if (!ok) return
-  showForm.value = false
-  form.value = emptyForm()
-}
-
-function toggleType(id) {
-  const idx = activeTypes.value.indexOf(id)
-  if (idx >= 0) activeTypes.value.splice(idx, 1)
-  else activeTypes.value.push(id)
-}
-
-function toggleFormType(id) {
-  const idx = form.value.types.indexOf(id)
-  if (idx >= 0) form.value.types.splice(idx, 1)
-  else form.value.types.push(id)
+async function saveSong(fields) {
+  saving.value = true
+  const ok = await attempt(() => store.createSong(fields), { success: 'Canción guardada', error: 'No se pudo guardar la canción.' })
+  saving.value = false
+  if (ok) showForm.value = false
 }
 
 function getSongTypes(s) {
@@ -315,11 +169,6 @@ const sortedSongs = computed(() => {
 })
 
 const isFiltering = computed(() => query.value.trim() !== '' || activeTypes.value.length > 0)
-
-// "A#/Bb" -> "A♯", "C" -> "C". El tono es el ancla visual de cada fila.
-function fmtKey(k) {
-  return (k.split('/')[0] || '').replace('#', '♯').replace('b', '♭')
-}
 
 function typeLabels(s) {
   const sTypes = getSongTypes(s)
@@ -417,28 +266,6 @@ async function deleteSongFromCtx() {
   text-overflow: ellipsis;
 }
 
-.sf-actions {
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
-  align-items: stretch;
-  gap: 10px;
-}
-.sf-actions .sf-save-btn,
-.sf-actions .sf-cancel-btn {
-  width: 100%;
-  min-height: 50px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  font-size: 15px;
-  font-weight: 600;
-}
-.sf-actions .sf-cancel-btn {
-  border: 1px solid var(--color-danger);
-  background: var(--color-danger);
-  color: var(--color-text-on-primary);
-  cursor: pointer;
-}
-.sf-actions .sf-cancel-btn:active { transform: scale(.98); }
 .song-item__dot { margin: 0 5px; opacity: 0.6; }
 .song-item__arrow { width: 15px; height: 15px; flex-shrink: 0; color: var(--color-text-muted); }
 
@@ -456,47 +283,4 @@ async function deleteSongFromCtx() {
 .songs-empty__svg { width: 40px; height: 40px; color: var(--color-text-muted); opacity: 0.7; margin: 0 auto 14px; display: block; }
 .songs-empty__hint { display: block; font-size: 0.8rem; color: var(--color-text-muted); margin-top: 6px; }
 
-/* ── FORMULARIO: encabezado amable ── */
-.sf-title-input--error { border-bottom-color: var(--color-danger); }
-.sf-error { color: var(--color-danger); font-size: 0.78rem; margin-top: 6px; }
-
-/* ── FORMULARIO: teclado de tonos (la firma) ── */
-.key-picker { display: flex; flex-wrap: wrap; gap: 7px; }
-.key-chip {
-  min-width: 42px;
-  padding: 9px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 11px;
-  background: var(--color-surface);
-  color: var(--color-text-primary);
-  font-family: var(--font-display);
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
-}
-.key-chip:hover { border-color: var(--color-primary); color: var(--color-primary); }
-.key-chip.active {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-text-on-primary);
-  box-shadow: var(--shadow-medium);
-}
-.key-chip:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
-.key-chip--none { color: var(--color-text-muted); font-weight: 600; }
-.key-chip--none.active { background: var(--color-text-secondary); border-color: var(--color-text-secondary); color: var(--color-text-on-primary); }
-
-/* ── FORMULARIO: tempo con unidad ── */
-.sf-bpm-wrap { position: relative; }
-.sf-bpm-input { padding-right: 48px; }
-.sf-bpm-unit {
-  position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
-  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em;
-  color: var(--color-text-muted); pointer-events: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .key-chip { transition: none; }
-}
 </style>

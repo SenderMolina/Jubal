@@ -22,7 +22,7 @@
 
     <!-- Header (modo edición) -->
     <div v-else>
-      <PageBackHeader eyebrow="Canciones" title="Editar alabanza" back-label="Volver a la canción" @back="cancelEdit" />
+      <PageBackHeader eyebrow="Canciones" title="Editar canción" back-label="Volver a la canción" @back="cancelEdit" />
     </div>
 
     <!-- Mini menú: navegación entre canciones + Play -->
@@ -49,73 +49,8 @@
 
     <ActionSheet ref="sheet" />
 
-    <!-- Edit form (mismo formato que crear alabanza) -->
-    <div v-if="editing">
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Título <span class="req">*</span></label>
-          <input
-            ref="editTitleInput"
-            class="form-input"
-            :class="{ 'form-input--error': titleError }"
-            v-model="form.title"
-            type="text"
-            placeholder="Ej: Santo, Santo, Santo"
-            @input="titleError = ''"
-          >
-          <p v-if="titleError" class="form-error">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            {{ titleError }}
-          </p>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Autor / Artista</label>
-          <UiCombobox v-model="form.author" :options="authorSuggestions" placeholder="Ej: Marcos Witt" aria-label="Autor o artista" />
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Tono (Key)</label>
-          <UiSelect v-model="form.key" :options="keyOptions" placeholder="— Sin especificar —" aria-label="Tono de la canción" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Tempo (BPM)</label>
-          <input class="form-input" v-model.number="form.bpm" type="number" placeholder="Ej: 75" min="40" max="200">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Duración (min:seg)</label>
-        <input class="form-input" v-model="form.durationText" type="text" inputmode="numeric" placeholder="Ej: 4:30">
-        <div class="form-hint">Se usa para el autoscroll de la letra en modo Play.</div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Tipos</label>
-        <div class="type-pills type-pills--form">
-          <button
-            v-for="t in store.songTypes"
-            :key="t.id"
-            type="button"
-            class="type-pill"
-            :class="{ active: form.types.includes(t.id) }"
-            @click="toggleFormType(t.id)"
-          >{{ t.name }}</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Letra y acordes</label>
-        <textarea class="form-textarea" v-model="form.lyrics" :placeholder="lyricsPlaceholder"></textarea>
-        <div class="form-hint">Acordes inline: <code>[C]Sublime [G]gra[Am]cia</code> — el acorde se coloca sobre la sílaba (también funciona el acorde en su propia línea). Usa [Coro], [Verso]… para secciones; con tiempo opcional [Intro 0:25] el autoscroll se pausa ahí. A las coristas no se les muestran los acordes.</div>
-      </div>
-
-      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:8px;">
-        <button class="btn btn-ghost" @click="cancelEdit">Cancelar</button>
-        <button class="btn btn-primary" @click="saveEdit">Guardar cambios</button>
-      </div>
-    </div>
+    <!-- Edición: el mismo formulario que al crear -->
+    <SongForm v-if="editing" :song="song" submit-label="Guardar cambios" :busy="saving" @submit="saveEdit" @cancel="cancelEdit" />
 
     <!-- View mode: letra y acordes -->
     <div v-else class="lyrics-block">
@@ -186,12 +121,11 @@ import { useLiveStore } from '../stores/live'
 import { usePracticeStore } from '../stores/practice'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
-import { parseDuration, formatDuration } from '../utils/duration'
+import { formatDuration } from '../utils/duration'
 import { parseSections } from '../utils/sections'
 import ActionSheet from '../components/ActionSheet.vue'
 import ChordLine from '../components/ChordLine.vue'
-import UiSelect from '../components/UiSelect.vue'
-import UiCombobox from '../components/UiCombobox.vue'
+import SongForm from '../components/SongForm.vue'
 import PageBackHeader from '../components/PageBackHeader.vue'
 
 const route     = useRoute()
@@ -205,27 +139,8 @@ const { confirm }   = useConfirm()
 
 const sheet       = ref(null)
 const editing     = ref(false)
-const form        = ref({})
-const showDetails = ref(false)
-const titleError  = ref('')
-const editTitleInput = ref(null)
+const saving      = ref(false)
 const practiceBusy = ref(false)
-
-const lyricsPlaceholder = `[Intro]
-G  Em  C  D
-
-[Verso 1]
-[G]Cuán [Em]grande es Él
-[C]Su amor [D]sin fin
-
-[Coro]
-[G]Santo, [D]Santo, [Em]Santo[C]...`
-
-const keys = ['A','A#/Bb','B','C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab']
-const keyOptions = [
-  { value: '', label: '— Sin especificar —' },
-  ...keys.map(key => ({ value: key, label: key })),
-]
 
 const song = computed(() => store.songs.find(s => s.id === Number(route.params.id)))
 const linkedSkill = computed(() => practice.skills.find(skill => Number(skill.song_id) === Number(song.value?.id)))
@@ -241,10 +156,6 @@ async function openPractice() {
     showError(reason, 'No se pudo agregar a la práctica')
   } finally { practiceBusy.value = false }
 }
-
-const authorSuggestions = computed(() =>
-  [...new Set(store.songs.map(s => s.author).filter(Boolean))]
-)
 
 function openMenu() {
   sheet.value?.open({
@@ -274,33 +185,18 @@ async function deleteSong() {
 }
 
 function startEdit() {
-  const s = song.value
-  const types = Array.isArray(s.types) ? [...s.types] : (s.type ? [s.type] : [])
-  form.value = { title: s.title, author: s.author || '', key: s.key || '', bpm: s.bpm || null, durationText: formatDuration(s.duration), types, lyrics: s.lyrics || '' }
   editing.value = true
-}
-
-function toggleFormType(id) {
-  const idx = form.value.types.indexOf(id)
-  if (idx >= 0) form.value.types.splice(idx, 1)
-  else form.value.types.push(id)
 }
 
 function cancelEdit() {
   editing.value = false
-  showDetails.value = false
 }
 
-async function saveEdit() {
-  if (!form.value.title.trim()) { titleError.value = 'Ponle un título para guardar.'; editTitleInput.value?.focus(); return }
-  const { durationText, ...fields } = form.value
-  const ok = await attempt(() => store.updateSong(Number(route.params.id), {
-    ...fields, title: fields.title.trim(), author: fields.author.trim(), lyrics: fields.lyrics.trim(),
-    bpm: fields.bpm || null, duration: parseDuration(durationText),
-  }), { success: 'Canción actualizada', error: 'No se pudo actualizar la canción.' })
-  if (!ok) return
-  editing.value = false
-  showDetails.value = false
+async function saveEdit(fields) {
+  saving.value = true
+  const ok = await attempt(() => store.updateSong(song.value.id, fields), { success: 'Canción actualizada', error: 'No se pudo actualizar la canción.' })
+  saving.value = false
+  if (ok) editing.value = false
 }
 
 // Aplanado de parseSections() — mismo parser que la vista en vivo, para que

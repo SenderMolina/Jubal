@@ -7,7 +7,6 @@ const ActividadesView = () => import('../views/ActividadesView.vue')
 const ActivityFormView = () => import('../views/ActivityFormView.vue')
 const ActividadDetailView = () => import('../views/ActividadDetailView.vue')
 const CancionesView = () => import('../views/CancionesView.vue')
-const AgregarView = () => import('../views/AgregarView.vue')
 const TiposView = () => import('../views/TiposView.vue')
 const SongView = () => import('../views/SongView.vue')
 const RepertorioView = () => import('../views/RepertorioView.vue')
@@ -35,7 +34,7 @@ const routes = [
   { path: '/repertorio',      component: RepertorioView },
   { path: '/repertorio/:id',  component: RepertorioDetailView },
   { path: '/canciones',       component: CancionesView },
-  { path: '/agregar',         component: AgregarView },
+  { path: '/agregar',         redirect: '/canciones' },
   { path: '/configuracion',   component: TiposView, meta: { title: 'Configuraciones' } },
   { path: '/tipos',           redirect: '/configuracion' },
   { path: '/banda',           component: BandManageView },

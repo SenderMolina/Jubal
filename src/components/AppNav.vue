@@ -19,12 +19,12 @@ const items = computed(() => band.personalMode ? [
   { to: '/practica', label: 'Inicio', icon: 'home' },
   { to: '/entrenar', label: 'Practicar', icon: 'tracker', paths: ['/skill/'] },
   { to: '/rutina', label: 'Rutinas', icon: 'activities' },
-  { to: '/canciones', label: 'Canciones', icon: 'songs', paths: ['/agregar'] },
+  { to: '/canciones', label: 'Canciones', icon: 'songs' },
 ] : [
   { to: '/inicio', label: 'Inicio', icon: 'home' },
   { to: '/actividades', label: 'Agenda', icon: 'activities', paths: ['/actividad/'] },
   { to: '/repertorio', label: 'Repertorios', icon: 'repertoire' },
-  { to: '/canciones', label: 'Canciones', icon: 'songs', paths: ['/agregar'] },
+  { to: '/canciones', label: 'Canciones', icon: 'songs' },
 ])
 function isActive(item) { return [item.to, ...(item.paths || [])].some(path => route.path.startsWith(path)) }
 </script>

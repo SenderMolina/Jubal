@@ -155,128 +155,16 @@
       </div>
 
       <!-- ── Selector de canciones ── -->
-      <Teleport to="body">
-        <Transition name="song-picker">
-          <div v-if="libraryOpen" class="song-picker-overlay" @click.self="closeLibrary" @keydown.esc="closeLibrary">
-            <section class="song-picker" role="dialog" aria-modal="true" aria-labelledby="activity-song-picker-title">
-              <div class="song-picker__handle" aria-hidden="true"></div>
-
-              <header class="song-picker__head">
-                <div>
-                  <span>{{ tiempoTitle(selectedTiempo) }}</span>
-                  <h2 id="activity-song-picker-title">Agregar canciones</h2>
-                </div>
-              </header>
-
-              <div class="song-picker__tabs" role="tablist">
-                <button
-                  type="button"
-                  role="tab"
-                  :aria-selected="libraryTab === 'songs'"
-                  :class="{ active: libraryTab === 'songs' }"
-                  @click="libraryTab = 'songs'"
-                >Canciones</button>
-                <button
-                  type="button"
-                  role="tab"
-                  :aria-selected="libraryTab === 'repertoires'"
-                  :class="{ active: libraryTab === 'repertoires' }"
-                  @click="libraryTab = 'repertoires'"
-                >Repertorios</button>
-              </div>
-
-              <div v-if="libraryTab === 'songs'" class="search-box song-picker__search">
-                <span class="search-box__icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>
-                  </svg>
-                </span>
-                <input
-                  ref="librarySearch"
-                  v-model="libraryQuery"
-                  class="search-box__input"
-                  type="search"
-                  placeholder="Buscar canción…"
-                  aria-label="Buscar canción"
-                >
-              </div>
-
-              <div v-if="libraryTab === 'songs' && store.songTypes.length" class="type-pills" style="margin-top:8px">
-                <button class="type-pill" :class="{ active: !libraryType }" @click="libraryType = ''">Todos</button>
-                <button
-                  v-for="t in store.songTypes"
-                  :key="t.id"
-                  class="type-pill"
-                  :class="{ active: libraryType === String(t.id) }"
-                  @click="libraryType = String(t.id)"
-                >{{ t.name }}</button>
-              </div>
-
-              <div class="song-picker__summary">
-                <span>{{ pendingSongIds.length }} canci{{ pendingSongIds.length === 1 ? 'ón' : 'ones' }} por agregar</span>
-                <button v-if="selectedSongIds.size || selectedRepIds.size" type="button" @click="clearSongSelection">Limpiar</button>
-              </div>
-
-              <div v-if="libraryTab === 'repertoires'" class="song-picker__list">
-                <button
-                  v-for="rep in store.repertoires"
-                  :key="rep.id"
-                  class="song-picker__row"
-                  :class="{ selected: selectedRepIds.has(rep.id), assigned: !repNewCount(rep) }"
-                  type="button"
-                  :disabled="!repNewCount(rep)"
-                  :aria-pressed="selectedRepIds.has(rep.id)"
-                  @click="toggleRepSelection(rep.id)"
-                >
-                  <span class="song-picker__row-body">
-                    <strong>{{ rep.name }}</strong>
-                    <small>
-                      {{ (rep.songs || []).length }} canci{{ (rep.songs || []).length === 1 ? 'ón' : 'ones' }}
-                      <template v-if="repNewCount(rep) && repNewCount(rep) < (rep.songs || []).length"> · {{ repNewCount(rep) }} nueva{{ repNewCount(rep) === 1 ? '' : 's' }}</template>
-                    </small>
-                  </span>
-                  <span v-if="!repNewCount(rep)" class="song-picker__assignment">{{ (rep.songs || []).length ? 'Ya agregado' : 'Vacío' }}</span>
-                  <span v-else class="song-picker__status" aria-hidden="true">{{ selectedRepIds.has(rep.id) ? '✓' : '+' }}</span>
-                </button>
-
-                <div v-if="!store.repertoires.length" class="song-picker__empty">
-                  Aún no tienes repertorios
-                </div>
-              </div>
-
-              <div v-else class="song-picker__list">
-                <button
-                  v-for="song in filteredLibrary"
-                  :key="song.id"
-                  class="song-picker__row"
-                  :class="{ selected: selectedSongIds.has(song.id), assigned: songAssignments[song.id] }"
-                  type="button"
-                  :disabled="Boolean(songAssignments[song.id])"
-                  :aria-pressed="selectedSongIds.has(song.id)"
-                  @click="toggleSongSelection(song.id)"
-                >
-                  <span class="song-picker__row-body">
-                    <strong>{{ song.title }}</strong>
-                    <small>{{ [song.author, song.key && `Tono ${song.key}`].filter(Boolean).join(' · ') || 'Sin datos adicionales' }}</small>
-                  </span>
-                  <span v-if="songAssignments[song.id]" class="song-picker__assignment">{{ songAssignments[song.id] }}</span>
-                  <span v-else class="song-picker__status" aria-hidden="true">{{ selectedSongIds.has(song.id) ? '✓' : '+' }}</span>
-                </button>
-
-                <div v-if="!filteredLibrary.length" class="song-picker__empty">
-                  {{ libraryQuery ? 'No se encontraron canciones' : 'Todas las canciones ya están en este tiempo' }}
-                </div>
-              </div>
-
-              <footer class="song-picker__actions">
-                <button class="btn btn-primary" type="button" :disabled="!pendingSongIds.length" @click="acceptSongSelection">
-                  Agregar<span v-if="pendingSongIds.length"> ({{ pendingSongIds.length }})</span>
-                </button>
-              </footer>
-            </section>
-          </div>
-        </Transition>
-      </Teleport>
+      <SongPicker
+        :open="libraryOpen"
+        :eyebrow="selectedTiempo ? tiempoTitle(selectedTiempo) : ''"
+        :exclude-ids="selectedTiempo?.songs || []"
+        :locked-labels="songAssignments"
+        with-repertoires
+        empty-text="Todas las canciones ya están en este tiempo"
+        @close="libraryOpen = false"
+        @accept="addSongs"
+      />
     </template>
 
     <!-- ══════════ VISTA MÚSICO / CANTANTE ══════════ -->
@@ -326,12 +214,14 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useBandStore } from '../stores/band'
 import { useLiveStore } from '../stores/live'
 import { useToast } from '../composables/useToast'
+import { fmtKey } from '../utils/keys'
+import SongPicker from '../components/SongPicker.vue'
 import { useConfirm } from '../composables/useConfirm'
 import draggable from 'vuedraggable'
 import ActionSheet from '../components/ActionSheet.vue'
@@ -357,13 +247,6 @@ const sheet             = ref(null)
 const selectedTiempoId  = ref(null)
 const tiempoForm        = ref(null)   // { id?, name, start, end } — null = cerrado
 const libraryOpen       = ref(false)
-const libraryQuery      = ref('')
-const libraryType       = ref('')
-const librarySearch     = ref(null)
-const libraryTab        = ref('songs')  // 'songs' | 'repertoires'
-const selectedSongIds   = ref(new Set())
-const selectedRepIds    = ref(new Set())
-let previousBodyOverflow = ''
 
 const activity = computed(() =>
   store.activities.find(a => a.id === Number(route.params.id))
@@ -388,7 +271,7 @@ const songAssignments = computed(() => {
   const map = {}
   for (const tiempo of activity.value?.tiempos || []) {
     for (const songId of tiempo.songs || []) {
-      if (!map[songId]) map[songId] = tiempo.name
+      if (!map[songId]) map[songId] = tiempoTitle(tiempo)
     }
   }
   return map
@@ -403,11 +286,6 @@ const formattedDate = computed(() => {
 
 function songById(id) { return store.songs.find(s => s.id === id) }
 
-// "A#/Bb" -> "A♯". Mismo lenguaje visual del tono que en la lista de canciones.
-function fmtKey(k) {
-  return (k.split('/')[0] || '').replace('#', '♯').replace('b', '♭')
-}
-
 function tiempoSongObjects(tiempo) {
   return (tiempo.songs || []).map(id => songById(id)).filter(Boolean)
 }
@@ -415,38 +293,6 @@ function setTiempoSongs(tiempo, songs) {
   tiempo.songs = songs.map(s => s.id)
   save()
 }
-
-// Biblioteca: oculta las canciones ya incluidas en el tiempo activo.
-const filteredLibrary = computed(() => {
-  const inSelected = new Set((selectedTiempo.value?.songs || []).map(String))
-  const q = libraryQuery.value.trim().toLowerCase()
-  return store.songs.filter(s => {
-    if (inSelected.has(String(s.id))) return false
-    const matchQuery = !q ||
-      s.title.toLowerCase().includes(q) ||
-      (s.author || '').toLowerCase().includes(q) ||
-      (s.key || '').toLowerCase().includes(q)
-    const sTypes = Array.isArray(s.types) ? s.types.map(String) : (s.type ? [String(s.type)] : [])
-    const matchType = !libraryType.value || sTypes.includes(libraryType.value)
-    return matchQuery && matchType
-  }).sort((a, b) => a.title.localeCompare(b.title, 'es', { sensitivity: 'base' }))
-})
-
-// Canciones de un repertorio que aún no están en ningún tiempo de la actividad
-// (misma regla que la pestaña de canciones: una canción, un tiempo).
-function repNewSongIds(rep) {
-  return (rep.songs || []).filter(id => !songAssignments.value[id] && songById(id))
-}
-function repNewCount(rep) { return repNewSongIds(rep).length }
-
-// Lo que agrega el botón: canciones elegidas + las nuevas de cada repertorio elegido, sin repetir.
-const pendingSongIds = computed(() => {
-  const ids = [...selectedSongIds.value]
-  for (const rep of store.repertoires) {
-    if (selectedRepIds.value.has(rep.id)) ids.push(...repNewSongIds(rep))
-  }
-  return [...new Set(ids)]
-})
 
 // Los cambios se aplican primero en pantalla y se guardan en cola (en orden).
 // Si el guardado falla, se avisa y se recarga para deshacer el cambio local.
@@ -561,51 +407,14 @@ async function deleteTiempo(tiempoId) {
 
 function openLibrary(tiempo) {
   selectedTiempoId.value = tiempo.id
-  libraryQuery.value = ''
-  libraryType.value = ''
-  libraryTab.value = 'songs'
-  selectedSongIds.value = new Set()
-  selectedRepIds.value = new Set()
-  previousBodyOverflow = document.body.style.overflow
-  document.body.style.overflow = 'hidden'
   libraryOpen.value = true
-  nextTick(() => librarySearch.value?.focus())
 }
 
-function closeLibrary() {
+function addSongs(songIds) {
   libraryOpen.value = false
-  selectedSongIds.value = new Set()
-  selectedRepIds.value = new Set()
-  document.body.style.overflow = previousBodyOverflow
-}
-
-function toggleSongSelection(songId) {
-  if (songAssignments.value[songId]) return
-  const next = new Set(selectedSongIds.value)
-  if (next.has(songId)) next.delete(songId)
-  else next.add(songId)
-  selectedSongIds.value = next
-}
-
-function toggleRepSelection(repId) {
-  const next = new Set(selectedRepIds.value)
-  if (next.has(repId)) next.delete(repId)
-  else next.add(repId)
-  selectedRepIds.value = next
-}
-
-function clearSongSelection() {
-  selectedSongIds.value = new Set()
-  selectedRepIds.value = new Set()
-}
-
-function acceptSongSelection() {
-  if (!selectedTiempo.value || !pendingSongIds.value.length) return
-  const existing = new Set((selectedTiempo.value.songs || []).map(String))
-  const additions = pendingSongIds.value.filter(id => !existing.has(String(id)))
-  selectedTiempo.value.songs = [...(selectedTiempo.value.songs || []), ...additions]
-  save(`${additions.length} canción${additions.length === 1 ? '' : 'es'} agregada${additions.length === 1 ? '' : 's'} a ${tiempoTitle(selectedTiempo.value)}`)
-  closeLibrary()
+  if (!selectedTiempo.value || !songIds.length) return
+  selectedTiempo.value.songs = [...(selectedTiempo.value.songs || []), ...songIds]
+  save(`${songIds.length} canción${songIds.length === 1 ? '' : 'es'} agregada${songIds.length === 1 ? '' : 's'} a ${tiempoTitle(selectedTiempo.value)}`)
 }
 
 function removeSong(tiempo, songId) {
@@ -630,9 +439,6 @@ async function handleDelete() {
   if (deleted) router.push('/actividades')
 }
 
-onBeforeUnmount(() => {
-  if (libraryOpen.value) document.body.style.overflow = previousBodyOverflow
-})
 </script>
 
 <style scoped>
@@ -720,39 +526,6 @@ onBeforeUnmount(() => {
 .tiempo-song-row__remove svg { width: 14px; height: 14px; display: block; }
 .tiempo-song-row__remove:active { background: var(--color-danger); color: var(--color-text-on-primary); }
 
-.song-picker-overlay { position: fixed; z-index: 1300; inset: 0; display: flex; align-items: flex-end; justify-content: center; padding-top: 54px; background: var(--color-overlay); }
-.song-picker { width: min(100%, 600px); height: min(86dvh, 780px); display: flex; flex-direction: column; overflow: hidden; padding: 8px 16px calc(14px + env(safe-area-inset-bottom)); border: 1px solid var(--color-border); border-bottom: 0; border-radius: 24px 24px 0 0; background: var(--color-background); box-shadow: var(--shadow-modal); }
-.song-picker__handle { width: 42px; height: 4px; flex: 0 0 4px; margin: 0 auto 10px; border-radius: 999px; background: var(--color-border-strong); }
-.song-picker__head { display: flex; align-items: flex-start; gap: 14px; padding: 2px 2px 12px; border: 0; background: transparent; }
-.song-picker__head span { display: block; max-width: 250px; overflow: hidden; color: var(--color-accent); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
-.song-picker__head h2 { margin-top: 2px; font-size: 21px; }
-.song-picker__tabs { flex: 0 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 10px; padding: 4px; border-radius: 12px; background: var(--color-surface-secondary); }
-.song-picker__tabs button { min-height: 36px; border: 0; border-radius: 9px; background: transparent; color: var(--color-text-muted); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s, color .15s; }
-.song-picker__tabs button.active { background: var(--color-surface); color: var(--color-primary); box-shadow: var(--shadow-small); }
-.song-picker__search { flex: 0 0 auto; }
-.song-picker__search svg { width: 18px; height: 18px; }
-.song-picker__summary { min-height: 38px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 2px; color: var(--color-text-secondary); font-size: 12px; }
-.song-picker__summary button { padding: 6px 0; border: 0; background: transparent; color: var(--color-link); font-size: 12px; cursor: pointer; }
-.song-picker__list { min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; margin-top: 3px; border: 1px solid var(--color-border); border-radius: 16px; background: var(--color-surface); }
-.song-picker__row { width: 100%; min-height: 62px; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 0; border-bottom: 1px solid var(--color-border); background: transparent; color: var(--color-text-primary); text-align: left; cursor: pointer; transition: background .15s ease; }
-.song-picker__row:last-of-type { border-bottom: 0; }
-.song-picker__row:hover { background: var(--color-surface-hover); }
-.song-picker__row.selected { background: var(--color-secondary-soft); }
-.song-picker__row.assigned { cursor: default; opacity: .68; }
-.song-picker__row-body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
-.song-picker__row-body strong { max-width: 100%; overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
-.song-picker__row-body small { max-width: 100%; overflow: hidden; color: var(--color-text-secondary); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.song-picker__status { width: 34px; height: 34px; flex: 0 0 34px; display: grid; place-items: center; border-radius: 50%; background: var(--color-secondary-soft); color: var(--color-primary); font-family: var(--font-display); font-size: 20px; }
-.song-picker__row.selected .song-picker__status { background: var(--color-success); color: var(--color-text-on-primary); font-size: 16px; }
-.song-picker__assignment { max-width: 92px; overflow: hidden; padding: 5px 8px; border-radius: 8px; background: var(--color-surface-secondary); color: var(--color-text-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-.song-picker__empty { display: grid; place-items: center; min-height: 150px; padding: 20px; color: var(--color-text-secondary); font-size: 13px; text-align: center; }
-.song-picker__actions { display: grid; grid-template-columns: 1fr; padding-top: 12px; }
-.song-picker__actions .btn { width: 100%; }
-.song-picker-enter-active, .song-picker-leave-active { transition: opacity .2s ease; }
-.song-picker-enter-active .song-picker, .song-picker-leave-active .song-picker { transition: transform .25s ease; }
-.song-picker-enter-from, .song-picker-leave-to { opacity: 0; }
-.song-picker-enter-from .song-picker, .song-picker-leave-to .song-picker { transform: translateY(100%); }
-
 /* Acción primaria: una sola, clara, en acento (no rojo) */
 .tiempo-live-btn {
   margin-top: 12px;
@@ -830,8 +603,4 @@ onBeforeUnmount(() => {
   .tiempo-song-row { gap: 5px; padding-inline: 6px; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .song-picker-enter-active, .song-picker-leave-active,
-  .song-picker-enter-active .song-picker, .song-picker-leave-active .song-picker { transition: none; }
-}
 </style>
