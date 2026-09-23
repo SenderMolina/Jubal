@@ -8,7 +8,7 @@
           <polyline points="12 19 5 12 12 5"/>
         </svg>
       </button>
-      <button v-if="band.isLeader" class="icon-circle-btn" aria-label="Opciones" @click="openMenu">
+      <button v-if="band.can.manageActivities" class="icon-circle-btn" aria-label="Opciones" @click="openMenu">
         <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
       </button>
     </div>
@@ -33,7 +33,7 @@
     <ActionSheet ref="sheet" />
 
     <!-- ══════════ VISTA LÍDER ══════════ -->
-    <template v-if="band.isLeader">
+    <template v-if="band.can.manageActivities">
       <div>
 
               <!-- Estado vacío -->
@@ -159,7 +159,7 @@
         :open="libraryOpen"
         :eyebrow="selectedTiempo ? tiempoTitle(selectedTiempo) : ''"
         :exclude-ids="selectedTiempo?.songs || []"
-        :locked-labels="songAssignments"
+        :locked-labels="songTiempoLabels"
         with-repertoires
         empty-text="Todas las canciones ya están en este tiempo"
         @close="libraryOpen = false"
@@ -267,7 +267,7 @@ const selectedTiempo = computed(() =>
 )
 
 // Mapa songId → nombre del tiempo donde está asignada
-const songAssignments = computed(() => {
+const songTiempoLabels = computed(() => {
   const map = {}
   for (const tiempo of activity.value?.tiempos || []) {
     for (const songId of tiempo.songs || []) {

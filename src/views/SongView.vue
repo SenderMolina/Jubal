@@ -14,7 +14,7 @@
           <span v-if="song?.key" class="song-topbar-key">{{ song.key }}</span>
         </div>
       </div>
-      <button v-if="band.isLeader" class="icon-circle-btn" aria-label="Opciones" @click="openMenu">
+      <button v-if="band.can.editLibrary" class="icon-circle-btn" aria-label="Opciones" @click="openMenu">
         <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
       </button>
       <div v-else class="song-topbar-spacer"></div>
@@ -57,13 +57,13 @@
       <template v-if="renderedLines.length">
         <template v-for="(line, i) in renderedLines" :key="i">
           <div v-if="line.type === 'spacer'" style="height:10px;"></div>
-          <ChordLine v-else-if="line.type === 'chordpro'" :pairs="line.pairs" :hide-chords="band.isCantante" />
+          <ChordLine v-else-if="line.type === 'chordpro'" :pairs="line.pairs" :hide-chords="!band.can.seeChords" />
           <div v-else :class="line.type">{{ line.text }}</div>
         </template>
       </template>
       <div v-else style="text-align:center;padding:40px;color:var(--color-text-muted)">
         Esta canción aún no tiene letra.
-        <span v-if="band.isLeader" style="display:block;margin-top:8px">
+        <span v-if="band.can.editLibrary" style="display:block;margin-top:8px">
           <button class="btn btn-ghost btn-sm" @click="startEdit">Agregar letra</button>
         </span>
       </div>
@@ -87,7 +87,7 @@
         <div ref="playerBody" class="player-body">
           <template v-for="(line, i) in renderedLines" :key="i">
             <div v-if="line.type === 'spacer'" style="height:10px;"></div>
-            <ChordLine v-else-if="line.type === 'chordpro'" :pairs="line.pairs" :hide-chords="band.isCantante" />
+            <ChordLine v-else-if="line.type === 'chordpro'" :pairs="line.pairs" :hide-chords="!band.can.seeChords" />
             <div v-else :class="line.type">{{ line.text }}</div>
           </template>
         </div>
@@ -162,7 +162,7 @@ function openMenu() {
     title: song.value?.title,
     actions: [
       // La sesión en vivo es de banda; en el espacio personal no aplica.
-      ...(band.personalMode ? [] : [{ label: '▶ Iniciar en vivo', onSelect: startLive }]),
+      ...(band.can.conductLive ? [{ label: '▶ Iniciar en vivo', onSelect: startLive }] : []),
       { label: 'Editar canción', icon: 'edit', onSelect: startEdit },
       { label: 'Eliminar canción', icon: 'trash', danger: true, onSelect: deleteSong },
     ],
@@ -203,7 +203,7 @@ async function saveEdit(fields) {
 // canción, vivo y reproductor rendericen idéntico. El ChordLine oculta los
 // acordes a coristas; las líneas de acordes sueltas (formato viejo) se filtran.
 const renderedLines = computed(() => {
-  const hideChords = band.isCantante
+  const hideChords = !band.can.seeChords
   const out = []
   for (const sec of parseSections(song.value?.lyrics)) {
     if (sec.label) out.push({ type: 'section-label', text: sec.label, secs: sec.secs })

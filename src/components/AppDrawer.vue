@@ -32,7 +32,7 @@
           </form>
           <button v-else class="drawer-item" @click="startCreate"><span class="drawer-plus" aria-hidden="true">＋</span><span class="drawer-item__label">Crear una banda</span></button>
 
-          <template v-if="band.currentBand && band.isLeader">
+          <template v-if="band.can.manageBand">
             <p class="drawer-section">Banda</p>
             <button class="drawer-item" :class="{ active: isPath('/banda') }" @click="go('/banda')">
               <JubalNavIcon name="band" /><span class="drawer-item__label">Administrar banda</span><span class="drawer-chevron">›</span>
@@ -50,7 +50,7 @@
 <script setup>
 import { ref, nextTick, watch, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useBandStore } from '../stores/band'
+import { ROLE_LABELS, useBandStore } from '../stores/band'
 import JubalNavIcon from './JubalNavIcon.vue'
 import { useToast } from '../composables/useToast'
 import logoText from '../assets/logo_text.png'
@@ -82,7 +82,7 @@ onBeforeUnmount(() => { if (props.open) document.body.style.overflow = previousO
 function isPath(p) { return route.path.startsWith(p) }
 
 function roleLabel(r) {
-  return { leader: 'Líder', musician: 'Músico', singer: 'Corista' }[r] || r
+  return ROLE_LABELS[r] || r
 }
 
 function goPractice() {

@@ -100,7 +100,7 @@ let loadVersion = 0
 
 const editing = computed(() => Boolean(route.params.id))
 const returnPath = computed(() => editing.value ? `/actividad/${route.params.id}` : '/actividades')
-const canEdit = computed(() => band.isLeader && band.currentBandId && band.currentBandId === sourceBandId.value)
+const canEdit = computed(() => band.can.manageActivities && band.currentBandId && band.currentBandId === sourceBandId.value)
 const dirty = computed(() => original.value && JSON.stringify(form) !== original.value)
 
 async function initialize() {

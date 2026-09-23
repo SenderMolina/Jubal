@@ -25,7 +25,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useAuthStore } from '../stores/auth'
-import { useBandStore } from '../stores/band'
+import { ROLE_LABELS, useBandStore } from '../stores/band'
 
 const auth = useAuthStore()
 const band = useBandStore()
@@ -36,8 +36,7 @@ const email = computed(() => auth.user?.email || '')
 const avatarUrl = computed(() => auth.user?.user_metadata?.avatar_url || '')
 const initial = computed(() => fullName.value.charAt(0).toUpperCase())
 
-const roleLabel = computed(() =>
-  ({ leader: 'Líder', musician: 'Músico', singer: 'Corista' }[band.myRole] || ''))
+const roleLabel = computed(() => ROLE_LABELS[band.myRole] || '')
 
 async function signOut() {
   band.reset()

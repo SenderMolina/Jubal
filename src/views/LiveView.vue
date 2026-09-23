@@ -25,12 +25,12 @@
     </div>
 
     <!-- Contenido de la sección actual -->
-    <div v-else class="live-content" :class="{ 'live-content--singer': band.isCantante }">
+    <div v-else class="live-content" :class="{ 'live-content--singer': !band.can.seeChords }">
       <div v-if="section" class="live-section">
         <div v-if="section.label" class="live-section__label">{{ section.label }}</div>
         <template v-for="(l, i) in section.lines" :key="i">
-          <ChordLine v-if="l.type === 'chordpro'" class="live-chordpro" :pairs="l.pairs" :hide-chords="band.isCantante" />
-          <div v-else-if="!(l.type === 'chord' && band.isCantante)"
+          <ChordLine v-if="l.type === 'chordpro'" class="live-chordpro" :pairs="l.pairs" :hide-chords="!band.can.seeChords" />
+          <div v-else-if="!(l.type === 'chord' && !band.can.seeChords)"
                :class="l.type === 'spacer' ? 'live-spacer' : (l.type === 'chord' ? 'live-chord' : 'live-lyric')">{{ l.text }}</div>
         </template>
       </div>

@@ -2,7 +2,7 @@
   <div class="repertoire-detail">
     <header class="repertoire-heading">
       <div class="repertoire-heading__info">
-        <div v-if="!editingName" class="activity-detail-title" @click="band.isLeader && startEditName()">
+        <div v-if="!editingName" class="activity-detail-title" @click="band.can.editLibrary && startEditName()">
           {{ repertoire?.name }}
         </div>
         <input
@@ -19,7 +19,7 @@
         </div>
       </div>
       <button
-        v-if="band.isLeader"
+        v-if="band.can.editLibrary"
         class="repertoire-heading__add"
         type="button"
         aria-label="Agregar canciones"
@@ -45,7 +45,7 @@
           <template #item="{ element: song, index }">
             <div class="repertoire-song-row">
               <div class="repertoire-song-row__main">
-                <span v-if="band.isLeader" class="drag-handle" aria-label="Reordenar">⠿</span>
+                <span v-if="band.can.editLibrary" class="drag-handle" aria-label="Reordenar">⠿</span>
                 <span class="repertoire-song-row__number">{{ index + 1 }}</span>
                 <button
                   class="repertoire-song-row__content"
@@ -56,7 +56,7 @@
                   <small>{{ [song.author, song.key && `Tono ${song.key}`].filter(Boolean).join(' · ') || 'Sin datos adicionales' }}</small>
                 </button>
                 <button
-                  v-if="band.isLeader"
+                  v-if="band.can.editLibrary"
                   class="repertoire-song-row__remove"
                   type="button"
                   :aria-label="`Quitar ${song.title}`"

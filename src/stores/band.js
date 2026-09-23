@@ -3,10 +3,12 @@ import { ref, computed } from 'vue'
 import { supabase } from '../supabase'
 import { clearLoadError, reportLoadError } from '../composables/useLoadErrors'
 import { useAuthStore } from './auth'
+import { permissionsFor } from '../utils/permissions'
+
+export const ROLE_LABELS = { leader: 'Líder', musician: 'Músico', singer: 'Corista' }
 
 // Store de sesión de banda: maneja las bandas del usuario, la banda activa y
-// el rol derivado de la membresía. Expone isLeader/isCantante para que
-// las vistas existentes sigan funcionando sin cambios (vía el shim de role.js).
+// el rol derivado de la membresía. Los permisos de la interfaz salen de `can`.
 export const useBandStore = defineStore('band', () => {
   const bands         = ref([])   // [{ id, name, owner_id, role }]
   const currentBandId = ref(sessionStorage.getItem('bandId') || null)
@@ -23,9 +25,11 @@ export const useBandStore = defineStore('band', () => {
     const auth = useAuthStore()
     return Boolean(currentBand.value && auth.user?.id === currentBand.value.owner_id)
   })
-  // En el espacio personal el músico es dueño de sus datos: mismas vistas, permisos de líder.
-  const isLeader   = computed(() => myRole.value === 'leader' || personalMode.value)
-  const isCantante = computed(() => myRole.value === 'singer')
+
+  // Permisos de la interfaz (matriz en utils/permissions.js).
+  const can = computed(() => permissionsFor({
+    role: myRole.value, personalMode: personalMode.value, isOwner: isOwner.value,
+  }))
 
   async function loadBands() {
     const auth = useAuthStore()
@@ -255,7 +259,7 @@ export const useBandStore = defineStore('band', () => {
   return {
     bands, currentBandId, currentBand, ready, pendingInvite, inviteResult,
     personalMode, enterPersonal,
-    myRole, isOwner, isLeader, isCantante,
+    myRole, can,
     init, createBand, updateBandName, updateBandImage, deleteBand,
     selectBand, changeRole, reset,
     loadMembers, updateMemberRole, removeMember,

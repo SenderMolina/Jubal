@@ -9,13 +9,13 @@
       <div class="bm-profile__image-wrap">
         <img v-if="bandImage && !imageBroken" :src="bandImage" class="bm-profile__image" alt="Imagen de la banda" @error="imageBroken = true">
         <span v-else class="bm-profile__image bm-profile__image--ph">{{ bandInitial }}</span>
-        <label v-if="band.isOwner" class="bm-profile__image-action" for="band-image" aria-label="Cambiar imagen de la banda">
+        <label v-if="band.can.editBand" class="bm-profile__image-action" for="band-image" aria-label="Cambiar imagen de la banda">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4 16 6h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l1.5-2h5Z"/><circle cx="12" cy="13" r="3"/></svg>
         </label>
-        <input v-if="band.isOwner" id="band-image" class="bm-profile__file" type="file" accept="image/jpeg,image/png,image/webp" @change="selectImage">
+        <input v-if="band.can.editBand" id="band-image" class="bm-profile__file" type="file" accept="image/jpeg,image/png,image/webp" @change="selectImage">
       </div>
 
-      <form v-if="band.isOwner" class="bm-profile__form" @submit.prevent="saveBandProfile">
+      <form v-if="band.can.editBand" class="bm-profile__form" @submit.prevent="saveBandProfile">
         <div>
           <span class="bm-eyebrow">Datos de la banda</span>
         </div>
@@ -89,7 +89,7 @@
     <p v-else class="bm-empty">Cargando miembros…</p>
 
     <!-- Invitaciones (solo líder) -->
-    <template v-if="band.isLeader">
+    <template v-if="band.can.manageBand">
       <h2 class="bm-heading">Invitaciones</h2>
 
       <div class="bm-create">
@@ -120,7 +120,7 @@
         <span class="bm-link__arrow">›</span>
       </RouterLink>
 
-      <section v-if="band.isOwner" class="bm-danger" aria-labelledby="delete-band-title">
+      <section v-if="band.can.editBand" class="bm-danger" aria-labelledby="delete-band-title">
         <div>
           <h2 id="delete-band-title">Eliminar banda</h2>
           <p>Elimina permanentemente sus actividades, canciones, repertorios e integrantes.</p>
@@ -136,7 +136,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useBandStore } from '../stores/band'
+import { ROLE_LABELS, useBandStore } from '../stores/band'
 import { useToast } from '../composables/useToast'
 import { clearLoadError, reportLoadError } from '../composables/useLoadErrors'
 import { useConfirm } from '../composables/useConfirm'
@@ -164,11 +164,10 @@ const bandImage = computed(() => previewUrl.value || band.currentBand?.avatar_ur
 const profileChanged = computed(() =>
   Boolean(imageFile.value) || bandName.value.trim() !== (band.currentBand?.name || ''))
 
-const roleLabels = { leader: 'Líder', musician: 'Músico', singer: 'Corista' }
-const roleLabel = r => roleLabels[r] || r
+const roleLabel = r => ROLE_LABELS[r] || r
 const roleIcons = { leader: '★', musician: '♩', singer: '♪' }
 const roleIcon = role => roleIcons[role] || '♫'
-const roleOptions = Object.keys(roleLabels).map(role => ({ value: role, label: roleLabel(role), icon: roleIcon(role) }))
+const roleOptions = Object.keys(ROLE_LABELS).map(role => ({ value: role, label: roleLabel(role), icon: roleIcon(role) }))
 
 function memberName(m) {
   return m.profile?.display_name || m.profile?.email?.split('@')[0] || 'Usuario'
@@ -209,7 +208,7 @@ function selectImage(event) {
 }
 
 async function saveBandProfile() {
-  if (!band.isOwner || profileBusy.value || !bandName.value.trim()) return
+  if (!band.can.editBand || profileBusy.value || !bandName.value.trim()) return
   profileBusy.value = true
   try {
     if (bandName.value.trim() !== band.currentBand?.name) {
@@ -226,7 +225,7 @@ async function saveBandProfile() {
 }
 
 async function deleteCurrentBand() {
-  if (!band.isOwner || deleteBusy.value) return
+  if (!band.can.editBand || deleteBusy.value) return
   const name = band.currentBand?.name || 'esta banda'
   const ok = await confirm(
     'Eliminar banda',
@@ -253,13 +252,13 @@ async function deleteCurrentBand() {
 
 // El líder puede editar a todos menos al dueño.
 function canEdit(m) {
-  return band.isLeader && m.user_id !== band.currentBand?.owner_id
+  return band.can.manageBand && m.user_id !== band.currentBand?.owner_id
 }
 
 async function refresh() {
   try {
     members.value = await band.loadMembers()
-    if (band.isLeader) invites.value = await band.loadInvites()
+    if (band.can.manageBand) invites.value = await band.loadInvites()
     clearLoadError('integrantes')
   } catch (reason) { reportLoadError('integrantes', reason, refresh) }
 }

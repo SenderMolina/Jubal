@@ -210,7 +210,7 @@ export const useAppStore = defineStore('app', () => {
   // El formulario guarda solo esta actividad y conserva su repertorio al editar.
   async function saveActivity(fields, id = null) {
     const b = bid()
-    if (!b || !band.isLeader) throw new Error('Solo el líder puede guardar actividades.')
+    if (!b || !band.can.manageActivities) throw new Error('Solo el líder puede guardar actividades.')
     const values = {
       title: fields.title.trim(), date: fields.date,
       time: fields.time || null, description: fields.description.trim(),

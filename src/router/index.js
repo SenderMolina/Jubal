@@ -28,16 +28,16 @@ const routes = [
   { path: '/inicio',          component: BandDashboardView },
   { path: '/practica',        component: HomeView },
   { path: '/actividades',     component: ActividadesView },
-  { path: '/actividades/nueva', component: ActivityFormView, meta: { activityForm: true, title: 'Nueva actividad' } },
-  { path: '/actividades/:id/editar', component: ActivityFormView, meta: { activityForm: true, title: 'Editar actividad' } },
+  { path: '/actividades/nueva', component: ActivityFormView, meta: { activityForm: true, title: 'Nueva actividad', can: 'manageActivities', denied: '/actividades' } },
+  { path: '/actividades/:id/editar', component: ActivityFormView, meta: { activityForm: true, title: 'Editar actividad', can: 'manageActivities', denied: '/actividades' } },
   { path: '/actividad/:id',   component: ActividadDetailView },
   { path: '/repertorio',      component: RepertorioView },
   { path: '/repertorio/:id',  component: RepertorioDetailView },
   { path: '/canciones',       component: CancionesView },
   { path: '/agregar',         redirect: '/canciones' },
-  { path: '/configuracion',   component: TiposView, meta: { title: 'Configuraciones' } },
+  { path: '/configuracion',   component: TiposView, meta: { title: 'Configuraciones', can: 'manageBand' } },
   { path: '/tipos',           redirect: '/configuracion' },
-  { path: '/banda',           component: BandManageView },
+  { path: '/banda',           component: BandManageView, meta: { can: 'manageBand' } },
   { path: '/live',            component: LiveView },
   { path: '/perfil',          component: ProfileView },
   { path: '/entrenar',        component: EntrenarView },
@@ -74,10 +74,9 @@ router.beforeEach((to) => {
   if (BAND_ONLY.some(p => to.path.startsWith(p)) && !band.currentBandId) {
     return '/practica'
   }
-  if (to.meta.activityForm && !band.isLeader) return '/actividades'
-  if (to.path === '/banda' && !band.isLeader) return '/inicio'
-  if (to.path === '/configuracion' && !band.isLeader) return '/inicio'
-  if (to.path === '/actividades' && to.query.nueva && band.isLeader) {
+  // Permiso declarado en la ruta (meta.can): ver `can` en stores/band.js.
+  if (to.meta.can && !band.can[to.meta.can]) return to.meta.denied || '/inicio'
+  if (to.path === '/actividades' && to.query.nueva && band.can.manageActivities) {
     return { path: '/actividades/nueva', query: to.query.fecha ? { fecha: to.query.fecha } : {} }
   }
   if (PERSONAL_ONLY.some(p => to.path.startsWith(p)) && !band.personalMode) {

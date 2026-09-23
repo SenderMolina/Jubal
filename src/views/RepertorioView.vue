@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- ── Crear nuevo repertorio ── -->
-    <div v-if="band.isLeader && !creating" class="page-actions">
+    <div v-if="band.can.editLibrary && !creating" class="page-actions">
       <button class="btn-pill btn-pill--primary" @click="startCreate">
         <span class="btn-pill__icon">+</span> Crear repertorio
       </button>
@@ -35,7 +35,7 @@
         :key="r.id"
         class="repertoire-card"
         @click="router.push('/repertorio/' + r.id)"
-        @contextmenu.prevent="band.isLeader && openCtx($event, r)"
+        @contextmenu.prevent="band.can.editLibrary && openCtx($event, r)"
       >
         <div>
           <div class="repertoire-card__name">{{ r.name }}</div>

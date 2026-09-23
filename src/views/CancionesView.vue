@@ -3,7 +3,7 @@
 
     <!-- ── Lista de canciones ── -->
     <template v-if="!showForm">
-      <div v-if="band.isLeader" class="page-actions">
+      <div v-if="band.can.editLibrary" class="page-actions">
         <button class="btn-pill btn-pill--primary" @click="openForm">
           <span class="btn-pill__icon">+</span> Agregar canción
         </button>
@@ -50,7 +50,7 @@
           <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
         </svg>
         <p>{{ store.songs.length ? 'Sin coincidencias' : 'Aún no hay canciones' }}</p>
-        <span v-if="!store.songs.length && band.isLeader" class="songs-empty__hint">Toca “Agregar canción” para empezar el repertorio.</span>
+        <span v-if="!store.songs.length && band.can.editLibrary" class="songs-empty__hint">Toca “Agregar canción” para empezar el repertorio.</span>
       </div>
       <div v-else class="song-list">
         <button
@@ -58,7 +58,7 @@
           :key="s.id"
           class="song-item"
           @click="router.push('/cancion/' + s.id)"
-          @contextmenu.prevent="band.isLeader && openContextMenu($event, s)"
+          @contextmenu.prevent="band.can.editLibrary && openContextMenu($event, s)"
         >
           <span class="song-item__badge">
             <img class="song-item__mark" :src="songMark" alt="">
