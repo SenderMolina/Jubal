@@ -87,8 +87,7 @@ async function signOut() {
   font-family: inherit; text-align: left; transition: all .15s;
 }
 .profile-btn svg { width: 20px; height: 20px; color: var(--color-primary); flex-shrink: 0; }
-.profile-btn span:not(.profile-btn__arrow) { flex: 1; }
-.profile-btn__arrow { color: var(--color-text-muted); font-size: 1.4rem; line-height: 1; }
+.profile-btn span { flex: 1; }
 .profile-btn:hover { border-color: var(--color-primary); transform: translateY(-1px); box-shadow: var(--shadow-medium); }
 .profile-btn--danger { color: var(--color-danger); }
 .profile-btn--danger svg { color: var(--color-danger); }

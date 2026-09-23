@@ -22,6 +22,15 @@
             <JubalNavIcon v-else name="band" />
             <span class="drawer-item__label">{{ b.name }}</span><small>{{ roleLabel(b.role) }}</small><span v-if="band.currentBandId === b.id" class="drawer-selected" aria-label="Seleccionada">✓</span>
           </button>
+          <form v-if="creating" class="drawer-create" @submit.prevent="create">
+            <label class="form-label" for="new-band-name">Nombre de la banda</label>
+            <input id="new-band-name" ref="nameInput" v-model="newName" class="form-input" maxlength="60" placeholder="Mi banda">
+            <div class="drawer-create__actions">
+              <button class="btn btn-primary btn-sm" :disabled="busy || !newName.trim()">{{ busy ? 'Creando…' : 'Crear banda' }}</button>
+              <button type="button" class="btn btn-ghost btn-sm" @click="creating = false">Cancelar</button>
+            </div>
+          </form>
+          <button v-else class="drawer-item" @click="startCreate"><span class="drawer-plus" aria-hidden="true">＋</span><span class="drawer-item__label">Crear una banda</span></button>
 
           <template v-if="band.currentBand && band.isLeader">
             <p class="drawer-section">Banda</p>
@@ -43,7 +52,8 @@ import { ref, nextTick, watch, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBandStore } from '../stores/band'
 import JubalNavIcon from './JubalNavIcon.vue'
-import logoText from '../../logo_text.png'
+import { useToast } from '../composables/useToast'
+import logoText from '../assets/logo_text.png'
 
 const props = defineProps({ open: Boolean })
 const emit  = defineEmits(['close'])
@@ -51,6 +61,7 @@ const emit  = defineEmits(['close'])
 const route  = useRoute()
 const router = useRouter()
 const band   = useBandStore()
+const { showToast } = useToast()
 
 const dialog = ref(null)
 let previousOverflow = ''
@@ -91,6 +102,33 @@ function goBand(id) {
   emit('close')
 }
 
+const creating  = ref(false)
+const busy      = ref(false)
+const newName   = ref('')
+const nameInput = ref(null)
+
+async function startCreate() {
+  creating.value = true
+  await nextTick()
+  nameInput.value?.focus()
+}
+
+async function create() {
+  if (!newName.value.trim() || busy.value) return
+  busy.value = true
+  try {
+    await band.createBand(newName.value.trim())
+    router.push('/inicio')
+    creating.value = false
+    newName.value = ''
+    emit('close')
+  } catch (e) {
+    showToast(e.message || 'No se pudo crear la banda.')
+  } finally {
+    busy.value = false
+  }
+}
+
 </script>
 
 <style scoped>
@@ -115,5 +153,8 @@ function goBand(id) {
 .drawer-item.active svg { color: var(--color-primary); }
 .drawer-selected { width: 20px; height: 20px; flex: 0 0 20px; display: grid; place-items: center; border-radius: 50%; background: var(--color-primary); color: var(--color-text-on-primary); font-size: 11px; font-weight: 900; }
 .drawer-chevron { margin-left: auto; color: var(--color-text-muted); font-size: 22px; }
+.drawer-plus { width: 22px; color: var(--color-primary); font-size: 22px; text-align: center; }
+.drawer-create { padding: 12px; }
+.drawer-create__actions { display: flex; gap: 10px; margin-top: 12px; }
 @media (prefers-reduced-motion: no-preference) { .drawer-dialog[open] { animation: menu-slide var(--motion-slow) var(--motion-ease); } .drawer-dialog[open]::backdrop { animation: menu-backdrop var(--motion-base) ease-out; } .drawer-dialog[open] .drawer-item { animation: menu-item-in 300ms var(--motion-ease) both; } .drawer-dialog[open] .drawer-item:nth-of-type(2) { animation-delay: 35ms; } .drawer-dialog[open] .drawer-item:nth-of-type(3) { animation-delay: 70ms; } .drawer-dialog[open] .drawer-item:nth-of-type(4) { animation-delay: 105ms; } @keyframes menu-slide { from { opacity: 0; transform: translateX(-100%); } to { opacity: 1; transform: translateX(0); } } @keyframes menu-backdrop { from { opacity: 0; } to { opacity: 1; } } @keyframes menu-item-in { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } } }
 </style>

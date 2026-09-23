@@ -377,8 +377,6 @@ onBeforeRouteLeave(async () => {
 .mission-summary > span { color: var(--color-primary); font-size: 8px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
 .mission-summary h1 { margin-top: 5px; font-size: 23px; }
 .mission-summary p { margin-top: 6px; color: var(--color-text-secondary); font-size: 10px; }
-.mission-summary__xp { margin: 18px 0; color: var(--color-primary); font-size: 32px; font-weight: 900; }
-.mission-summary__xp small { font-size: 10px; }
 .mission-summary__stats { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); overflow: hidden; border: 1px solid var(--color-border); border-radius: 16px; background: var(--color-surface); }
 .mission-summary__stats span { display: flex; flex-direction: column; padding: 12px 4px; border-right: 1px solid var(--color-border); color: var(--color-text-muted); font-size: 7px; }
 .mission-summary__stats span:last-child { border: 0; }

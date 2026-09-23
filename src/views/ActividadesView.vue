@@ -15,7 +15,7 @@
           Pasadas
         </template>
       </button>
-      <RouterLink v-if="roleStore.isLeader" class="btn-pill btn-pill--primary" :to="{ path: '/actividades/nueva', query: selectedDate ? { fecha: selectedDate } : {} }">
+      <RouterLink v-if="band.isLeader" class="btn-pill btn-pill--primary" :to="{ path: '/actividades/nueva', query: selectedDate ? { fecha: selectedDate } : {} }">
         <span class="btn-pill__icon">+</span> Nueva actividad
       </RouterLink>
 
@@ -73,7 +73,7 @@
             <span class="activity-badge activity-badge--songs">{{ totalSongs(a) }} canción{{ totalSongs(a) !== 1 ? 'es' : '' }}</span>
           </div>
         </div>
-        <button v-if="roleStore.isLeader" class="dots-btn" aria-label="Opciones" @click.stop="openMenu(a)">
+        <button v-if="band.isLeader" class="dots-btn" aria-label="Opciones" @click.stop="openMenu(a)">
           <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
         </button>
       </div>
@@ -85,7 +85,7 @@
         <svg class="setlist-empty__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         <p>
           Nada en la agenda todavía.
-          <template v-if="roleStore.isLeader"><br>Toca “Nueva actividad” para agregarla a tu agenda.</template>
+          <template v-if="band.isLeader"><br>Toca “Nueva actividad” para agregarla a tu agenda.</template>
         </p>
       </div>
 
@@ -110,7 +110,7 @@
             {{ hero.tiempos.length }} tiempo{{ hero.tiempos.length !== 1 ? 's' : '' }}
             · {{ totalSongs(hero) }} canción{{ totalSongs(hero) !== 1 ? 'es' : '' }}
           </div>
-          <button v-if="roleStore.isLeader" class="dots-btn next-hero__menu" aria-label="Opciones" @click.stop="openMenu(hero)">
+          <button v-if="band.isLeader" class="dots-btn next-hero__menu" aria-label="Opciones" @click.stop="openMenu(hero)">
             <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
           </button>
         </div>
@@ -138,7 +138,7 @@
                   <span class="activity-badge activity-badge--songs">{{ totalSongs(a) }} canción{{ totalSongs(a) !== 1 ? 'es' : '' }}</span>
                 </div>
               </div>
-              <button v-if="roleStore.isLeader" class="dots-btn" aria-label="Opciones" @click.stop="openMenu(a)">
+              <button v-if="band.isLeader" class="dots-btn" aria-label="Opciones" @click.stop="openMenu(a)">
                 <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
               </button>
             </div>
@@ -155,7 +155,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAppStore } from '../stores/app'
-import { useRoleStore } from '../stores/role'
+import { useBandStore } from '../stores/band'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import ActionSheet from '../components/ActionSheet.vue'
@@ -163,7 +163,7 @@ import ActionSheet from '../components/ActionSheet.vue'
 const router    = useRouter()
 const route     = useRoute()
 const store     = useAppStore()
-const roleStore = useRoleStore()
+const band = useBandStore()
 const sheet     = ref(null)
 const { showToast } = useToast()
 const { confirm }   = useConfirm()
@@ -171,7 +171,7 @@ const { confirm }   = useConfirm()
 // Compatibilidad con enlaces antiguos durante la restauración de la sesión.
 onMounted(async () => {
   await store.loadActivities()
-  if (route.query.nueva && roleStore.isLeader) {
+  if (route.query.nueva && band.isLeader) {
     router.replace({ path: '/actividades/nueva', query: route.query.fecha ? { fecha: route.query.fecha } : {} })
   }
 })

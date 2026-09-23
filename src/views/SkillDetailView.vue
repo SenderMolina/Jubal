@@ -20,11 +20,6 @@
       <span><strong>{{ skill.song.title }}</strong><small>{{ [skill.song.author, skill.song.key && `Tono ${skill.song.key}`].filter(Boolean).join(' · ') }}</small></span>
     </div>
 
-    <label v-if="skill.song?.band_id" class="skill-share">
-      <input type="checkbox" :checked="skill.share_with_band" @change="setSharing($event.target.checked)">
-      <span><strong>Compartir preparación con la banda</strong><small>El equipo verá estado, porcentaje, BPM y última práctica; no verá tus sesiones privadas.</small></span>
-    </label>
-
     <!-- Estado -->
     <div class="skill-status">
       <button
@@ -238,13 +233,6 @@ function practicePart(part) {
   router.push('/metronomo')
 }
 
-async function setSharing(value) {
-  try {
-    await store.updateSkill(skill.value.id, { share_with_band: value })
-    showToast(value ? 'Preparación visible para tu banda' : 'Preparación privada')
-  } catch (reason) { showToast(reason.message || 'No se pudo cambiar la visibilidad') }
-}
-
 function setStatus(st) {
   store.updateSkill(skill.value.id, { status: st })
 }
@@ -352,7 +340,6 @@ onMounted(async () => {
 
 .skill-practice { justify-content: center; padding: 13px; gap: 8px; font-size: 15px; }
 .skill-song { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); color: var(--color-text-primary); text-decoration: none; }.skill-song__icon { width: 35px; height: 35px; display: grid; place-items: center; border-radius: 11px; background: var(--color-primary-soft); color: var(--color-primary-hover); font-size: 18px; }.skill-song > span:nth-child(2) { min-width: 0; flex: 1; display: flex; flex-direction: column; }.skill-song small { margin-top: 2px; color: var(--color-text-muted); font-size: 11px; }.skill-song > b { color: var(--color-text-muted); font-size: 20px; }
-.skill-share { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-radius: 14px; background: var(--color-primary-soft); cursor: pointer; }.skill-share input { margin-top: 3px; accent-color: var(--color-primary); }.skill-share span { display: flex; flex-direction: column; gap: 3px; }.skill-share strong { font-size: 13px; }.skill-share small { color: var(--color-text-secondary); font-size: 10px; line-height: 1.4; }
 
 .skill-status { display: flex; gap: 8px; }
 .skill-status__chip {

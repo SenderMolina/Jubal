@@ -88,6 +88,6 @@ export const useLiveStore = defineStore('live', () => {
 
   return {
     session, participants, isActive, isController, currentSongId,
-    start, setSong, setSection, togglePlay, end, loadActive,
+    start, setSong, setSection, togglePlay, end,
   }
 })

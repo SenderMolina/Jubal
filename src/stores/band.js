@@ -4,7 +4,7 @@ import { supabase } from '../supabase'
 import { useAuthStore } from './auth'
 
 // Store de sesión de banda: maneja las bandas del usuario, la banda activa y
-// el rol derivado de la membresía. Expone isLeader/isMusico/isCantante para que
+// el rol derivado de la membresía. Expone isLeader/isCantante para que
 // las vistas existentes sigan funcionando sin cambios (vía el shim de role.js).
 export const useBandStore = defineStore('band', () => {
   const bands         = ref([])   // [{ id, name, owner_id, role }]
@@ -24,7 +24,6 @@ export const useBandStore = defineStore('band', () => {
   })
   // En el espacio personal el músico es dueño de sus datos: mismas vistas, permisos de líder.
   const isLeader   = computed(() => myRole.value === 'leader' || personalMode.value)
-  const isMusico   = computed(() => myRole.value === 'musician')
   const isCantante = computed(() => myRole.value === 'singer')
 
   async function loadBands() {
@@ -253,9 +252,9 @@ export const useBandStore = defineStore('band', () => {
   return {
     bands, currentBandId, currentBand, ready, pendingInvite, inviteResult,
     personalMode, enterPersonal,
-    myRole, isOwner, isLeader, isMusico, isCantante,
-    loadBands, init, createBand, updateBandName, updateBandImage, deleteBand,
-    selectBand, redeemPending, changeRole, reset,
+    myRole, isOwner, isLeader, isCantante,
+    init, createBand, updateBandName, updateBandImage, deleteBand,
+    selectBand, changeRole, reset,
     loadMembers, updateMemberRole, removeMember,
     loadInvites, createInvite, revokeInvite, inviteLink,
   }

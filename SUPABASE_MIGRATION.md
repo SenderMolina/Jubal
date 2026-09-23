@@ -100,7 +100,7 @@ existentes y los mueve a una sección inicial llamada “Entrenamiento”.
 Después de la fase 5, ejecutar
 [`supabase/phase6_guided_practice.sql`](supabase/phase6_guided_practice.sql).
 Esta migración agrega las partidas de rutina, resultados por habilidad, recuperación
-de sesiones interrumpidas y cálculo de XP de misión dentro de la base de datos.
+de sesiones interrumpidas y cálculo de XP de misión dentro de la base de datos (el XP se retira en la fase 9).
 
 ## 8. Integración de repertorio y práctica
 
@@ -110,7 +110,6 @@ Esta migración:
 
 - vincula las partes practicables con las secciones importadas de una canción;
 - permite elegir una parte concreta dentro de una rutina;
-- agrega preparación compartida opcional sin exponer sesiones privadas;
-- agrega responsabilidades de músicos por canción;
-- sincroniza los resúmenes de preparación mediante triggers;
+- agrega preparación compartida y responsabilidades por canción (retiradas en
+  [`phase9_cleanup_unused.sql`](supabase/phase9_cleanup_unused.sql));
 - reemplaza el orden de cada repertorio dentro de una transacción.

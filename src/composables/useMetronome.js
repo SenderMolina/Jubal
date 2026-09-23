@@ -17,7 +17,6 @@ const subdivision    = ref(1)    // pulsos por beat: negra, corcheas o semicorch
 const volume         = ref(0.7)
 const accentEnabled  = ref(true)
 const currentBeat    = ref(-1)  // para el pulso visual (-1 = detenido)
-const currentSubdivision = ref(-1)
 const elapsedSeconds = ref(0)   // tiempo practicado acumulado (entre guardados)
 const skill          = ref(null) // skill en práctica, o null (metrónomo libre)
 const part           = ref(null) // parte concreta de la skill, o null
@@ -78,7 +77,6 @@ function tick() {
     setTimeout(() => {
       if (!isRunning.value) return
       currentBeat.value = beat
-      currentSubdivision.value = sub
     }, delay)
     nextNoteTime += 60 / bpm.value / pulsesPerBeat
     pulseCount++
@@ -109,7 +107,6 @@ function stop() {
   elapsedSeconds.value = Math.floor(accumulatedMs / 1000)
   isRunning.value = false
   currentBeat.value = -1
-  currentSubdivision.value = -1
   scheduledNodes.forEach(node => { try { node.stop() } catch { /* ya finalizó */ } })
   scheduledNodes.clear()
   wakeLock?.release().catch(() => {})
@@ -162,7 +159,7 @@ function close() {
 export function useMetronome() {
   return {
     isRunning, bpm, beatsPerBar, subdivision, volume, accentEnabled,
-    currentBeat, currentSubdivision, elapsedSeconds, skill, part,
-    open, close, start, stop, toggle, setBpm, setSubdivision, setVolume, tap, resetElapsed,
+    currentBeat, elapsedSeconds, skill, part,
+    open, close, start, stop, toggle, setBpm, setSubdivision, setVolume, tap,
   }
 }

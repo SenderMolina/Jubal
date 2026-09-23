@@ -162,20 +162,6 @@ export const usePracticeStore = defineStore('practice', () => {
     return data || []
   }
 
-  // Hitos de XP ganados (ledger, no se pierden al borrar skills). Devuelve
-  // null si la migración phase8 no está aplicada → el caller usa el fallback.
-  async function loadXpEvents() {
-    const { data, error } = await supabase
-      .from('xp_events')
-      .select('amount, reason, ref_name, created_at')
-    if (error) {
-      const missing = ['PGRST204', 'PGRST205', '42P01', '42703'].includes(error.code)
-      if (!missing) console.error('Error cargando eventos de XP:', error)
-      return null
-    }
-    return data || []
-  }
-
   // Guarda una sesión y actualiza el bpm de la skill; si alcanzó la meta,
   // la marca como dominada.
   async function logSession({ skill_id, part_id = null, bpm = null, duration_seconds, routine_run_item_id = null, quality = 3 }) {
@@ -397,21 +383,6 @@ export const usePracticeStore = defineStore('practice', () => {
   }
 
   // ---------- Ejecución guiada de rutinas ----------
-  async function loadRoutineRuns({ limit = 120 } = {}) {
-    const { data, error } = await supabase
-      .from('practice_runs')
-      .select('*')
-      .order('started_at', { ascending: false })
-      .limit(limit)
-    if (error) {
-      const missing = ['PGRST204', 'PGRST205', '42P01', '42703'].includes(error.code)
-      if (!missing) console.error('Error cargando ejecuciones:', error)
-      return []
-    }
-    routineRuns.value = data || []
-    return routineRuns.value
-  }
-
   async function loadPracticeRun(runId) {
     const [runResult, itemsResult] = await Promise.all([
       supabase.from('practice_runs').select('*').eq('id', runId).single(),
@@ -505,14 +476,14 @@ export const usePracticeStore = defineStore('practice', () => {
   }
 
   return {
-    skills, ready, routines, routine, routineError, routineRuns,
+    skills, ready, routines, routine, routineError,
     loadSkills, createSkill, createSkillFromSong, syncSongParts, updateSkill, deleteSkill,
     addPart, updatePart, deletePart,
-    loadSessions, loadAllSessions, loadXpEvents, logSession,
+    loadSessions, loadAllSessions, logSession,
     loadRoutine, loadRoutines, selectRoutine, createRoutine, updateRoutine, deleteRoutine,
     updateRoutineDays, addRoutineSection, updateRoutineSection, removeRoutineSection,
     addRoutineItem, updateRoutineItem, removeRoutineItem, moveRoutineItem,
-    loadRoutineRuns, loadPracticeRun, startRoutineRun, updatePracticeRun,
+    startRoutineRun, updatePracticeRun,
     updatePracticeRunItem, finishPracticeRun,
     reset,
   }

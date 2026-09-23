@@ -3,7 +3,7 @@
 
     <!-- ── Lista de canciones ── -->
     <template v-if="!showForm">
-      <div v-if="roleStore.isLeader" class="page-actions">
+      <div v-if="band.isLeader" class="page-actions">
         <button class="btn-pill btn-pill--primary" @click="openForm">
           <span class="btn-pill__icon">+</span> Agregar canción
         </button>
@@ -50,7 +50,7 @@
           <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
         </svg>
         <p>{{ store.songs.length ? 'Sin coincidencias' : 'Aún no hay canciones' }}</p>
-        <span v-if="!store.songs.length && roleStore.isLeader" class="songs-empty__hint">Toca “Agregar canción” para empezar el repertorio.</span>
+        <span v-if="!store.songs.length && band.isLeader" class="songs-empty__hint">Toca “Agregar canción” para empezar el repertorio.</span>
       </div>
       <div v-else class="song-list">
         <button
@@ -58,7 +58,7 @@
           :key="s.id"
           class="song-item"
           @click="router.push('/cancion/' + s.id)"
-          @contextmenu.prevent="roleStore.isLeader && openContextMenu($event, s)"
+          @contextmenu.prevent="band.isLeader && openContextMenu($event, s)"
         >
           <span class="song-item__badge">
             <img class="song-item__mark" :src="songMark" alt="">
@@ -185,7 +185,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
-import { useRoleStore } from '../stores/role'
+import { useBandStore } from '../stores/band'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import { parseDuration } from '../utils/duration'
@@ -195,7 +195,7 @@ import songMark from '../assets/song-mark.svg'
 
 const router    = useRouter()
 const store     = useAppStore()
-const roleStore = useRoleStore()
+const band = useBandStore()
 const { showToast } = useToast()
 const { confirm }   = useConfirm()
 

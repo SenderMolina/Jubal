@@ -87,23 +87,6 @@
 }
 
 /* Tactile controls */
-:where(.btn, .btn-pill, .sf-save-btn, .icon-circle-btn, .dots-btn, .song-nav-btn,
-  .player-ctrl-btn, .library-add-btn, .app-header__menu, .app-header__user,
-  .drawer-close, .drawer-item, .sheet-item, .type-pill, .cal-nav) {
-  transition:
-    transform var(--motion-fast) var(--motion-ease),
-    background-color var(--motion-fast) ease,
-    border-color var(--motion-fast) ease,
-    color var(--motion-fast) ease,
-    box-shadow var(--motion-fast) ease,
-    opacity var(--motion-fast) ease;
-}
-
-:where(.btn, .btn-pill, .sf-save-btn, .icon-circle-btn, .dots-btn, .song-nav-btn,
-  .player-ctrl-btn, .library-add-btn, .app-header__menu, .app-header__user,
-  .drawer-close, .drawer-item, .sheet-item, .type-pill, .cal-nav):active:not(:disabled) {
-  transform: scale(.96);
-}
 
 .app-header__menu svg {
   transition: transform var(--motion-base) var(--motion-spring);
@@ -123,27 +106,6 @@
 }
 
 /* Interactive content */
-:where(.activity-card, .song-card, .song-item, .setlist-card, .skill-card,
-  .routine-card, .next-hero, .song-row) {
-  transition:
-    transform var(--motion-base) var(--motion-ease),
-    border-color var(--motion-base) ease,
-    background-color var(--motion-base) ease,
-    box-shadow var(--motion-base) ease;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  :where(.activity-card, .song-card, .song-item, .setlist-card, .skill-card,
-    .routine-card, .next-hero, .song-row):hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-small);
-  }
-}
-
-:where(.activity-card, .song-card, .song-item, .setlist-card, .skill-card,
-  .routine-card, .next-hero, .song-row):active {
-  transform: scale(.985);
-}
 
 /* Dynamic values and progress */
 :where([class*='progress__bar'], [class*='progress-bar'], [class$='__fill'], .player-progress__bar) {

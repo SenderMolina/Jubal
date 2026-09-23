@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- ── Crear nuevo repertorio ── -->
-    <div v-if="roleStore.isLeader && !creating" class="page-actions">
+    <div v-if="band.isLeader && !creating" class="page-actions">
       <button class="btn-pill btn-pill--primary" @click="startCreate">
         <span class="btn-pill__icon">+</span> Crear repertorio
       </button>
@@ -35,7 +35,7 @@
         :key="r.id"
         class="repertoire-card"
         @click="router.push('/repertorio/' + r.id)"
-        @contextmenu.prevent="roleStore.isLeader && openCtx($event, r)"
+        @contextmenu.prevent="band.isLeader && openCtx($event, r)"
       >
         <div>
           <div class="repertoire-card__name">{{ r.name }}</div>
@@ -63,13 +63,13 @@
 import { ref, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
-import { useRoleStore } from '../stores/role'
+import { useBandStore } from '../stores/band'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 
 const router    = useRouter()
 const store     = useAppStore()
-const roleStore = useRoleStore()
+const band = useBandStore()
 const { showToast } = useToast()
 const { confirm }   = useConfirm()
 

@@ -8,7 +8,7 @@
           <polyline points="12 19 5 12 12 5"/>
         </svg>
       </button>
-      <button v-if="roleStore.isLeader" class="icon-circle-btn" aria-label="Opciones" @click="openMenu">
+      <button v-if="band.isLeader" class="icon-circle-btn" aria-label="Opciones" @click="openMenu">
         <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
       </button>
     </div>
@@ -33,7 +33,7 @@
     <ActionSheet ref="sheet" />
 
     <!-- ══════════ VISTA LÍDER ══════════ -->
-    <template v-if="roleStore.isLeader">
+    <template v-if="band.isLeader">
       <div>
 
               <!-- Estado vacío -->
@@ -329,7 +329,7 @@
 import { ref, computed, nextTick, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
-import { useRoleStore } from '../stores/role'
+import { useBandStore } from '../stores/band'
 import { useLiveStore } from '../stores/live'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
@@ -340,7 +340,7 @@ import TiempoForm from '../components/TiempoForm.vue'
 const route     = useRoute()
 const router    = useRouter()
 const store     = useAppStore()
-const roleStore = useRoleStore()
+const band = useBandStore()
 const live      = useLiveStore()
 
 async function startLive(tiempo) {

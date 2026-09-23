@@ -12,8 +12,7 @@ personal de cada músico.
 - Canciones convertibles en skills con secciones importadas desde la letra.
 - Práctica completa o por parte con metrónomo, tiempo, BPM y calidad.
 - Rutinas por días con secciones, descansos y ejecución guiada.
-- Progreso, rachas, XP, estadísticas por skill y recomendaciones por sección.
-- Preparación compartida opcional y asignaciones visibles para la banda.
+- Progreso, rachas, estadísticas por skill y recomendaciones por sección.
 
 ## Stack
 
@@ -33,6 +32,5 @@ Copia `.env.example` a `.env` y configura las credenciales públicas de Supabase
 ## Base de datos
 
 Las migraciones se aplican en orden desde `supabase/schema.sql` hasta
-`supabase/phase7_integrated_practice.sql`. La fase 7 conecta repertorio y
-práctica, agrega preparación compartida/asignaciones y hace atómico el reemplazo
-del orden de canciones de un repertorio.
+`supabase/phase9_cleanup_unused.sql`. La fase 9 retira funciones que no
+llegaron a la interfaz: preparación compartida, asignaciones y XP.
