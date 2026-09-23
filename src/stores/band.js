@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { supabase } from '../supabase'
+import { clearLoadError, reportLoadError } from '../composables/useLoadErrors'
 import { useAuthStore } from './auth'
 
 // Store de sesión de banda: maneja las bandas del usuario, la banda activa y
@@ -35,7 +36,9 @@ export const useBandStore = defineStore('band', () => {
       .select('role, band:bands(*)')
       .eq('user_id', auth.user.id)
 
-    if (error) console.error('Error cargando bandas:', error)
+    // Si falla, se conservan las bandas ya cargadas y se ofrece reintentar.
+    if (error) { reportLoadError('bandas', error, loadBands); return }
+    clearLoadError('bandas')
     bands.value = (data || [])
       .filter(r => r.band)
       .map(r => ({ ...r.band, role: r.role }))
@@ -189,7 +192,7 @@ export const useBandStore = defineStore('band', () => {
       .from('band_members')
       .select('user_id, role, joined_at, profile:profiles(display_name, email, avatar_url)')
       .eq('band_id', b)
-    if (error) { console.error('Error cargando miembros:', error); return [] }
+    if (error) throw error
     return data || []
   }
 
@@ -213,7 +216,7 @@ export const useBandStore = defineStore('band', () => {
       .from('invitations')
       .select('*').eq('band_id', b).eq('revoked', false)
       .order('created_at', { ascending: false })
-    if (error) { console.error('Error cargando invitaciones:', error); return [] }
+    if (error) throw error
     return data || []
   }
 

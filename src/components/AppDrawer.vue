@@ -61,7 +61,7 @@ const emit  = defineEmits(['close'])
 const route  = useRoute()
 const router = useRouter()
 const band   = useBandStore()
-const { showToast } = useToast()
+const { showError } = useToast()
 
 const dialog = ref(null)
 let previousOverflow = ''
@@ -123,7 +123,7 @@ async function create() {
     newName.value = ''
     emit('close')
   } catch (e) {
-    showToast(e.message || 'No se pudo crear la banda.')
+    showError(e, 'No se pudo crear la banda.')
   } finally {
     busy.value = false
   }

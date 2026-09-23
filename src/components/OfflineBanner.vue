@@ -6,16 +6,30 @@
       </svg>
       <span>Sin conexión. Los cambios y el en vivo se actualizarán al volver internet.</span>
     </div>
+    <div v-else-if="hasLoadErrors" class="offline-banner offline-banner--error" role="alert">
+      <span>No se pudo cargar parte de la información.</span>
+      <button type="button" class="offline-banner__retry" :disabled="retrying" @click="retry">{{ retrying ? 'Cargando…' : 'Reintentar' }}</button>
+    </div>
   </Transition>
 </template>
 
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useLoadErrors } from '../composables/useLoadErrors'
 
 const online = ref(navigator.onLine)
+const retrying = ref(false)
+const { hasLoadErrors, retryAll } = useLoadErrors()
+
+async function retry() {
+  retrying.value = true
+  try { await retryAll() } finally { retrying.value = false }
+}
 
 function updateOnline() {
   online.value = navigator.onLine
+  // Al volver internet, reintentar lo que falló por la caída.
+  if (online.value && hasLoadErrors.value) retry()
 }
 
 onMounted(() => {
@@ -51,6 +65,25 @@ onBeforeUnmount(() => {
   font-weight: 600;
   line-height: 1.35;
   text-align: center;
+}
+
+.offline-banner--error {
+  border-color: var(--color-danger);
+  background: var(--color-danger-soft);
+  color: var(--color-danger-text);
+}
+
+.offline-banner__retry {
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .offline-banner svg {

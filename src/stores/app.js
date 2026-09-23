@@ -2,23 +2,11 @@ import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import { supabase } from '../supabase'
 import { useBandStore } from './band'
+import { clearLoadError, reportLoadError } from '../composables/useLoadErrors'
 
-// Sincroniza una tabla con el estado local, ACOTADO al ámbito activo (banda o
-// espacio personal): upsert de las filas presentes y borrado de las que ya no
-// existen en ese ámbito.
-async function syncTable(table, bandId, rows) {
-  if (rows.length) {
-    const { error } = await supabase.from(table).upsert(rows)
-    if (error) { console.error(`Error guardando ${table}:`, error); return }
-  }
-  const ids = rows.map(r => r.id)
-  // En personal (bandId null) RLS ya acota el delete a las filas del usuario.
-  let del = supabase.from(table).delete()
-  del = bandId ? del.eq('band_id', bandId) : del.is('band_id', null)
-  if (ids.length) del = del.not('id', 'in', `(${ids.join(',')})`)
-  const { error } = await del
-  if (error) console.error(`Error limpiando ${table}:`, error)
-}
+// Columnas editables de una canción (el resto las pone la base o el ámbito).
+const SONG_FIELDS = ['title', 'author', 'key', 'bpm', 'duration', 'lyrics', 'types']
+const pick = (fields, keys) => Object.fromEntries(keys.filter(k => k in fields).map(k => [k, fields[k]]))
 
 export const useAppStore = defineStore('app', () => {
   const songs       = ref([])
@@ -67,7 +55,8 @@ export const useAppStore = defineStore('app', () => {
     const { data, error } = await inScope(supabase.from('songs').select('*')).order('id')
     const currentScope = band.currentBandId || '__personal__'
     if (requestedScope !== currentScope) return
-    if (error) { console.error('Error cargando canciones:', error); return }
+    if (error) { songs.value = []; reportLoadError('canciones', error, loadSongs); return }
+    clearLoadError('canciones')
     songs.value = data || []
   }
 
@@ -75,13 +64,15 @@ export const useAppStore = defineStore('app', () => {
     const ids = [...new Set((songIds || []).filter(id => id !== null && id !== undefined))]
     if (!ids.length) return []
     const { data, error } = await supabase.from('songs').select('*').in('id', ids)
-    if (error) { console.error('Error cargando canciones del repertorio:', error); return [] }
+    if (error) throw error
     return data || []
   }
 
   async function loadSongTypes() {
     if (!scoped()) { songTypes.value = []; return }
-    const { data } = await inScope(supabase.from('song_types').select('*')).order('id')
+    const { data, error } = await inScope(supabase.from('song_types').select('*')).order('id')
+    if (error) { songTypes.value = []; reportLoadError('tipos de canción', error, loadSongTypes); return }
+    clearLoadError('tipos de canción')
     songTypes.value = data || []
   }
 
@@ -89,7 +80,8 @@ export const useAppStore = defineStore('app', () => {
     const b = bid(); if (!b) { activities.value = []; return }  // solo banda
     const { data, error } = await supabase.from('activities').select('*').eq('band_id', b).order('date').order('time')
     if (bid() !== b) return
-    if (error) { console.error('Error cargando actividades:', error); return }
+    if (error) { activities.value = []; reportLoadError('actividades', error, loadActivities); return }
+    clearLoadError('actividades')
     activities.value = (data || []).map(a => ({ ...a, tiempos: a.tiempos || [] }))
   }
 
@@ -97,16 +89,20 @@ export const useAppStore = defineStore('app', () => {
     if (!scoped()) { repertoires.value = []; return }
     const requestedVersion = repertoireStateVersion
     const requestedScope = band.currentBandId || '__personal__'
-    const { data: reps } = await inScope(supabase.from('repertoires').select('*')).order('id')
+    const { data: reps, error } = await inScope(supabase.from('repertoires').select('*')).order('id')
     const repIds = (reps || []).map(r => r.id)
     let links = []
-    if (repIds.length) {
-      const { data } = await supabase
+    let linksError = null
+    if (!error && repIds.length) {
+      const result = await supabase
         .from('repertoire_songs').select('*').in('repertoire_id', repIds).order('position')
-      links = data || []
+      links = result.data || []
+      linksError = result.error
     }
     const currentScope = band.currentBandId || '__personal__'
     if (requestedVersion !== repertoireStateVersion || requestedScope !== currentScope) return
+    if (error || linksError) { repertoires.value = []; reportLoadError('repertorios', error || linksError, loadRepertoires); return }
+    clearLoadError('repertorios')
     repertoires.value = (reps || []).map(r => ({
       ...r,
       songs: links
@@ -118,27 +114,88 @@ export const useAppStore = defineStore('app', () => {
 
   function loadAll() { loadSongs(); loadSongTypes(); loadActivities(); loadRepertoires() }
 
-  // ---------- Guardados (incluyen band_id) ----------
-  function saveSongs() {
-    const b = bid()
-    return syncTable('songs', b, songs.value.map(s => ({
-      id: s.id, title: s.title, author: s.author,
-      key: s.key, bpm: s.bpm ?? null, duration: s.duration ?? null,
-      lyrics: s.lyrics ?? '', band_id: b,
-    })))
+  // ---------- Escrituras: un registro a la vez; los errores se lanzan ----------
+  // Los ids son bigint generados en el cliente (Date.now()), como en el resto
+  // del esquema heredado de Firebase.
+  async function insertRow(table, values) {
+    const { data, error } = await supabase.from(table)
+      .insert({ id: Date.now(), ...values, band_id: bid() || null })
+      .select('*').single()
+    if (error) throw error
+    return data
   }
 
-  function saveSongTypes() {
-    const b = bid()
-    return syncTable('song_types', b, songTypes.value.map(t => ({ id: t.id, name: t.name, band_id: b })))
+  async function updateRow(table, id, values) {
+    const { data, error } = await supabase.from(table).update(values).eq('id', id).select('*').single()
+    if (error) throw error
+    return data
   }
 
-  function saveActivities() {
-    const b = bid()
-    return syncTable('activities', b, activities.value.map(a => ({
-      id: a.id, title: a.title, date: a.date ?? null, time: a.time ?? null,
-      description: a.description ?? '', tiempos: a.tiempos || [], band_id: b,
-    })))
+  async function deleteRow(table, id) {
+    const { error } = await supabase.from(table).delete().eq('id', id)
+    if (error) throw error
+  }
+
+  const replaceIn = (list, row) => list.map(item => item.id === row.id ? { ...item, ...row } : item)
+
+  async function createSong(fields) {
+    const song = await insertRow('songs', pick(fields, SONG_FIELDS))
+    songs.value = [...songs.value, song]
+    return song
+  }
+
+  async function updateSong(id, fields) {
+    const song = await updateRow('songs', id, pick(fields, SONG_FIELDS))
+    songs.value = replaceIn(songs.value, song)
+    return song
+  }
+
+  async function deleteSong(id) {
+    await deleteRow('songs', id)
+    songs.value = songs.value.filter(song => song.id !== id)
+    // repertoire_songs borra en cascada; reflejarlo sin esperar al realtime.
+    repertoires.value = repertoires.value.map(repertoire => ({
+      ...repertoire, songs: (repertoire.songs || []).filter(songId => songId !== id),
+    }))
+  }
+
+  async function createSongType(name) {
+    const type = await insertRow('song_types', { name })
+    songTypes.value = [...songTypes.value, type]
+    return type
+  }
+
+  async function deleteSongType(id) {
+    await deleteRow('song_types', id)
+    songTypes.value = songTypes.value.filter(type => type.id !== id)
+  }
+
+  async function updateActivityTiempos(id, tiempos) {
+    const activity = await updateRow('activities', id, { tiempos })
+    activities.value = replaceIn(activities.value, { ...activity, tiempos: activity.tiempos || [] })
+    return activity
+  }
+
+  async function deleteActivity(id) {
+    await deleteRow('activities', id)
+    activities.value = activities.value.filter(activity => activity.id !== id)
+  }
+
+  async function createRepertoire(name) {
+    const repertoire = { ...(await insertRow('repertoires', { name })), songs: [] }
+    repertoires.value = [...repertoires.value, repertoire]
+    return repertoire
+  }
+
+  async function renameRepertoire(id, name) {
+    const repertoire = await updateRow('repertoires', id, { name })
+    repertoires.value = replaceIn(repertoires.value, repertoire)
+    return repertoire
+  }
+
+  async function deleteRepertoire(id) {
+    await deleteRow('repertoires', id)
+    repertoires.value = repertoires.value.filter(repertoire => repertoire.id !== id)
   }
 
   async function getActivity(id) {
@@ -170,30 +227,6 @@ export const useAppStore = defineStore('app', () => {
       else activities.value[index] = activity
     }
     return activity
-  }
-
-  async function saveRepertoires() {
-    const b = bid()
-    // Capturar el estado antes del primer await evita que una recarga realtime
-    // cambie las canciones que se están guardando durante la operación.
-    const snapshot = repertoires.value.map(repertoire => ({
-      id: repertoire.id,
-      name: repertoire.name,
-      songs: [...(repertoire.songs || [])],
-    }))
-    beginRepertoireWrite()
-    try {
-      await syncTable('repertoires', b, snapshot.map(r => ({ id: r.id, name: r.name, band_id: b })))
-      const results = await Promise.all(snapshot.map(repertoire =>
-        supabase.rpc('replace_repertoire_songs', {
-          p_repertoire_id: repertoire.id,
-          p_song_ids: repertoire.songs,
-        })))
-      const failed = results.find(result => result.error)
-      if (failed) throw failed.error
-    } finally {
-      endRepertoireWrite()
-    }
   }
 
   async function saveRepertoireSongs(repertoireId, songIds) {
@@ -241,6 +274,9 @@ export const useAppStore = defineStore('app', () => {
 
   return {
     songs, activities, songTypes, repertoires,
-    saveSongs, saveActivities, saveActivity, getActivity, saveSongTypes, saveRepertoires, saveRepertoireSongs, loadSongs, getSongsByIds, loadActivities, loadRepertoires,
+    loadSongs, getSongsByIds, loadActivities, loadRepertoires,
+    createSong, updateSong, deleteSong, createSongType, deleteSongType,
+    getActivity, saveActivity, updateActivityTiempos, deleteActivity,
+    createRepertoire, renameRepertoire, deleteRepertoire, saveRepertoireSongs,
   }
 })

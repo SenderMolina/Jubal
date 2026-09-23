@@ -80,7 +80,7 @@ import PageBackHeader from '../components/PageBackHeader.vue'
 
 const router = useRouter()
 const store  = useAppStore()
-const { showToast } = useToast()
+const { attempt } = useToast()
 
 const keys = ['A','A#/Bb','B','C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab']
 const keyOptions = [
@@ -111,15 +111,14 @@ G  Em  C  D
 [Coro]
 [G]Santo, [D]Santo, [Em]Santo[C]...`
 
-function save() {
+async function save() {
   if (!form.value.title.trim()) {
     errors.value.title = 'Ponle un título para guardar.'
     titleInput.value?.focus()
     return
   }
 
-  store.songs.push({
-    id:     Date.now(),
+  const ok = await attempt(() => store.createSong({
     title:  form.value.title.trim(),
     author: form.value.author.trim(),
     key:    form.value.key,
@@ -127,9 +126,8 @@ function save() {
     duration: parseDuration(form.value.durationText),
     types:  form.value.types.length ? form.value.types : [],
     lyrics: form.value.lyrics.trim() || '',
-  })
-  store.saveSongs()
-  showToast('Alabanza guardada ✓')
+  }), { success: 'Alabanza guardada', error: 'No se pudo guardar la alabanza.' })
+  if (!ok) return
   form.value = emptyForm()
   router.push('/repertorio')
 }

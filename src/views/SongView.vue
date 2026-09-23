@@ -200,7 +200,7 @@ const store     = useAppStore()
 const band = useBandStore()
 const live      = useLiveStore()
 const practice  = usePracticeStore()
-const { showToast } = useToast()
+const { showError, attempt } = useToast()
 const { confirm }   = useConfirm()
 
 const sheet       = ref(null)
@@ -238,7 +238,7 @@ async function openPractice() {
     band.enterPersonal()
     router.push(`/skill/${skill.id}`)
   } catch (reason) {
-    showToast(reason.message || 'No se pudo agregar a la práctica')
+    showError(reason, 'No se pudo agregar a la práctica')
   } finally { practiceBusy.value = false }
 }
 
@@ -263,16 +263,14 @@ async function startLive() {
   try {
     await live.start({ source: 'song', songIds: [song.value.id] })
     router.push('/live')
-  } catch (e) { showToast('No se pudo iniciar la sesión en vivo') }
+  } catch (e) { showError(e, 'No se pudo iniciar la sesión en vivo.') }
 }
 
 async function deleteSong() {
   const ok = await confirm('¿Eliminar canción?', `"${song.value?.title}"`)
   if (!ok) return
-  store.songs = store.songs.filter(s => s.id !== song.value.id)
-  store.saveSongs()
-  showToast('Canción eliminada')
-  router.back()
+  const deleted = await attempt(() => store.deleteSong(song.value.id), { success: 'Canción eliminada', error: 'No se pudo eliminar la canción.' })
+  if (deleted) router.back()
 }
 
 function startEdit() {
@@ -293,16 +291,16 @@ function cancelEdit() {
   showDetails.value = false
 }
 
-function saveEdit() {
+async function saveEdit() {
   if (!form.value.title.trim()) { titleError.value = 'Ponle un título para guardar.'; editTitleInput.value?.focus(); return }
-  const idx = store.songs.findIndex(s => s.id === Number(route.params.id))
-  if (idx === -1) return
   const { durationText, ...fields } = form.value
-  store.songs[idx] = { ...store.songs[idx], ...fields, title: form.value.title.trim(), lyrics: form.value.lyrics.trim(), bpm: form.value.bpm || null, duration: parseDuration(durationText), types: form.value.types.length ? form.value.types : [] }
-  store.saveSongs()
+  const ok = await attempt(() => store.updateSong(Number(route.params.id), {
+    ...fields, title: fields.title.trim(), author: fields.author.trim(), lyrics: fields.lyrics.trim(),
+    bpm: fields.bpm || null, duration: parseDuration(durationText),
+  }), { success: 'Canción actualizada', error: 'No se pudo actualizar la canción.' })
+  if (!ok) return
   editing.value = false
   showDetails.value = false
-  showToast('Canción actualizada ✓')
 }
 
 // Aplanado de parseSections() — mismo parser que la vista en vivo, para que

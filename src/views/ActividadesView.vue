@@ -165,7 +165,7 @@ const route     = useRoute()
 const store     = useAppStore()
 const band = useBandStore()
 const sheet     = ref(null)
-const { showToast } = useToast()
+const { attempt } = useToast()
 const { confirm }   = useConfirm()
 
 // Compatibilidad con enlaces antiguos durante la restauración de la sesión.
@@ -189,9 +189,7 @@ function openMenu(a) {
 async function deleteActivity(a) {
   const ok = await confirm('¿Estás seguro que quieres eliminar esta actividad?', `"${a.title}"`)
   if (!ok) return
-  store.activities = store.activities.filter(x => x.id !== a.id)
-  store.saveActivities()
-  showToast('Actividad eliminada')
+  await attempt(() => store.deleteActivity(a.id), { success: 'Actividad eliminada', error: 'No se pudo eliminar la actividad.' })
 }
 
 const monthNamesShort = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']

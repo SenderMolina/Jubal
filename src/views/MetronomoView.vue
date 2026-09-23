@@ -150,7 +150,7 @@ const {
   close, stop, toggle, setBpm, setSubdivision, setVolume, tap,
 } = useMetronome()
 const store = usePracticeStore()
-const { showToast } = useToast()
+const { showToast, showError } = useToast()
 const { confirm } = useConfirm()
 
 const QUALITY = [
@@ -219,11 +219,11 @@ async function saveSession() {
       quality: quality.value,
     })
     const mastered = s.status === 'mastered' && !wasMastered
-    showToast(mastered ? '🎉 ¡Objetivo dominado!' : 'Sesión guardada ✓')
+    showToast(mastered ? '🎉 ¡Objetivo dominado!' : 'Sesión guardada')
     close()
     router.back()
   } catch (e) {
-    showToast(e.message || 'No se pudo guardar la sesión')
+    showError(e, 'No se pudo guardar la sesión')
   }
 }
 

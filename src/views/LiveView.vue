@@ -78,11 +78,16 @@ import { useAppStore } from '../stores/app'
 import { useBandStore } from '../stores/band'
 import { parseSections } from '../utils/sections'
 import ChordLine from '../components/ChordLine.vue'
+import { useToast } from '../composables/useToast'
 
 const router = useRouter()
 const live  = useLiveStore()
 const store = useAppStore()
 const band  = useBandStore()
+const { attempt } = useToast()
+
+// Toda acción del controlador pasa por aquí: si falla, se avisa con un toast.
+const send = (action) => attempt(action, { error: 'No se pudo actualizar el en vivo.' })
 
 const song = computed(() => store.songs.find(s => s.id === live.currentSongId) || null)
 const sections = computed(() => parseSections(song.value?.lyrics))
@@ -126,33 +131,40 @@ let timer = null
 function elapsed() {
   return live.session?.is_playing ? anchor.base + (Date.now() - anchor.at) / 1000 : anchor.base
 }
-function tick() {
-  if (!live.isController || !live.session?.is_playing) return
+let autoAdvancing = false
+async function tick() {
+  if (autoAdvancing || !live.isController || !live.session?.is_playing) return
   const e = elapsed()
   let target = -1
   sectionTimes.value.forEach((secs, i) => { if (secs != null && secs <= e) target = i })
-  if (target > live.session.current_section_index) live.setSection(target)
+  if (target > live.session.current_section_index) {
+    autoAdvancing = true   // sin reintentos en cada tick mientras la anterior está en vuelo
+    await send(() => live.setSection(target))
+    autoAdvancing = false
+  }
 }
 
 // Controles
 function next() {
   if (secIndex.value < sections.value.length - 1) goSection(secIndex.value + 1)
-  else if (songIndex.value < songs.value.length - 1) live.setSong(songIndex.value + 1)
+  else if (songIndex.value < songs.value.length - 1) send(() => live.setSong(songIndex.value + 1))
 }
 function prev() {
   if (secIndex.value > 0) goSection(secIndex.value - 1)
-  else if (songIndex.value > 0) live.setSong(songIndex.value - 1)
+  else if (songIndex.value > 0) send(() => live.setSong(songIndex.value - 1))
 }
 function goSection(i) {
   anchor = { at: Date.now(), base: sectionTimes.value[i] ?? anchor.base }
-  live.setSection(i)
+  send(() => live.setSection(i))
 }
 function togglePlay() {
   if (live.session.is_playing) anchor.base = elapsed()   // pausa: congelar
   else anchor.at = Date.now()                            // reanuda
-  live.togglePlay()
+  send(() => live.togglePlay())
 }
-async function end() { await live.end(); router.back() }
+async function end() {
+  if (await send(() => live.end())) router.back()
+}
 
 // Al cambiar de canción, reiniciar el reloj.
 watch(() => live.currentSongId, () => { anchor = { at: Date.now(), base: 0 } })

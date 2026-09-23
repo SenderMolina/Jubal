@@ -348,9 +348,9 @@ async function startLive(tiempo) {
   try {
     await live.start({ source: 'tiempo', activityId: activity.value.id, tiempoId: tiempo.id, songIds: tiempo.songs })
     router.push('/live')
-  } catch (e) { console.error('No se pudo iniciar la sesión en vivo:', e) }
+  } catch (e) { showError(e, 'No se pudo iniciar la sesión en vivo.') }
 }
-const { showToast } = useToast()
+const { showToast, showError, attempt } = useToast()
 const { confirm }   = useConfirm()
 
 const sheet             = ref(null)
@@ -448,7 +448,23 @@ const pendingSongIds = computed(() => {
   return [...new Set(ids)]
 })
 
-function save() { store.saveActivities() }
+// Los cambios se aplican primero en pantalla y se guardan en cola (en orden).
+// Si el guardado falla, se avisa y se recarga para deshacer el cambio local.
+let saveChain = Promise.resolve()
+function save(success) {
+  const { id, tiempos } = activity.value
+  const snapshot = JSON.parse(JSON.stringify(tiempos || []))
+  saveChain = saveChain.then(async () => {
+    try {
+      await store.updateActivityTiempos(id, snapshot)
+      if (success) showToast(success)
+    } catch (reason) {
+      showError(reason, 'No se pudieron guardar los cambios de la actividad.')
+      await store.loadActivities()
+    }
+  })
+  return saveChain
+}
 
 // "20:05" -> "8:05 pm"
 function fmtTime(t) {
@@ -512,16 +528,15 @@ function saveTiempoForm() {
   if (f.id) {
     const t = activity.value.tiempos.find(t => t.id === f.id)
     if (t) Object.assign(t, data)
-    showToast('Tiempo actualizado')
+    save('Tiempo actualizado')
   } else {
     if (!activity.value.tiempos) activity.value.tiempos = []
     const nuevo = { id: Date.now(), songs: [], ...data }
     activity.value.tiempos.push(nuevo)
     selectedTiempoId.value = nuevo.id
-    showToast(`Tiempo "${tiempoLabel(nuevo)}" creado`)
+    save(`Tiempo "${tiempoLabel(nuevo)}" creado`)
   }
   tiempoForm.value = null
-  save()
 }
 
 function cancelTiempoForm() {
@@ -541,8 +556,7 @@ async function deleteTiempo(tiempoId) {
   if (selectedTiempoId.value === tiempoId) {
     selectedTiempoId.value = activity.value.tiempos[0]?.id ?? null
   }
-  save()
-  showToast(`Tiempo "${nombre}" eliminado`)
+  save(`Tiempo "${nombre}" eliminado`)
 }
 
 function openLibrary(tiempo) {
@@ -590,8 +604,7 @@ function acceptSongSelection() {
   const existing = new Set((selectedTiempo.value.songs || []).map(String))
   const additions = pendingSongIds.value.filter(id => !existing.has(String(id)))
   selectedTiempo.value.songs = [...(selectedTiempo.value.songs || []), ...additions]
-  save()
-  showToast(`${additions.length} canción${additions.length === 1 ? '' : 'es'} agregada${additions.length === 1 ? '' : 's'} a ${tiempoTitle(selectedTiempo.value)}`)
+  save(`${additions.length} canción${additions.length === 1 ? '' : 'es'} agregada${additions.length === 1 ? '' : 's'} a ${tiempoTitle(selectedTiempo.value)}`)
   closeLibrary()
 }
 
@@ -613,10 +626,8 @@ function openMenu() {
 async function handleDelete() {
   const ok = await confirm('¿Estás seguro que quieres eliminar esta actividad?', `"${activity.value?.title}"`)
   if (!ok) return
-  store.activities = store.activities.filter(a => a.id !== activity.value.id)
-  store.saveActivities()
-  showToast('Actividad eliminada')
-  router.push('/actividades')
+  const deleted = await attempt(() => store.deleteActivity(activity.value.id), { success: 'Actividad eliminada', error: 'No se pudo eliminar la actividad.' })
+  if (deleted) router.push('/actividades')
 }
 
 onBeforeUnmount(() => {

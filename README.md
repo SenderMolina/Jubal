@@ -32,5 +32,6 @@ Copia `.env.example` a `.env` y configura las credenciales públicas de Supabase
 ## Base de datos
 
 Las migraciones se aplican en orden desde `supabase/schema.sql` hasta
-`supabase/phase9_cleanup_unused.sql`. La fase 9 retira funciones que no
-llegaron a la interfaz: preparación compartida, asignaciones y XP.
+`supabase/phase10_song_types.sql`. La fase 9 retira funciones que no
+llegaron a la interfaz (preparación compartida, asignaciones y XP) y la 10
+agrega `songs.types` para que los tipos de cada canción se guarden.

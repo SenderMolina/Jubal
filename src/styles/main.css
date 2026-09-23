@@ -961,6 +961,8 @@ header {
   pointer-events: none;
 }
 .success-toast::before { content: '✓'; margin-right: 7px; font-weight: 900; }
+.success-toast--error { background: var(--color-danger-soft); border-color: var(--color-danger); color: var(--color-danger-text); box-shadow: 0 4px 20px rgba(var(--color-danger-rgb),0.2); }
+.success-toast--error::before { content: '!'; }
 .success-toast.show { transform: translateX(-50%) translateY(0); }
 
 @keyframes pulse {

@@ -135,6 +135,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { usePracticeStore } from '../stores/practice'
 import { useToast } from '../composables/useToast'
+import { clearLoadError, reportLoadError } from '../composables/useLoadErrors'
 import { ACTIVE_DAY_SECONDS, dailySecondsMap, dateKey, lastSevenDays, maxStreak, practiceStreak } from '../utils/gamification'
 import { skillProgress } from '../utils/skills'
 
@@ -248,9 +249,16 @@ function lastPracticedLabel(value) {
   return `hace ${days} días`
 }
 
+async function loadSessions() {
+  try {
+    sessions.value = await store.loadAllSessions()
+    clearLoadError('sesiones')
+  } catch (reason) { reportLoadError('sesiones', reason, loadSessions) }
+}
+
 onMounted(async () => {
   if (!store.ready) await store.loadSkills()
-  sessions.value = await store.loadAllSessions()
+  await loadSessions()
 })
 </script>
 

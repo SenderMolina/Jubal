@@ -148,13 +148,14 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useBandStore } from '../stores/band'
 import { useToast } from '../composables/useToast'
+import { clearLoadError, reportLoadError } from '../composables/useLoadErrors'
 import draggable from 'vuedraggable'
 
 const route     = useRoute()
 const router    = useRouter()
 const store     = useAppStore()
 const band = useBandStore()
-const { showToast } = useToast()
+const { showError, attempt } = useToast()
 
 const libQuery    = ref('')
 const pickerOpen = ref(false)
@@ -229,11 +230,6 @@ function acceptSongSelection() {
   closeSongPicker()
 }
 
-async function save() {
-  try { await store.saveRepertoires(); return true }
-  catch (reason) { showToast(reason.message || 'No se pudo guardar el repertorio'); return false }
-}
-
 function queueSongSave() {
   songSaveQueued = true
   if (!songSaveRunning) flushSongSave()
@@ -250,7 +246,7 @@ async function flushSongSave() {
       await store.saveRepertoireSongs(current.id, current.songs || [])
     } catch (reason) {
       songSaveQueued = false
-      showToast(reason.message || 'No se pudieron guardar las canciones')
+      showError(reason, 'No se pudieron guardar las canciones')
       await store.loadRepertoires()
       break
     }
@@ -275,18 +271,23 @@ function startEditName() {
 }
 
 async function confirmEditName() {
-  if (editName.value.trim() && editName.value.trim() !== repertoire.value.name) {
-    const previous = repertoire.value.name
-    repertoire.value.name = editName.value.trim()
-    if (await save()) showToast('Nombre actualizado')
-    else repertoire.value.name = previous
+  const name = editName.value.trim()
+  if (name && name !== repertoire.value.name) {
+    await attempt(() => store.renameRepertoire(repertoire.value.id, name), { success: 'Nombre actualizado', error: 'No se pudo renombrar el repertorio.' })
   }
   editingName.value = false
 }
 
+async function loadLinkedSongs() {
+  try {
+    linkedSongs.value = await store.getSongsByIds(repertoire.value?.songs || [])
+    clearLoadError('canciones del repertorio')
+  } catch (reason) { reportLoadError('canciones del repertorio', reason, loadLinkedSongs) }
+}
+
 onMounted(async () => {
   await store.loadSongs()
-  linkedSongs.value = await store.getSongsByIds(repertoire.value?.songs || [])
+  await loadLinkedSongs()
 })
 onBeforeUnmount(() => {
   if (pickerOpen.value) document.body.style.overflow = previousBodyOverflow

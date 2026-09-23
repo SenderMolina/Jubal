@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { supabase } from '../supabase'
+import { clearLoadError, reportLoadError } from '../composables/useLoadErrors'
 import { useBandStore } from './band'
 import { useAuthStore } from './auth'
 
@@ -22,9 +23,11 @@ export const useLiveStore = defineStore('live', () => {
   async function loadActive() {
     const b = band.currentBandId
     if (!b) { session.value = null; return }
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('live_sessions').select('*')
       .eq('band_id', b).eq('is_active', true).maybeSingle()
+    if (error) { reportLoadError('sesión en vivo', error, loadActive); return }
+    clearLoadError('sesión en vivo')
     session.value = data || null
   }
 
@@ -52,8 +55,9 @@ export const useLiveStore = defineStore('live', () => {
   // ---------- Controlador ----------
   async function start({ source, activityId = null, tiempoId = null, songIds }) {
     const b = band.currentBandId
-    await supabase.from('live_sessions').update({ is_active: false })
+    const { error: closeError } = await supabase.from('live_sessions').update({ is_active: false })
       .eq('band_id', b).eq('is_active', true)            // cerrar previa si la hubiera
+    if (closeError) throw closeError
     const { data, error } = await supabase.from('live_sessions').insert({
       band_id: b, source, activity_id: activityId, tiempo_id: tiempoId,
       song_ids: songIds, current_song_index: 0, current_section_index: 0,
@@ -67,10 +71,11 @@ export const useLiveStore = defineStore('live', () => {
 
   async function patch(fields) {
     if (!session.value) return
-    const { data } = await supabase.from('live_sessions')
+    const { data, error } = await supabase.from('live_sessions')
       .update({ ...fields, updated_at: new Date().toISOString() })
       .eq('id', session.value.id).select().single()
-    if (data) session.value = data
+    if (error) throw error
+    session.value = data
   }
   const setSong    = (i) => patch({ current_song_index: i, current_section_index: 0 })
   const setSection = (i) => patch({ current_section_index: i })
@@ -78,8 +83,9 @@ export const useLiveStore = defineStore('live', () => {
 
   async function end() {
     if (session.value) {
-      await supabase.from('live_sessions')
+      const { error } = await supabase.from('live_sessions')
         .update({ is_active: false, is_playing: false }).eq('id', session.value.id)
+      if (error) throw error
     }
     session.value = null
   }

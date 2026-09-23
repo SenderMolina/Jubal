@@ -202,7 +202,7 @@ const BREAK_OPTIONS = [
 ]
 const store = usePracticeStore()
 const router = useRouter()
-const { showToast } = useToast()
+const { attempt } = useToast()
 const { confirm } = useConfirm()
 const routines = computed(() => store.routines || [])
 const routine = computed(() => store.routine?.sections ? store.routine : null)
@@ -232,13 +232,10 @@ function sectionMinutes(section) {
 }
 function routineMinutes(value) { return value?.sections?.reduce((total, section) => total + sectionMinutes(section), 0) || 0 }
 
-async function run(action, successMessage) {
+async function run(action, success) {
   busy.value = true
   try {
-    await action()
-    if (successMessage) showToast(successMessage)
-  } catch (error) {
-    showToast(error.message || 'No se pudo guardar el cambio')
+    return await attempt(action, { success, error: 'No se pudo guardar el cambio.' })
   } finally { busy.value = false }
 }
 async function createNewRoutine() {

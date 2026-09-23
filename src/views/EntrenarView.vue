@@ -151,6 +151,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePracticeStore } from '../stores/practice'
 import { useToast } from '../composables/useToast'
+import { clearLoadError, reportLoadError } from '../composables/useLoadErrors'
 import { useMetronome } from '../composables/useMetronome'
 import { TYPE_LABELS, skillProgress } from '../utils/skills'
 import UiSelect from '../components/UiSelect.vue'
@@ -158,7 +159,7 @@ import UiSelect from '../components/UiSelect.vue'
 const router = useRouter()
 const store = usePracticeStore()
 const metronome = useMetronome()
-const { showToast } = useToast()
+const { showToast, showError } = useToast()
 
 const creating  = ref(false)
 const busy      = ref(false)
@@ -272,9 +273,9 @@ async function create() {
       parts: form.value.firstPart.trim() ? [form.value.firstPart.trim()] : [],
     })
     creating.value = false
-    showToast(form.value.status === 'learning' ? 'Agregado a tu lista de deseos ☆' : 'Objetivo listo para practicar ✓')
+    showToast(form.value.status === 'learning' ? 'Agregado a tu lista de deseos ☆' : 'Objetivo listo para practicar')
   } catch (e) {
-    showToast(e.message || 'No se pudo crear la skill')
+    showError(e, 'No se pudo crear la skill')
   } finally {
     busy.value = false
   }
@@ -295,9 +296,16 @@ function relativeDate(value) {
   return new Date(value).toLocaleDateString('es', { day: 'numeric', month: 'short' })
 }
 
+async function loadSessions() {
+  try {
+    sessions.value = await store.loadAllSessions()
+    clearLoadError('sesiones')
+  } catch (reason) { reportLoadError('sesiones', reason, loadSessions) }
+}
+
 onMounted(async () => {
   if (!store.ready) await store.loadSkills()
-  sessions.value = await store.loadAllSessions()
+  await loadSessions()
   store.loadRoutine()
 })
 </script>

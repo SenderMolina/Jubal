@@ -47,7 +47,7 @@ import { useToast } from '../composables/useToast'
 import PageBackHeader from '../components/PageBackHeader.vue'
 
 const store = useAppStore()
-const { showToast } = useToast()
+const { attempt } = useToast()
 const newName = ref('')
 
 function songCount(typeId) {
@@ -57,18 +57,15 @@ function songCount(typeId) {
   }).length
 }
 
-function save() {
-  if (!newName.value.trim()) return
-  store.songTypes.push({ id: Date.now(), name: newName.value.trim() })
-  store.saveSongTypes()
-  newName.value = ''
-  showToast('Tipo guardado ✓')
+async function save() {
+  const name = newName.value.trim()
+  if (!name) return
+  const ok = await attempt(() => store.createSongType(name), { success: 'Tipo guardado', error: 'No se pudo guardar el tipo.' })
+  if (ok) newName.value = ''
 }
 
 function deleteType(t) {
-  store.songTypes = store.songTypes.filter(x => x.id !== t.id)
-  store.saveSongTypes()
-  showToast('Tipo eliminado')
+  attempt(() => store.deleteSongType(t.id), { success: 'Tipo eliminado', error: 'No se pudo eliminar el tipo.' })
 }
 </script>
 

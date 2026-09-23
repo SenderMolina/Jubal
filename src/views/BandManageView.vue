@@ -138,12 +138,13 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useBandStore } from '../stores/band'
 import { useToast } from '../composables/useToast'
+import { clearLoadError, reportLoadError } from '../composables/useLoadErrors'
 import { useConfirm } from '../composables/useConfirm'
 import UiSelect from '../components/UiSelect.vue'
 
 const band = useBandStore()
 const router = useRouter()
-const { showToast } = useToast()
+const { showToast, showError } = useToast()
 const { confirm } = useConfirm()
 
 const members = ref([])
@@ -218,7 +219,7 @@ async function saveBandProfile() {
     resetBandProfile()
     showToast('Banda actualizada')
   } catch (e) {
-    showToast(e.message || 'No se pudo actualizar la banda.')
+    showError(e, 'No se pudo actualizar la banda.')
   } finally {
     profileBusy.value = false
   }
@@ -244,7 +245,7 @@ async function deleteCurrentBand() {
     showToast('Banda eliminada')
     await router.replace(band.currentBandId ? '/inicio' : '/practica')
   } catch (e) {
-    showToast(e.message || 'No se pudo eliminar la banda.')
+    showError(e, 'No se pudo eliminar la banda.')
   } finally {
     deleteBusy.value = false
   }
@@ -256,8 +257,11 @@ function canEdit(m) {
 }
 
 async function refresh() {
-  members.value = await band.loadMembers()
-  if (band.isLeader) invites.value = await band.loadInvites()
+  try {
+    members.value = await band.loadMembers()
+    if (band.isLeader) invites.value = await band.loadInvites()
+    clearLoadError('integrantes')
+  } catch (reason) { reportLoadError('integrantes', reason, refresh) }
 }
 
 async function changeRole(m, role) {
@@ -266,7 +270,7 @@ async function changeRole(m, role) {
     await band.updateMemberRole(m.user_id, role)
     m.role = role
     showToast('Rol actualizado')
-  } catch (e) { showToast(e.message || 'No se pudo actualizar') }
+  } catch (e) { showError(e, 'No se pudo actualizar') }
 }
 
 async function remove(m) {
@@ -277,7 +281,7 @@ async function remove(m) {
     await band.removeMember(m.user_id)
     members.value = members.value.filter(x => x.user_id !== m.user_id)
     showToast('Miembro quitado')
-  } catch (e) { showToast(e.message || 'No se pudo quitar') }
+  } catch (e) { showError(e, 'No se pudo quitar') }
 }
 
 async function create() {
@@ -286,7 +290,7 @@ async function create() {
     const inv = await band.createInvite(newRole.value)
     invites.value.unshift(inv)
     await copy(inv.token)
-  } catch (e) { showToast(e.message || 'No se pudo crear la invitación') }
+  } catch (e) { showError(e, 'No se pudo crear la invitación') }
   finally { busy.value = false }
 }
 
@@ -307,7 +311,7 @@ async function revoke(inv) {
     await band.revokeInvite(inv.id)
     invites.value = invites.value.filter(x => x.id !== inv.id)
     showToast('Invitación revocada')
-  } catch (e) { showToast(e.message || 'No se pudo revocar') }
+  } catch (e) { showError(e, 'No se pudo revocar') }
 }
 
 onMounted(() => {

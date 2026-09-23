@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { supabase } from '../supabase'
+import { clearLoadError, reportLoadError } from '../composables/useLoadErrors'
 import { sectionsToPracticeParts } from '../utils/sections'
 import { progressFromSessions, stableBpm } from '../utils/skills'
 
@@ -12,14 +13,14 @@ export const usePracticeStore = defineStore('practice', () => {
   const routines = ref([])  // rutinas del usuario, cada una con sections[] e items[]
   const routine = ref(null) // rutina seleccionada en el constructor
   const routineError = ref('')
-  const routineRuns = ref([])
 
   async function loadSkills() {
     const { data, error } = await supabase
       .from('skills')
       .select('*, song:songs(id,title,author,key,bpm,lyrics,band_id), parts:skill_parts(*)')
       .order('created_at', { ascending: false })
-    if (error) { console.error('Error cargando skills:', error); return }
+    if (error) { reportLoadError('objetivos de práctica', error, loadSkills); return }
+    clearLoadError('objetivos de práctica')
     skills.value = (data || []).map(s => ({
       ...s,
       parts: (s.parts || []).sort((a, b) => a.position - b.position),
@@ -148,7 +149,7 @@ export const usePracticeStore = defineStore('practice', () => {
       .select('*')
       .eq('skill_id', skillId)
       .order('practiced_at', { ascending: false })
-    if (error) { console.error('Error cargando sesiones:', error); return [] }
+    if (error) throw error
     return data || []
   }
 
@@ -158,7 +159,7 @@ export const usePracticeStore = defineStore('practice', () => {
       .from('practice_sessions')
       .select('id, skill_id, part_id, bpm, duration_seconds, quality, practiced_at, routine_run_item_id')
       .order('practiced_at', { ascending: false })
-    if (error) { console.error('Error cargando sesiones:', error); return [] }
+    if (error) throw error
     return data || []
   }
 
@@ -244,9 +245,10 @@ export const usePracticeStore = defineStore('practice', () => {
       routineError.value = migrationMissing
         ? 'Falta actualizar la base de datos para habilitar secciones y descansos.'
         : (error.message || 'No se pudieron cargar las rutinas.')
-      console.error('Error cargando rutinas:', error)
+      reportLoadError('rutinas', error, loadRoutines)
       return []
     }
+    clearLoadError('rutinas')
     if (routineResult.data?.length) {
       const sections = (sectionResult.data || []).map(section => ({
         ...section,
@@ -442,7 +444,6 @@ export const usePracticeStore = defineStore('practice', () => {
       await supabase.from('practice_runs').delete().eq('id', run.id)
       throw itemsError
     }
-    routineRuns.value.unshift(run)
     return { ...run, items: runItems || [] }
   }
 
@@ -450,8 +451,6 @@ export const usePracticeStore = defineStore('practice', () => {
     const { data, error } = await supabase
       .from('practice_runs').update(patch).eq('id', runId).select().single()
     if (error) throw error
-    const cached = routineRuns.value.find(item => item.id === runId)
-    if (cached) Object.assign(cached, data)
     return data
   }
 
@@ -472,7 +471,6 @@ export const usePracticeStore = defineStore('practice', () => {
     routines.value = []
     routine.value = null
     routineError.value = ''
-    routineRuns.value = []
   }
 
   return {

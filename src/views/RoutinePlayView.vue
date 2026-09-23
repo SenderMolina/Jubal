@@ -10,7 +10,6 @@
     <div v-else-if="error" class="mission-state mission-state--error">
       <strong>No se pudo abrir la misión</strong>
       <p>{{ error }}</p>
-      <small>Si aún no lo hiciste, ejecuta <b>supabase/phase6_guided_practice.sql</b> en Supabase.</small>
       <button @click="router.replace('/rutina')">Volver a rutinas</button>
     </div>
 
@@ -105,6 +104,8 @@ import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { usePracticeStore } from '../stores/practice'
 import { useMetronome } from '../composables/useMetronome'
 import { useConfirm } from '../composables/useConfirm'
+import { useToast } from '../composables/useToast'
+import { errorMessage } from '../utils/errors'
 import { TYPE_LABELS } from '../utils/skills'
 
 const QUALITY = [
@@ -117,6 +118,7 @@ const router = useRouter()
 const store = usePracticeStore()
 const metro = useMetronome()
 const { confirm } = useConfirm()
+const { showError } = useToast()
 const { bpm, currentBeat, setBpm } = metro
 
 const run = ref(null)
@@ -174,7 +176,12 @@ async function startPhase() {
   phaseStartedAt.value = Date.now()
   running.value = true
   if (phase.value === 'exercise') {
-    await store.updatePracticeRunItem(currentItem.value.id, { status: 'active' })
+    try {
+      await store.updatePracticeRunItem(currentItem.value.id, { status: 'active' })
+    } catch (reason) {
+      running.value = false
+      return showError(reason, 'No se pudo iniciar el ejercicio.')
+    }
     currentItem.value.status = 'active'
     metro.start()
   }
@@ -206,7 +213,7 @@ async function pausePhase() {
   try {
     const saved = await store.updatePracticeRunItem(currentItem.value.id, { [actualField()]: actual })
     Object.assign(currentItem.value, saved)
-  } catch (reason) { error.value = reason.message || 'No se pudo guardar el avance' }
+  } catch (reason) { showError(reason, 'No se pudo guardar el avance.') }
 }
 
 async function finishExercise() {
@@ -236,28 +243,36 @@ async function finishExercise() {
       remaining.value = Math.max(0, item.break_seconds - baseActual.value)
     } else await advance()
   } catch (reason) {
+    // La sesión ya estaba registrada (reintento): basta con cerrar el ejercicio.
     if (reason.code === '23505') {
-      const saved = await store.updatePracticeRunItem(item.id, { status: 'completed', quality: quality.value })
-      Object.assign(item, saved)
-      return item.break_seconds ? preparePhase() : advance()
+      try {
+        const saved = await store.updatePracticeRunItem(item.id, { status: 'completed', quality: quality.value })
+        Object.assign(item, saved)
+        return item.break_seconds ? preparePhase() : await advance()
+      } catch (retryError) { reason = retryError }
     }
-    error.value = reason.message || 'No se pudo completar la habilidad'
+    showError(reason, 'No se pudo completar el ejercicio.')
   }
 }
 
 async function skipExercise() {
-  const saved = await store.updatePracticeRunItem(currentItem.value.id, { status: 'skipped' })
-  Object.assign(currentItem.value, saved)
-  await advance()
+  try {
+    const saved = await store.updatePracticeRunItem(currentItem.value.id, { status: 'skipped' })
+    Object.assign(currentItem.value, saved)
+    await advance()
+  } catch (reason) { showError(reason, 'No se pudo omitir el ejercicio.') }
 }
 
 async function completeRest() {
   if (running.value) await pausePhase()
-  const saved = await store.updatePracticeRunItem(currentItem.value.id, { break_actual_seconds: currentItem.value.break_seconds })
-  Object.assign(currentItem.value, saved)
-  await advance()
+  try {
+    const saved = await store.updatePracticeRunItem(currentItem.value.id, { break_actual_seconds: currentItem.value.break_seconds })
+    Object.assign(currentItem.value, saved)
+    await advance()
+  } catch (reason) { showError(reason, 'No se pudo terminar el descanso.') }
 }
 
+// Lanza el error: quien la llama decide cómo avisar.
 async function advance() {
   metro.close()
   if (currentIndex.value >= run.value.items.length - 1) return finishRun()
@@ -293,12 +308,12 @@ async function initialize() {
     if (!store.ready) await store.loadSkills()
     run.value = await store.startRoutineRun(route.params.id)
     const firstPending = run.value.items.findIndex(item => !['completed', 'skipped'].includes(item.status) || (item.status === 'completed' && item.break_actual_seconds < item.break_seconds))
-    if (firstPending < 0) return finishRun()
+    if (firstPending < 0) return await finishRun()
     if (firstPending !== run.value.current_item_index) {
       Object.assign(run.value, await store.updatePracticeRun(run.value.id, { current_item_index: firstPending }))
     }
     preparePhase()
-  } catch (reason) { error.value = reason.message || 'No se pudo iniciar la rutina' }
+  } catch (reason) { error.value = errorMessage(reason, 'No se pudo iniciar la rutina.') }
   finally { loading.value = false }
 }
 

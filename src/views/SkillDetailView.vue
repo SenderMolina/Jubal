@@ -175,6 +175,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePracticeStore } from '../stores/practice'
 import { useToast } from '../composables/useToast'
+import { clearLoadError, reportLoadError } from '../composables/useLoadErrors'
 import { useConfirm } from '../composables/useConfirm'
 import { useMetronome } from '../composables/useMetronome'
 import { STATUS_LABELS, TYPE_LABELS, skillProgress } from '../utils/skills'
@@ -184,7 +185,7 @@ const metronome = useMetronome()
 const route  = useRoute()
 const router = useRouter()
 const store  = usePracticeStore()
-const { showToast } = useToast()
+const { showToast, showError, attempt } = useToast()
 const { confirm } = useConfirm()
 
 const skill    = computed(() => store.skills.find(s => s.id === route.params.id))
@@ -234,43 +235,42 @@ function practicePart(part) {
 }
 
 function setStatus(st) {
-  store.updateSkill(skill.value.id, { status: st })
+  attempt(() => store.updateSkill(skill.value.id, { status: st }), { error: 'No se pudo cambiar el estado.' })
 }
 
 async function saveNotes() {
   try {
     await store.updateSkill(skill.value.id, { notes: notes.value.trim() || null })
-    showToast('Notas guardadas ✓')
-  } catch (reason) { showToast(reason.message || 'No se pudieron guardar las notas') }
+    showToast('Notas guardadas')
+  } catch (reason) { showError(reason, 'No se pudieron guardar las notas') }
 }
 
 function setTargetBpm(v) {
-  store.updateSkill(skill.value.id, { target_bpm: v ? +v : null })
+  attempt(() => store.updateSkill(skill.value.id, { target_bpm: v ? +v : null }), { error: 'No se pudo guardar la meta de BPM.' })
 }
 
 async function addPart() {
-  if (!newPart.value.trim()) return
-  await store.addPart(skill.value.id, newPart.value.trim())
-  newPart.value = ''
+  const name = newPart.value.trim()
+  if (!name) return
+  if (await attempt(() => store.addPart(skill.value.id, name), { error: 'No se pudo agregar la parte.' })) newPart.value = ''
 }
 
 async function removePart(p) {
   if (!await confirm('¿Eliminar parte?', p.name)) return
-  await store.deletePart(skill.value.id, p.id)
+  await attempt(() => store.deletePart(skill.value.id, p.id), { error: 'No se pudo eliminar la parte.' })
 }
 
 async function syncSongParts() {
   try {
     const changed = await store.syncSongParts(skill.value.id)
     showToast(changed.length ? 'Secciones actualizadas' : 'Las secciones ya estaban al día')
-  } catch (reason) { showToast(reason.message || 'No se pudieron actualizar las secciones') }
+  } catch (reason) { showError(reason, 'No se pudieron actualizar las secciones') }
 }
 
 async function removeSkill() {
   if (!await confirm('¿Eliminar objetivo?', 'Se borrará junto con sus partes y su historial quedará sin objetivo.')) return
-  await store.deleteSkill(skill.value.id)
-  showToast('Objetivo eliminado')
-  router.push('/entrenar')
+  const ok = await attempt(() => store.deleteSkill(skill.value.id), { success: 'Objetivo eliminado', error: 'No se pudo eliminar el objetivo.' })
+  if (ok) router.push('/entrenar')
 }
 
 async function saveManualSession() {
@@ -284,10 +284,10 @@ async function saveManualSession() {
       duration_seconds: Math.round(Number(manual.value.duration) * 60),
       quality: manual.value.quality,
     })
-    sessions.value = await store.loadSessions(skill.value.id)
+    await loadSessions()
     manualOpen.value = false
-    showToast('Práctica registrada ✓')
-  } catch (reason) { showToast(reason.message || 'No se pudo registrar la práctica') }
+    showToast('Práctica registrada')
+  } catch (reason) { showError(reason, 'No se pudo registrar la práctica') }
   finally { manualBusy.value = false }
 }
 
@@ -321,10 +321,17 @@ function skillIcon(type) {
   return { lick: 'ϟ', solo: '★', technique: '◎', song: '♫' }[type] || '♪'
 }
 
+async function loadSessions() {
+  try {
+    sessions.value = await store.loadSessions(skill.value.id)
+    clearLoadError('sesiones')
+  } catch (reason) { reportLoadError('sesiones', reason, loadSessions) }
+}
+
 onMounted(async () => {
   if (!store.ready) await store.loadSkills()
   if (!skill.value) { router.replace('/entrenar'); return }
-  sessions.value = await store.loadSessions(skill.value.id)
+  await loadSessions()
 })
 </script>
 

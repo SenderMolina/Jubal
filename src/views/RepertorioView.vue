@@ -70,7 +70,7 @@ import { useConfirm } from '../composables/useConfirm'
 const router    = useRouter()
 const store     = useAppStore()
 const band = useBandStore()
-const { showToast } = useToast()
+const { attempt } = useToast()
 const { confirm }   = useConfirm()
 
 const creating    = ref(false)
@@ -84,15 +84,11 @@ function startCreate() {
   nextTick(() => createInput.value?.focus())
 }
 
-function confirmCreate() {
-  if (!newName.value.trim()) return
-  store.repertoires.push({
-    id: Date.now(),
-    name: newName.value.trim(),
-    songs: [],
-  })
-  store.saveRepertoires()
-  showToast('Repertorio creado')
+async function confirmCreate() {
+  const name = newName.value.trim()
+  if (!name) return
+  const ok = await attempt(() => store.createRepertoire(name), { success: 'Repertorio creado', error: 'No se pudo crear el repertorio.' })
+  if (!ok) return
   creating.value = false
   newName.value = ''
 }
@@ -118,9 +114,7 @@ async function deleteFromCtx() {
   if (!r) return
   const ok = await confirm('¿Eliminar repertorio?', `"${r.name}"`)
   if (!ok) return
-  store.repertoires = store.repertoires.filter(x => x.id !== r.id)
-  store.saveRepertoires()
-  showToast('Repertorio eliminado')
+  await attempt(() => store.deleteRepertoire(r.id), { success: 'Repertorio eliminado', error: 'No se pudo eliminar el repertorio.' })
 }
 </script>
 

@@ -196,7 +196,7 @@ import songMark from '../assets/song-mark.svg'
 const router    = useRouter()
 const store     = useAppStore()
 const band = useBandStore()
-const { showToast } = useToast()
+const { attempt } = useToast()
 const { confirm }   = useConfirm()
 
 const query       = ref('')
@@ -248,12 +248,11 @@ function toggleForm() {
   }
 }
 
-function _doSave() {
-  if (!form.value.title.trim()) { titleError.value = true; return false }
+async function saveSong() {
+  if (!form.value.title.trim()) { titleError.value = true; return }
   if (form.value.key)    localStorage.setItem('lastSongKey',    form.value.key)
   if (form.value.author) localStorage.setItem('lastSongAuthor', form.value.author.trim())
-  store.songs.push({
-    id:     Date.now(),
+  const ok = await attempt(() => store.createSong({
     title:  form.value.title.trim(),
     author: form.value.author.trim(),
     key:    form.value.key,
@@ -261,14 +260,8 @@ function _doSave() {
     duration: parseDuration(form.value.durationText),
     types:  form.value.types.length ? form.value.types : [],
     lyrics: form.value.lyrics.trim() || '',
-  })
-  store.saveSongs()
-  return true
-}
-
-function saveSong() {
-  if (!_doSave()) return
-  showToast('Canción guardada ✓')
+  }), { success: 'Canción guardada', error: 'No se pudo guardar la canción.' })
+  if (!ok) return
   showForm.value = false
   form.value = emptyForm()
 }
@@ -349,9 +342,7 @@ async function deleteSongFromCtx() {
   if (!s) return
   const ok = await confirm('¿Eliminar canción?', `"${s.title}"`)
   if (!ok) return
-  store.songs = store.songs.filter(x => x.id !== s.id)
-  store.saveSongs()
-  showToast('Canción eliminada')
+  await attempt(() => store.deleteSong(s.id), { success: 'Canción eliminada', error: 'No se pudo eliminar la canción.' })
 }
 </script>
 
