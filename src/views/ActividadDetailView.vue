@@ -127,16 +127,6 @@
                     </div>
                   </template>
                 </draggable>
-
-                <!-- Acción primaria del tiempo -->
-                <button
-                  v-if="tiempo.songs?.length"
-                  class="tiempo-live-btn"
-                  @click.stop="startLive(tiempo)"
-                >
-                  <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
-                  Iniciar en vivo
-                </button>
               </div>
 
               <!-- Form de crear tiempo nuevo (al final) -->
@@ -218,7 +208,6 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useBandStore } from '../stores/band'
-import { useLiveStore } from '../stores/live'
 import { useToast } from '../composables/useToast'
 import { fmtKey } from '../utils/keys'
 import SongPicker from '../components/SongPicker.vue'
@@ -231,15 +220,7 @@ const route     = useRoute()
 const router    = useRouter()
 const store     = useAppStore()
 const band = useBandStore()
-const live      = useLiveStore()
 
-async function startLive(tiempo) {
-  if (!tiempo.songs?.length) return
-  try {
-    await live.start({ source: 'tiempo', activityId: activity.value.id, tiempoId: tiempo.id, songIds: tiempo.songs })
-    router.push('/live')
-  } catch (e) { showError(e, 'No se pudo iniciar la sesión en vivo.') }
-}
 const { showToast, showError, attempt } = useToast()
 const { confirm }   = useConfirm()
 
@@ -527,23 +508,6 @@ async function handleDelete() {
 .tiempo-song-row__remove:active { background: var(--color-danger); color: var(--color-text-on-primary); }
 
 /* Acción primaria: una sola, clara, en acento (no rojo) */
-.tiempo-live-btn {
-  margin-top: 12px;
-  width: 100%;
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 11px;
-  border: none;
-  border-radius: 12px;
-  background: var(--color-primary);
-  color: var(--color-text-on-primary);
-  font-size: .9rem; font-weight: 700;
-  box-shadow: var(--shadow-small);
-  cursor: pointer;
-  transition: background .15s, transform .05s;
-}
-.tiempo-live-btn svg { width: 15px; height: 15px; }
-.tiempo-live-btn:hover { background: var(--color-primary-hover); }
-.tiempo-live-btn:active { transform: translateY(1px); }
 
 .orden__empty { font-size: .82rem; color: var(--color-text-muted); padding: 2px 2px 4px; }
 

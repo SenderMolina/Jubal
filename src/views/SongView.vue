@@ -101,7 +101,6 @@ import { ref, computed, nextTick, onBeforeUnmount, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useBandStore } from '../stores/band'
-import { useLiveStore } from '../stores/live'
 import { usePracticeStore } from '../stores/practice'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
@@ -114,7 +113,6 @@ const route     = useRoute()
 const router    = useRouter()
 const store     = useAppStore()
 const band = useBandStore()
-const live      = useLiveStore()
 const practice  = usePracticeStore()
 const { showError, attempt } = useToast()
 const { confirm }   = useConfirm()
@@ -144,20 +142,10 @@ function openMenu() {
   sheet.value?.open({
     title: song.value?.title,
     actions: [
-      // La sesión en vivo es de banda; en el espacio personal no aplica.
-      ...(band.can.conductLive ? [{ label: '▶ Iniciar en vivo', onSelect: startLive }] : []),
       { label: 'Editar canción', icon: 'edit', onSelect: startEdit },
       { label: 'Eliminar canción', icon: 'trash', danger: true, onSelect: deleteSong },
     ],
   })
-}
-
-async function startLive() {
-  if (!song.value) return
-  try {
-    await live.start({ source: 'song', songIds: [song.value.id] })
-    router.push('/live')
-  } catch (e) { showError(e, 'No se pudo iniciar la sesión en vivo.') }
 }
 
 async function deleteSong() {

@@ -13,7 +13,6 @@ const SongFormView = () => import('../views/SongFormView.vue')
 const RepertorioView = () => import('../views/RepertorioView.vue')
 const RepertorioDetailView = () => import('../views/RepertorioDetailView.vue')
 const BandManageView = () => import('../views/BandManageView.vue')
-const LiveView = () => import('../views/LiveView.vue')
 const ProfileView = () => import('../views/ProfileView.vue')
 const EntrenarView = () => import('../views/EntrenarView.vue')
 const SkillDetailView = () => import('../views/SkillDetailView.vue')
@@ -41,7 +40,8 @@ const routes = [
   { path: '/configuracion',   component: TiposView, meta: { title: 'Configuraciones', can: 'manageBand' } },
   { path: '/tipos',           redirect: '/configuracion' },
   { path: '/banda',           component: BandManageView, meta: { can: 'manageBand' } },
-  { path: '/live',            component: LiveView },
+  // El modo en vivo vive en la rama en-vivo; /live se conserva por enlaces viejos.
+  { path: '/live',            redirect: '/actividades' },
   { path: '/perfil',          component: ProfileView },
   { path: '/entrenar',        component: EntrenarView },
   { path: '/skill/:id',       component: SkillDetailView },
@@ -62,7 +62,7 @@ const router = createRouter({
 
 // Rutas exclusivas de banda: sin banda activa, al dashboard de práctica.
 // (canciones/repertorios NO están aquí: existen también en el espacio personal)
-const BAND_ONLY = ['/actividad', '/banda', '/configuracion', '/live']
+const BAND_ONLY = ['/actividad', '/banda', '/configuracion']
 // Rutas exclusivas del espacio personal: activan el modo personal
 // (ej. recarga o re-login directo en /entrenar).
 const PERSONAL_ONLY = ['/practica', '/entrenar', '/skill', '/estadisticas', '/rutina', '/metronomo']

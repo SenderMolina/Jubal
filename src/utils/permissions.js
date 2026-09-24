@@ -6,7 +6,6 @@ export function permissionsFor({ role = null, personalMode = false, isOwner = fa
   return {
     editLibrary: leader || personalMode, // canciones, repertorios y tipos
     manageActivities: leader,            // agenda y setlists
-    conductLive: leader,                 // iniciar y dirigir el en vivo
     manageBand: leader,                  // integrantes, invitaciones, configuración
     editBand: isOwner,                   // nombre, imagen y eliminar la banda
     seeChords: role !== 'singer',        // a las coristas se les ocultan

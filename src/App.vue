@@ -16,7 +16,6 @@
       </main>
       <AppNav v-if="!hideNav" />
       <AppDrawer :open="menuOpen" @close="menuOpen = false" />
-      <LiveBanner />
       <Toast />
       <ConfirmModal />
     </template>
@@ -36,7 +35,6 @@ import LoginView    from './views/LoginView.vue'
 import AppHeader    from './components/AppHeader.vue'
 import AppNav       from './components/AppNav.vue'
 import AppDrawer    from './components/AppDrawer.vue'
-import LiveBanner   from './components/LiveBanner.vue'
 import Toast        from './components/Toast.vue'
 import ConfirmModal from './components/ConfirmModal.vue'
 import OfflineBanner from './components/OfflineBanner.vue'
@@ -71,7 +69,7 @@ watch(() => authStore.isAuthenticated, async (authed) => {
       } else {
         router.replace('/practica')
       }
-    } else if (!bandStore.currentBandId && ['/actividad', '/banda', '/live'].some(path => route.path.startsWith(path))) {
+    } else if (!bandStore.currentBandId && ['/actividad', '/banda'].some(path => route.path.startsWith(path))) {
       router.replace('/practica')
     }
   } else {
@@ -80,13 +78,13 @@ watch(() => authStore.isAuthenticated, async (authed) => {
   }
 }, { immediate: true })
 
-// Detalle de actividad, canción y la sesión en vivo van a pantalla completa
+// Detalle de actividad y canción van a pantalla completa
 const isFullscreen = computed(() =>
-  route.path.startsWith('/actividad/') || route.path.startsWith('/cancion/') || route.path.startsWith('/live') || route.path.startsWith('/rutina/jugar/')
+  route.path.startsWith('/actividad/') || route.path.startsWith('/cancion/') || route.path.startsWith('/rutina/jugar/')
 )
 
-// Canción y sesión en vivo ocultan la navegación inferior (pantalla completa)
+// Canción y formularios ocultan la navegación inferior
 const hideNav = computed(() =>
-  route.meta.form || route.path.startsWith('/cancion/') || route.path.startsWith('/live') || route.path.startsWith('/rutina/jugar/')
+  route.meta.form || route.path.startsWith('/cancion/') || route.path.startsWith('/rutina/jugar/')
 )
 </script>

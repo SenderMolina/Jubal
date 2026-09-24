@@ -7,7 +7,8 @@ personal de cada músico.
 
 - Bandas con líderes, músicos, coristas e invitaciones.
 - Biblioteca de canciones con artista, tono, BPM, duración, letra y acordes.
-- Repertorios, actividades/setlists y conducción en vivo por secciones.
+- Repertorios y actividades con setlists por tiempos.
+- El modo en vivo (conducción por secciones) está en la rama `en-vivo`.
 - Skills personales de canción, solo, lick o técnica.
 - Canciones convertibles en skills con secciones importadas desde la letra.
 - Práctica completa o por parte con metrónomo, tiempo, BPM y calidad.
