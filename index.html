@@ -83,6 +83,23 @@
     .startup-splash__rhythm span:nth-child(3) { animation-delay: 240ms; background: #f39015; }
     .startup-splash__rhythm span:nth-child(4) { animation-delay: 360ms; }
     .startup-splash__rhythm span:nth-child(5) { animation-delay: 480ms; }
+    .startup-splash__recovery { max-width: 280px; text-align: center; font-size: 14px; line-height: 1.5; }
+    .startup-splash__recovery p { margin: 0 0 18px; }
+    .startup-splash__recovery button {
+      min-height: 44px;
+      padding: 10px 24px;
+      border: 0;
+      border-radius: 999px;
+      background: #083b59;
+      color: #fff;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .startup-splash__recovery button:focus-visible { outline: 3px solid #209eb5; outline-offset: 4px; }
+    .startup-splash [hidden] { display: none; }
+    .startup-splash[data-state='error'] *,
+    .startup-splash[data-state='error'] *::before { animation: none !important; }
     @keyframes startup-harp {
       0%, 100% { transform: translateY(0) rotate(-2deg); }
       50% { transform: translateY(-7px) rotate(2deg); }
@@ -117,12 +134,92 @@
       </div>
       <p class="startup-splash__status">Cargando tu música…</p>
       <div class="startup-splash__rhythm" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="startup-splash__recovery" hidden>
+        <p>Revisa tu conexión y vuelve a intentarlo.</p>
+        <button type="button">Reintentar</button>
+      </div>
       <noscript>Activa JavaScript para abrir Jubal.</noscript>
     </div>
   </div>
   <div id="app" inert aria-busy="true"></div>
-  <script>
-    document.getElementById('startup-splash').dataset.startedAt = performance.now()
+  <!-- Independiente del bundle: también permite recuperarse si Vue no llega a cargar. -->
+  <script id="startup-controller">
+    (() => {
+      const splash = document.getElementById('startup-splash')
+      const app = document.getElementById('app')
+      const status = splash.querySelector('.startup-splash__status')
+      const rhythm = splash.querySelector('.startup-splash__rhythm')
+      const recovery = splash.querySelector('.startup-splash__recovery')
+      const retry = recovery.querySelector('button')
+      const MIN_VISIBLE_MS = 1500
+      const MAX_LOADING_MS = 12000
+      let startedAt = performance.now()
+      let readyTimer, hideTimer, loadingTimer
+
+      function clearTimers() {
+        clearTimeout(readyTimer)
+        clearTimeout(hideTimer)
+        clearTimeout(loadingTimer)
+      }
+
+      function fail() {
+        clearTimers()
+        splash.dataset.state = 'error'
+        splash.hidden = false
+        splash.classList.remove('startup-splash--leaving')
+        splash.setAttribute('aria-label', 'No se pudo iniciar Jubal')
+        status.textContent = 'No pudimos completar el inicio.'
+        rhythm.hidden = true
+        recovery.hidden = false
+        app.inert = true
+        app.setAttribute('aria-busy', 'false')
+        retry.focus({ preventScroll: true })
+      }
+
+      function setLoading(loading) {
+        clearTimers()
+        if (loading) {
+          if (splash.hidden) startedAt = performance.now()
+          splash.dataset.state = 'loading'
+          splash.hidden = false
+          splash.classList.remove('startup-splash--leaving')
+          splash.setAttribute('aria-label', 'Cargando Jubal')
+          status.textContent = 'Cargando tu música…'
+          rhythm.hidden = false
+          recovery.hidden = true
+          app.inert = true
+          app.setAttribute('aria-busy', 'true')
+          loadingTimer = setTimeout(fail, Math.max(0, MAX_LOADING_MS - (performance.now() - startedAt)))
+          return
+        }
+
+        splash.dataset.state = 'ready'
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        const remaining = reducedMotion ? 0 : Math.max(0, MIN_VISIBLE_MS - (performance.now() - startedAt))
+        const dismiss = () => {
+          app.inert = false
+          app.setAttribute('aria-busy', 'false')
+          splash.classList.add('startup-splash--leaving')
+          hideTimer = setTimeout(() => { splash.hidden = true }, reducedMotion ? 0 : 240)
+        }
+        if (remaining > 0) readyTimer = setTimeout(dismiss, remaining)
+        else dismiss()
+      }
+
+      retry.addEventListener('click', () => window.location.reload())
+      window.addEventListener('error', (event) => {
+        if (splash.dataset.state === 'loading' && (event.error || event.target?.tagName === 'SCRIPT')) fail()
+      }, true)
+      window.addEventListener('vite:preloadError', () => {
+        if (splash.dataset.state === 'loading') fail()
+      })
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && splash.dataset.state === 'loading' &&
+            performance.now() - startedAt >= MAX_LOADING_MS) fail()
+      })
+      window.jubalStartup = { setLoading, fail }
+      setLoading(true)
+    })()
   </script>
   <script type="module" src="/src/main.js"></script>
 </body>

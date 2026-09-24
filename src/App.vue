@@ -39,7 +39,7 @@ import Toast        from './components/Toast.vue'
 import ConfirmModal from './components/ConfirmModal.vue'
 import OfflineBanner from './components/OfflineBanner.vue'
 import ConfigError  from './components/ConfigError.vue'
-import { setStartupLoading } from './utils/startupSplash'
+import { setStartupLoading, showStartupError } from './utils/startupSplash'
 
 const authStore = useAuthStore()
 const bandStore = useBandStore()
@@ -48,15 +48,23 @@ const route = useRoute()
 const router = useRouter()
 const routeReady = ref(false)
 const restoringSession = ref(false)
+const startupError = ref(null)
 onMounted(async () => {
-  await router.isReady()
-  routeReady.value = true
+  try {
+    await router.isReady()
+    routeReady.value = true
+  } catch (error) {
+    startupError.value = error
+  }
 })
 const startupLoading = computed(() => supabaseConfigured && (
   !routeReady.value || !authStore.ready || restoringSession.value ||
   (authStore.isAuthenticated && !bandStore.ready)
 ))
-watch(startupLoading, setStartupLoading, { immediate: true, flush: 'post' })
+watch([startupLoading, () => authStore.initializationError, startupError], ([loading, authError, error]) => {
+  if (supabaseConfigured && (authError || error)) showStartupError(authError || error)
+  else setStartupLoading(loading)
+}, { immediate: true, flush: 'post' })
 const menuOpen = ref(false)
 watch(() => route.fullPath, () => { menuOpen.value = false })
 const { showToast } = useToast()
@@ -86,6 +94,8 @@ watch(() => authStore.isAuthenticated, async (authed) => {
       } else if (!bandStore.currentBandId && ['/actividad', '/banda'].some(path => route.path.startsWith(path))) {
         await router.replace('/practica')
       }
+    } catch (error) {
+      startupError.value = error
     } finally {
       restoringSession.value = false
     }
