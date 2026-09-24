@@ -87,6 +87,6 @@ const isFullscreen = computed(() =>
 
 // Canción y sesión en vivo ocultan la navegación inferior (pantalla completa)
 const hideNav = computed(() =>
-  route.meta.activityForm || route.path.startsWith('/cancion/') || route.path.startsWith('/live') || route.path.startsWith('/rutina/jugar/')
+  route.meta.form || route.path.startsWith('/cancion/') || route.path.startsWith('/live') || route.path.startsWith('/rutina/jugar/')
 )
 </script>

@@ -9,6 +9,7 @@ const ActividadDetailView = () => import('../views/ActividadDetailView.vue')
 const CancionesView = () => import('../views/CancionesView.vue')
 const TiposView = () => import('../views/TiposView.vue')
 const SongView = () => import('../views/SongView.vue')
+const SongFormView = () => import('../views/SongFormView.vue')
 const RepertorioView = () => import('../views/RepertorioView.vue')
 const RepertorioDetailView = () => import('../views/RepertorioDetailView.vue')
 const BandManageView = () => import('../views/BandManageView.vue')
@@ -28,13 +29,15 @@ const routes = [
   { path: '/inicio',          component: BandDashboardView },
   { path: '/practica',        component: HomeView },
   { path: '/actividades',     component: ActividadesView },
-  { path: '/actividades/nueva', component: ActivityFormView, meta: { activityForm: true, title: 'Nueva actividad', can: 'manageActivities', denied: '/actividades' } },
-  { path: '/actividades/:id/editar', component: ActivityFormView, meta: { activityForm: true, title: 'Editar actividad', can: 'manageActivities', denied: '/actividades' } },
+  { path: '/actividades/nueva', component: ActivityFormView, meta: { form: true, title: 'Nueva actividad', can: 'manageActivities', denied: '/actividades' } },
+  { path: '/actividades/:id/editar', component: ActivityFormView, meta: { form: true, title: 'Editar actividad', can: 'manageActivities', denied: '/actividades' } },
   { path: '/actividad/:id',   component: ActividadDetailView },
   { path: '/repertorio',      component: RepertorioView },
   { path: '/repertorio/:id',  component: RepertorioDetailView },
   { path: '/canciones',       component: CancionesView },
-  { path: '/agregar',         redirect: '/canciones' },
+  { path: '/canciones/nueva', component: SongFormView, meta: { form: true, can: 'editLibrary', denied: '/canciones' } },
+  { path: '/canciones/:id/editar', component: SongFormView, meta: { form: true, can: 'editLibrary', denied: '/canciones' } },
+  { path: '/agregar',         redirect: '/canciones/nueva' },
   { path: '/configuracion',   component: TiposView, meta: { title: 'Configuraciones', can: 'manageBand' } },
   { path: '/tipos',           redirect: '/configuracion' },
   { path: '/banda',           component: BandManageView, meta: { can: 'manageBand' } },

@@ -2,98 +2,89 @@
   <div>
 
     <!-- ── Lista de canciones ── -->
-    <template v-if="!showForm">
-      <div v-if="band.can.editLibrary" class="page-actions">
-        <button class="btn-pill btn-pill--primary" @click="openForm">
-          <span class="btn-pill__icon">+</span> Agregar canción
-        </button>
-      </div>
+    <div v-if="band.can.editLibrary" class="page-actions">
+      <RouterLink class="btn-pill btn-pill--primary" to="/canciones/nueva">
+        <span class="btn-pill__icon">+</span> Agregar canción
+      </RouterLink>
+    </div>
 
-      <div class="search-box" style="margin-top:12px">
-        <span class="search-box__icon">
-          <svg class="search-box__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-        </span>
-        <input
-          class="search-box__input"
-          type="text"
-          placeholder="Buscar por nombre, tono o tempo…"
-          aria-label="Buscar canciones"
-          v-model="query"
-        >
-      </div>
-
-      <div v-if="store.songTypes.length" class="type-pills">
-        <button
-          v-for="t in store.songTypes"
-          :key="t.id"
-          class="type-pill"
-          :class="{ active: activeTypes.includes(String(t.id)) }"
-          :aria-pressed="activeTypes.includes(String(t.id))"
-          @click="toggleType(String(t.id))"
-        >{{ t.name }}</button>
-        <button v-if="activeTypes.length" class="type-pill type-pill--clear" aria-label="Limpiar filtros" @click="activeTypes = []">✕</button>
-      </div>
-
-      <div class="list-toolbar">
-        <span class="list-toolbar__count">
-          {{ isFiltering ? 'Filtradas' : 'Todas' }} ({{ filteredSongs.length }})
-        </span>
-        <button class="list-toolbar__sort" @click="toggleSort">
-          {{ sortMode === 'added' ? 'Añadido' : 'A–Z' }} <span>↓</span>
-        </button>
-      </div>
-
-      <div v-if="sortedSongs.length === 0" class="songs-empty">
-        <svg class="songs-empty__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+    <div class="search-box" style="margin-top:12px">
+      <span class="search-box__icon">
+        <svg class="search-box__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <p>{{ store.songs.length ? 'Sin coincidencias' : 'Aún no hay canciones' }}</p>
-        <span v-if="!store.songs.length && band.can.editLibrary" class="songs-empty__hint">Toca “Agregar canción” para empezar el repertorio.</span>
-      </div>
-      <div v-else class="song-list">
-        <button
-          v-for="s in sortedSongs"
-          :key="s.id"
-          class="song-item"
-          @click="router.push('/cancion/' + s.id)"
-          @contextmenu.prevent="band.can.editLibrary && openContextMenu($event, s)"
-        >
-          <span class="song-item__badge">
-            <img class="song-item__mark" :src="songMark" alt="">
-          </span>
-          <span class="song-item__main">
-            <span class="song-item__title">{{ s.title }}</span>
-            <span v-if="s.author || typeLabels(s).length" class="song-item__sub">
-              <template v-if="s.author">{{ s.author }}</template>
-              <template v-for="(tl, ti) in typeLabels(s)" :key="tl"><span v-if="s.author || ti" class="song-item__dot">·</span>{{ tl }}</template>
-            </span>
-          </span>
-          <svg class="song-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </button>
-      </div>
+      </span>
+      <input
+        class="search-box__input"
+        type="text"
+        placeholder="Buscar por nombre, tono o tempo…"
+        aria-label="Buscar canciones"
+        v-model="query"
+      >
+    </div>
 
-      <!-- Context menu for delete -->
-      <Teleport to="body">
-        <div v-if="ctxMenu.visible" class="ctx-overlay" @click="closeContextMenu">
-          <div class="ctx-menu" :style="{ top: ctxMenu.y + 'px', left: ctxMenu.x + 'px' }">
-            <button class="ctx-menu__item ctx-menu__item--danger" @click="deleteSongFromCtx">
-              🗑 Eliminar canción
-            </button>
-          </div>
+    <div v-if="store.songTypes.length" class="type-pills">
+      <button
+        v-for="t in store.songTypes"
+        :key="t.id"
+        class="type-pill"
+        :class="{ active: activeTypes.includes(String(t.id)) }"
+        :aria-pressed="activeTypes.includes(String(t.id))"
+        @click="toggleType(String(t.id))"
+      >{{ t.name }}</button>
+      <button v-if="activeTypes.length" class="type-pill type-pill--clear" aria-label="Limpiar filtros" @click="activeTypes = []">✕</button>
+    </div>
+
+    <div class="list-toolbar">
+      <span class="list-toolbar__count">
+        {{ isFiltering ? 'Filtradas' : 'Todas' }} ({{ filteredSongs.length }})
+      </span>
+      <button class="list-toolbar__sort" @click="toggleSort">
+        {{ sortMode === 'added' ? 'Añadido' : 'A–Z' }} <span>↓</span>
+      </button>
+    </div>
+
+    <div v-if="sortedSongs.length === 0" class="songs-empty">
+      <svg class="songs-empty__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+      </svg>
+      <p>{{ store.songs.length ? 'Sin coincidencias' : 'Aún no hay canciones' }}</p>
+      <span v-if="!store.songs.length && band.can.editLibrary" class="songs-empty__hint">Toca “Agregar canción” para empezar el repertorio.</span>
+    </div>
+    <div v-else class="song-list">
+      <button
+        v-for="s in sortedSongs"
+        :key="s.id"
+        class="song-item"
+        @click="router.push('/cancion/' + s.id)"
+        @contextmenu.prevent="band.can.editLibrary && openContextMenu($event, s)"
+      >
+        <span class="song-item__badge">
+          <img class="song-item__mark" :src="songMark" alt="">
+        </span>
+        <span class="song-item__main">
+          <span class="song-item__title">{{ s.title }}</span>
+          <span v-if="s.author || typeLabels(s).length" class="song-item__sub">
+            <template v-if="s.author">{{ s.author }}</template>
+            <template v-for="(tl, ti) in typeLabels(s)" :key="tl"><span v-if="s.author || ti" class="song-item__dot">·</span>{{ tl }}</template>
+          </span>
+        </span>
+        <svg class="song-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Context menu for delete -->
+    <Teleport to="body">
+      <div v-if="ctxMenu.visible" class="ctx-overlay" @click="closeContextMenu">
+        <div class="ctx-menu" :style="{ top: ctxMenu.y + 'px', left: ctxMenu.x + 'px' }">
+          <button class="ctx-menu__item ctx-menu__item--danger" @click="deleteSongFromCtx">
+            🗑 Eliminar canción
+          </button>
         </div>
-      </Teleport>
-
-    </template>
-
-    <!-- ── Formulario nueva canción ── -->
-    <template v-else>
-      <PageBackHeader eyebrow="Canciones" title="Nueva canción" back-label="Volver a canciones" @back="showForm = false" />
-      <SongForm :busy="saving" @submit="saveSong" @cancel="showForm = false" />
-    </template>
+      </div>
+    </Teleport>
 
   </div>
 </template>
@@ -105,8 +96,6 @@ import { useAppStore } from '../stores/app'
 import { useBandStore } from '../stores/band'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
-import SongForm from '../components/SongForm.vue'
-import PageBackHeader from '../components/PageBackHeader.vue'
 import songMark from '../assets/song-mark.svg'
 
 const router    = useRouter()
@@ -117,21 +106,7 @@ const { confirm }   = useConfirm()
 
 const query       = ref('')
 const activeTypes = ref([])
-const showForm   = ref(false)
 const ctxMenu    = ref({ visible: false, x: 0, y: 0, song: null })
-const saving     = ref(false)
-
-function openForm() {
-  showForm.value = true
-}
-
-async function saveSong(fields) {
-  saving.value = true
-  const ok = await attempt(() => store.createSong(fields), { success: 'Canción guardada', error: 'No se pudo guardar la canción.' })
-  saving.value = false
-  if (ok) showForm.value = false
-}
-
 function getSongTypes(s) {
   if (Array.isArray(s.types) && s.types.length) return s.types.map(String)
   if (s.type) return [String(s.type)]
