@@ -121,6 +121,9 @@
     </div>
   </div>
   <div id="app" inert aria-busy="true"></div>
+  <script>
+    document.getElementById('startup-splash').dataset.startedAt = performance.now()
+  </script>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>
