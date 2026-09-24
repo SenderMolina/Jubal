@@ -17,7 +17,7 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#F7F6F3',
+        background_color: '#fff9f5',
         theme_color: '#219EBC',
         icons: [
           {
@@ -43,6 +43,7 @@ export default defineConfig({
         globPatterns: [
           '**/*.{js,css,html,ico,svg,webmanifest,woff2}',
           'icons/*.png',
+          'assets/logo_text-*.png',
         ],
         runtimeCaching: [
           {

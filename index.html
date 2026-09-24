@@ -15,9 +15,112 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Estilos críticos: el arranque se ve antes de descargar y montar Vue. -->
+  <style>
+    .startup-splash {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: grid;
+      place-items: center;
+      box-sizing: border-box;
+      padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+      background: radial-gradient(ellipse at 50% 42%, #fff1df 0, #fff9f5 55%);
+      color: #647680;
+      font-family: system-ui, sans-serif;
+      transition: opacity 240ms ease, visibility 240ms ease;
+    }
+    .startup-splash[hidden] { display: none; }
+    .startup-splash--leaving { opacity: 0; visibility: hidden; pointer-events: none; }
+    .startup-splash__content { display: flex; flex-direction: column; align-items: center; }
+    .startup-splash__harp {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 176px;
+      height: 176px;
+      margin-bottom: 22px;
+    }
+    .startup-splash__harp::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 1px solid #f3901526;
+      border-radius: 50%;
+      animation: startup-resonate 2400ms ease-out infinite;
+    }
+    .startup-splash__harp img {
+      width: 152px;
+      height: 152px;
+      filter: drop-shadow(0 12px 16px #f3901520);
+      animation: startup-harp 2400ms ease-in-out infinite;
+    }
+    .startup-splash__wordmark {
+      position: relative;
+      width: 236px;
+      height: 74px;
+      overflow: hidden;
+      animation: startup-wordmark 850ms cubic-bezier(.22, 1, .36, 1) both;
+    }
+    .startup-splash__wordmark img {
+      position: absolute;
+      width: 320px;
+      max-width: none;
+      height: auto;
+      left: -46px;
+      top: -16px;
+    }
+    .startup-splash__status { margin: 26px 0 14px; font-size: 13px; letter-spacing: .06em; }
+    .startup-splash__rhythm { display: flex; align-items: center; gap: 5px; height: 20px; }
+    .startup-splash__rhythm span {
+      width: 3px;
+      height: 16px;
+      border-radius: 3px;
+      background: #209eb5;
+      animation: startup-rhythm 1000ms ease-in-out infinite;
+    }
+    .startup-splash__rhythm span:nth-child(2) { animation-delay: 120ms; }
+    .startup-splash__rhythm span:nth-child(3) { animation-delay: 240ms; background: #f39015; }
+    .startup-splash__rhythm span:nth-child(4) { animation-delay: 360ms; }
+    .startup-splash__rhythm span:nth-child(5) { animation-delay: 480ms; }
+    @keyframes startup-harp {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-7px) rotate(2deg); }
+    }
+    @keyframes startup-resonate {
+      0% { opacity: 0; transform: scale(.8); }
+      30% { opacity: 1; }
+      100% { opacity: 0; transform: scale(1.18); }
+    }
+    @keyframes startup-wordmark {
+      from { opacity: 0; clip-path: inset(0 100% 0 0); transform: translateY(8px); }
+      to { opacity: 1; clip-path: inset(0); transform: translateY(0); }
+    }
+    @keyframes startup-rhythm {
+      0%, 100% { transform: scaleY(.35); opacity: .5; }
+      50% { transform: scaleY(1); opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .startup-splash { transition: none; }
+      .startup-splash *, .startup-splash *::before { animation: none !important; }
+    }
+  </style>
 </head>
 <body>
-  <div id="app"></div>
+  <div id="startup-splash" class="startup-splash" role="status" aria-live="polite" aria-label="Cargando Jubal">
+    <div class="startup-splash__content">
+      <div class="startup-splash__harp" aria-hidden="true">
+        <img src="/icons/jubal-192x192.png" width="152" height="152" alt="" fetchpriority="high">
+      </div>
+      <div class="startup-splash__wordmark" aria-hidden="true">
+        <img src="/src/assets/logo_text.png" width="2172" height="724" alt="" fetchpriority="high">
+      </div>
+      <p class="startup-splash__status">Cargando tu música…</p>
+      <div class="startup-splash__rhythm" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+      <noscript>Activa JavaScript para abrir Jubal.</noscript>
+    </div>
+  </div>
+  <div id="app" inert aria-busy="true"></div>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

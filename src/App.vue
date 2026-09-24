@@ -24,7 +24,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { useBandStore } from './stores/band'
@@ -39,12 +39,24 @@ import Toast        from './components/Toast.vue'
 import ConfirmModal from './components/ConfirmModal.vue'
 import OfflineBanner from './components/OfflineBanner.vue'
 import ConfigError  from './components/ConfigError.vue'
+import { setStartupLoading } from './utils/startupSplash'
 
 const authStore = useAuthStore()
 const bandStore = useBandStore()
 const practiceStore = usePracticeStore()
 const route = useRoute()
 const router = useRouter()
+const routeReady = ref(false)
+const restoringSession = ref(false)
+onMounted(async () => {
+  await router.isReady()
+  routeReady.value = true
+})
+const startupLoading = computed(() => supabaseConfigured && (
+  !routeReady.value || !authStore.ready || restoringSession.value ||
+  (authStore.isAuthenticated && !bandStore.ready)
+))
+watch(startupLoading, setStartupLoading, { immediate: true, flush: 'post' })
 const menuOpen = ref(false)
 watch(() => route.fullPath, () => { menuOpen.value = false })
 const { showToast } = useToast()
@@ -58,19 +70,24 @@ watch(() => bandStore.inviteResult, (r) => {
 // Cargar bandas (y canjear invitación pendiente) al autenticarse; limpiar al salir.
 watch(() => authStore.isAuthenticated, async (authed) => {
   if (authed) {
-    if (!bandStore.ready) await bandStore.init()
-    const isPersonalRoute = ['/practica', '/entrenar', '/skill', '/estadisticas', '/rutina', '/metronomo']
-      .some(path => route.path.startsWith(path))
-    if (isPersonalRoute && !bandStore.personalMode) {
-      bandStore.enterPersonal()
-    } else if (route.path === '/actividades' && !bandStore.currentBandId) {
-      if (bandStore.bands.length) {
-        bandStore.selectBand(bandStore.bands[0].id)
-      } else {
-        router.replace('/practica')
+    restoringSession.value = true
+    try {
+      if (!bandStore.ready) await bandStore.init()
+      const isPersonalRoute = ['/practica', '/entrenar', '/skill', '/estadisticas', '/rutina', '/metronomo']
+        .some(path => route.path.startsWith(path))
+      if (isPersonalRoute && !bandStore.personalMode) {
+        bandStore.enterPersonal()
+      } else if (route.path === '/actividades' && !bandStore.currentBandId) {
+        if (bandStore.bands.length) {
+          bandStore.selectBand(bandStore.bands[0].id)
+        } else {
+          await router.replace('/practica')
+        }
+      } else if (!bandStore.currentBandId && ['/actividad', '/banda'].some(path => route.path.startsWith(path))) {
+        await router.replace('/practica')
       }
-    } else if (!bandStore.currentBandId && ['/actividad', '/banda'].some(path => route.path.startsWith(path))) {
-      router.replace('/practica')
+    } finally {
+      restoringSession.value = false
     }
   } else {
     bandStore.reset()
