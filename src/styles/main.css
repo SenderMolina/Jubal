@@ -45,6 +45,9 @@
   --color-accent-text: var(--color-primary);
   --color-accent-soft: #fff1df;
   --color-accent-rgb: 243, 144, 21;
+  /* Acordes: naranja del acento, oscurecido lo justo para leerse como texto en negrita
+     (3.5:1 sobre el fondo) y distinguirse de la letra (azul casi negro) de un vistazo. */
+  --color-chord: #dc5f0a;
 
   /* Estados semánticos */
   --color-success: #2e8b67;
@@ -569,9 +572,10 @@ header {
 /* ── SONG VIEW ── */
 
 /* Acordes y letra comparten fuente monoespaciada y tamaño: la alineación
-   por espacios (formato cifraclub) solo funciona si cada carácter mide igual. */
-.chord-line { color: var(--color-primary); font-weight: 600; font-size: 0.85rem; line-height: 1.7; font-family: ui-monospace, 'Roboto Mono', Menlo, Consolas, monospace; }
-.lyric-line { color: var(--color-text-primary); line-height: 2; margin-bottom: 8px; font-size: 0.85rem; font-family: ui-monospace, 'Roboto Mono', Menlo, Consolas, monospace; }
+   por espacios (formato cifraclub) solo funciona si cada carácter mide igual.
+   Mismo ritmo que ChordLine (acordes inline): acorde pegado a su letra, aire entre versos. */
+.chord-line { color: var(--color-chord); font-weight: 700; font-size: 0.85rem; line-height: 1.25; font-family: ui-monospace, 'Roboto Mono', Menlo, Consolas, monospace; }
+.lyric-line { color: var(--color-text-primary); line-height: 1.6; margin-bottom: 10px; font-size: 0.85rem; font-family: ui-monospace, 'Roboto Mono', Menlo, Consolas, monospace; }
 .section-label { display: flex; align-items: center; gap: 8px; color: var(--color-primary); font-size: 0.75rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-top: 24px; margin-bottom: 8px; }
 .section-label::before { content: '●'; font-size: 0.6rem; line-height: 1; }
 
@@ -1194,8 +1198,6 @@ header {
   white-space: pre-wrap;
   -webkit-overflow-scrolling: touch;
 }
-.player-body .lyric-line { font-size: 1rem; line-height: 1.9; }
-.player-body .chord-line { font-size: 1rem; }
 .player-controls {
   display: flex;
   align-items: center;

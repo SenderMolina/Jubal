@@ -533,6 +533,11 @@ onMounted(() => { if (!practice.ready) practice.loadSkills() })
 .song-dock__practice:disabled { opacity: .6; cursor: wait; }
 .song-dock button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
+/* Reproductor: letra un poco más grande, mismo tamaño en los dos formatos de acordes. */
+.player-body :deep(.chord-line),
+.player-body :deep(.lyric-line),
+.player-body :deep(.cp-line) { font-size: 1rem; }
+
 @media (min-width: 768px) {
   .song-sheet :deep(.chord-line),
   .song-sheet :deep(.lyric-line),

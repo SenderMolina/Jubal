@@ -201,7 +201,7 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
   color: var(--color-primary); font-weight: 700; margin-bottom: 12px;
 }
 .live-spacer { height: 12px; }
-.live-chord { color: var(--color-primary); font-weight: 700; font-family: ui-monospace, 'Roboto Mono', monospace; white-space: pre; line-height: 1.5; }
+.live-chord { color: var(--color-chord); font-weight: 700; font-family: ui-monospace, 'Roboto Mono', monospace; white-space: pre; line-height: 1.5; }
 .live-lyric { color: var(--color-text-primary); white-space: pre-wrap; line-height: 1.7; font-family: ui-monospace, 'Roboto Mono', monospace; }
 
 /* Vista corista (estilo Spotify): grande y centrada */

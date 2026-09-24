@@ -23,13 +23,13 @@ const plain = computed(() => props.pairs.map(p => p.text).join(''))
   font-family: ui-monospace, 'Roboto Mono', Menlo, Consolas, monospace;
   font-size: 0.85rem;
   line-height: 1.4;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 .cp-pair { display: inline-flex; flex-direction: column; vertical-align: bottom; }
 .cp-chord {
-  color: var(--color-primary);
-  font-weight: 600;
-  font-size: 0.78em;
+  color: var(--color-chord);
+  font-weight: 700;
+  font-size: 1em;       /* mismo tamaño que los acordes en su propia línea */
   min-height: 1.25em;
   line-height: 1.25;
   white-space: pre;
