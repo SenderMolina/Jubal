@@ -30,44 +30,37 @@
 
     <!-- ── Lista de repertorios ── -->
     <div v-else class="repertoire-list">
+      <!-- Opciones con botón visible: el long-press (contextmenu) no existe en iOS. -->
       <div
         v-for="r in store.repertoires"
         :key="r.id"
         class="repertoire-card"
-        @click="router.push('/repertorio/' + r.id)"
-        @contextmenu.prevent="band.can.editLibrary && openCtx($event, r)"
+        @contextmenu.prevent="band.can.editLibrary && openMenu(r)"
       >
-        <div>
-          <div class="repertoire-card__name">{{ r.name }}</div>
-          <div class="repertoire-card__count">
+        <RouterLink class="repertoire-card__link" :to="'/repertorio/' + r.id">
+          <span class="repertoire-card__name">{{ r.name }}</span>
+          <span class="repertoire-card__count">
             {{ (r.songs || []).length }} canción{{ (r.songs || []).length === 1 ? '' : 'es' }}
-          </div>
-        </div>
+          </span>
+        </RouterLink>
+        <button v-if="band.can.editLibrary" class="dots-btn repertoire-card__menu" type="button" :aria-label="`Opciones de ${r.name}`" @click="openMenu(r)">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+        </button>
       </div>
     </div>
 
-    <!-- Context menu -->
-    <Teleport to="body">
-      <div v-if="ctx.visible" class="ctx-overlay" @click="closeCtx">
-        <div class="ctx-menu" :style="{ top: ctx.y + 'px', left: ctx.x + 'px' }">
-          <button class="ctx-menu__item ctx-menu__item--danger" @click="deleteFromCtx">
-            🗑 Eliminar repertorio
-          </button>
-        </div>
-      </div>
-    </Teleport>
+    <ActionSheet ref="sheet" />
   </div>
 </template>
 
 <script setup>
 import { ref, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useBandStore } from '../stores/band'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
+import ActionSheet from '../components/ActionSheet.vue'
 
-const router    = useRouter()
 const store     = useAppStore()
 const band = useBandStore()
 const { attempt } = useToast()
@@ -76,7 +69,7 @@ const { confirm }   = useConfirm()
 const creating    = ref(false)
 const newName     = ref('')
 const createInput = ref(null)
-const ctx         = ref({ visible: false, x: 0, y: 0, item: null })
+const sheet       = ref(null)
 
 function startCreate() {
   creating.value = true
@@ -98,20 +91,16 @@ function cancelCreate() {
   newName.value = ''
 }
 
-function openCtx(e, item) {
-  const x = Math.min(e.clientX, window.innerWidth - 200)
-  const y = Math.min(e.clientY, window.innerHeight - 60)
-  ctx.value = { visible: true, x, y, item }
+function openMenu(r) {
+  sheet.value?.open({
+    title: r.name,
+    actions: [
+      { label: 'Eliminar repertorio', icon: 'trash', danger: true, onSelect: () => deleteRepertoire(r) },
+    ],
+  })
 }
 
-function closeCtx() {
-  ctx.value = { visible: false, x: 0, y: 0, item: null }
-}
-
-async function deleteFromCtx() {
-  const r = ctx.value.item
-  closeCtx()
-  if (!r) return
+async function deleteRepertoire(r) {
   const ok = await confirm('¿Eliminar repertorio?', `"${r.name}"`)
   if (!ok) return
   await attempt(() => store.deleteRepertoire(r.id), { success: 'Repertorio eliminado', error: 'No se pudo eliminar el repertorio.' })
@@ -128,15 +117,29 @@ async function deleteFromCtx() {
 
 .repertoire-card {
   min-height: 72px;
-  padding: 15px 17px;
+  display: flex;
+  align-items: center;
   border-bottom: 1px solid var(--color-border);
-  cursor: pointer;
   transition: background .15s ease;
 }
+.repertoire-card__link {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  justify-content: center;
+  padding: 15px 4px 15px 17px;
+  color: inherit;
+  text-decoration: none;
+}
+.repertoire-card__link:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; border-radius: 12px; }
+.repertoire-card__menu { width: 44px; height: 44px; justify-content: center; margin-right: 8px; border-radius: 50%; }
+.repertoire-card__menu:focus-visible { outline: 2px solid var(--color-primary); }
 
 .repertoire-card:last-child { border-bottom: 0; }
 .repertoire-card:hover { background: var(--color-surface-hover); }
 .repertoire-card:active { background: var(--color-primary-soft); }
-.repertoire-card__name { color: var(--color-text-primary); font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+.repertoire-card__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-primary); font-family: var(--font-display); font-size: 16px; font-weight: 600; }
 .repertoire-card__count { margin-top: 3px; color: var(--color-text-secondary); font-size: 13px; }
 </style>

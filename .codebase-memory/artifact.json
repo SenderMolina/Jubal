@@ -1,11 +1,11 @@
 {
     "schema_version": 1,
-    "commit": "f061bc707c7fae113c8fd4c44afa4d154787b03b",
-    "indexed_at": "2026-09-22T16:31:55Z",
+    "commit": "c3798649250d5fdd956bca1bf7825ef8f372f8cc",
+    "indexed_at": "2026-09-24T14:18:08Z",
     "project": "home-seos-Documents-projects-Jubal",
-    "nodes": 530,
-    "edges": 867,
+    "nodes": 564,
+    "edges": 878,
     "original_size": 2818048,
-    "compressed_size": 402631,
+    "compressed_size": 405932,
     "compression_level": 3
 }
