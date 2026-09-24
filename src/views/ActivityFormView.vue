@@ -64,7 +64,6 @@
         <button class="btn btn-primary" type="submit" :disabled="saving">
           {{ saving ? 'Guardando…' : editing ? 'Guardar cambios' : 'Crear actividad' }}
         </button>
-        <button class="activity-form-cancel" type="button" :disabled="saving" @click="router.push(returnPath)">Cancelar</button>
       </div>
     </form>
   </div>
@@ -148,10 +147,11 @@ async function save() {
   saving.value = true
   saveError.value = ''
   try {
-    await store.saveActivity({ ...form }, editing.value ? Number(route.params.id) : null)
+    const activity = await store.saveActivity({ ...form }, editing.value ? Number(route.params.id) : null)
     saved.value = true
     showToast(editing.value ? 'Actividad actualizada' : 'Actividad creada')
-    await router.replace(returnPath.value)
+    // Al crear, directo a su detalle: ahí se arma el setlist (o se vuelve atrás).
+    await router.replace(editing.value ? returnPath.value : `/actividad/${activity.id}`)
   } catch {
     saveError.value = 'No pudimos guardar la actividad. Tus datos siguen aquí; revisa tu conexión y vuelve a intentarlo.'
   } finally {
@@ -191,11 +191,8 @@ onBeforeRouteUpdate(canLeave)
 .activity-optional { color: var(--color-text-muted); font-size: 14px; font-weight: 500; }
 .activity-date-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .95fr); gap: 12px; }
 .activity-date-grid > div { min-width: 0; }
-.activity-form-actions { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 10px; padding-bottom: env(safe-area-inset-bottom); }
+.activity-form-actions { display: grid; gap: 10px; padding-bottom: env(safe-area-inset-bottom); }
 .activity-form-actions .btn { width: 100%; min-height: 50px; padding: 12px 16px; border-radius: 14px; font-family: var(--font-display); font-size: 15px; font-weight: 600; box-shadow: none; }
-.activity-form-cancel { min-height: 50px; padding: 12px 14px; border: 1px solid var(--color-danger); border-radius: 14px; background: var(--color-danger); color: var(--color-text-on-primary); font-family: var(--font-display); font-size: 15px; font-weight: 600; cursor: pointer; }
-.activity-form-cancel:active:not(:disabled) { transform: scale(.98); }
-.activity-form-cancel:disabled { border-color: var(--color-disabled-border); background: var(--color-disabled-background); color: var(--color-disabled-text); }
 .activity-field-error { margin-top: 8px; color: var(--color-danger); font-size: 13px; line-height: 1.4; }
 .activity-form .form-input--error { border-color: var(--color-danger); }
 .activity-save-error { color: var(--color-danger); font-size: 13px; line-height: 1.5; }

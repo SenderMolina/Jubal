@@ -36,9 +36,14 @@
     <template v-if="band.can.manageActivities">
       <div>
 
-              <!-- Estado vacío -->
-              <div v-if="!activity?.tiempos?.length && !tiempoForm" class="setlist-zero-state">
-                <p>Crea el primer tiempo para comenzar a armar el setlist.</p>
+              <!-- Sin tiempos: arrancar el setlist con un toque -->
+              <div v-if="!activity?.tiempos?.length && !tiempoForm" class="setlist-start">
+                <p class="setlist-start__title">Arma el setlist</p>
+                <p class="setlist-start__hint">Empieza con un tiempo; después eliges sus canciones.</p>
+                <div class="setlist-start__chips">
+                  <button v-for="name in TIEMPO_SUGGESTIONS" :key="name" type="button" class="setlist-start__chip" @click="createTiempo({ name, start: '', end: '' })">{{ name }}</button>
+                  <button type="button" class="setlist-start__chip setlist-start__chip--other" @click="startCreateTiempo">+ Otro</button>
+                </div>
               </div>
 
               <!-- Bloques de tiempos -->
@@ -138,7 +143,7 @@
               />
 
               <!-- Footer: crear tiempo -->
-              <div v-if="!tiempoForm" class="setlist-column-footer">
+              <div v-if="!tiempoForm && activity?.tiempos?.length" class="setlist-column-footer">
                 <button class="btn-create-tiempo" @click="startCreateTiempo">+ Crear tiempo</button>
               </div>
 
@@ -147,8 +152,8 @@
       <!-- ── Selector de canciones ── -->
       <SongPicker
         :open="libraryOpen"
-        :eyebrow="selectedTiempo ? tiempoTitle(selectedTiempo) : ''"
-        :exclude-ids="selectedTiempo?.songs || []"
+        :eyebrow="pickerTiempo ? tiempoTitle(pickerTiempo) : ''"
+        :exclude-ids="pickerTiempo?.songs || []"
         :locked-labels="songTiempoLabels"
         with-repertoires
         empty-text="Todas las canciones ya están en este tiempo"
@@ -243,8 +248,11 @@ watch(
   { immediate: true }
 )
 
-const selectedTiempo = computed(() =>
-  activity.value?.tiempos?.find(t => t.id === selectedTiempoId.value)
+// Destino del selector de canciones, aparte del resaltado: el clic "afuera"
+// que deselecciona (contenedor raíz) no debe dejar al selector sin tiempo.
+const pickerTiempoId = ref(null)
+const pickerTiempo = computed(() =>
+  activity.value?.tiempos?.find(t => t.id === pickerTiempoId.value)
 )
 
 // Mapa songId → nombre del tiempo donde está asignada
@@ -357,13 +365,22 @@ function saveTiempoForm() {
     if (t) Object.assign(t, data)
     save('Tiempo actualizado')
   } else {
-    if (!activity.value.tiempos) activity.value.tiempos = []
-    const nuevo = { id: Date.now(), songs: [], ...data }
-    activity.value.tiempos.push(nuevo)
-    selectedTiempoId.value = nuevo.id
-    save(`Tiempo "${tiempoLabel(nuevo)}" creado`)
+    createTiempo(data)
   }
   tiempoForm.value = null
+}
+
+const TIEMPO_SUGGESTIONS = ['Alabanza', 'Adoración', 'Ofrenda']
+
+// Crear un tiempo abre de una vez el selector de canciones para ese tiempo:
+// el flujo sigue solo a elegir canciones (o se cierra si no se quiere).
+function createTiempo(data) {
+  if (!activity.value.tiempos) activity.value.tiempos = []
+  const nuevo = { id: Date.now(), songs: [], ...data }
+  activity.value.tiempos.push(nuevo)
+  save(`Tiempo "${tiempoLabel(nuevo)}" creado`)
+  if (store.songs.length) openLibrary(nuevo)
+  else selectedTiempoId.value = nuevo.id
 }
 
 function cancelTiempoForm() {
@@ -388,14 +405,16 @@ async function deleteTiempo(tiempoId) {
 
 function openLibrary(tiempo) {
   selectedTiempoId.value = tiempo.id
+  pickerTiempoId.value = tiempo.id
   libraryOpen.value = true
 }
 
 function addSongs(songIds) {
   libraryOpen.value = false
-  if (!selectedTiempo.value || !songIds.length) return
-  selectedTiempo.value.songs = [...(selectedTiempo.value.songs || []), ...songIds]
-  save(`${songIds.length} canción${songIds.length === 1 ? '' : 'es'} agregada${songIds.length === 1 ? '' : 's'} a ${tiempoTitle(selectedTiempo.value)}`)
+  const target = pickerTiempo.value
+  if (!target || !songIds.length) return
+  target.songs = [...(target.songs || []), ...songIds]
+  save(`${songIds.length} canción${songIds.length === 1 ? '' : 'es'} agregada${songIds.length === 1 ? '' : 's'} a ${tiempoTitle(target)}`)
 }
 
 function removeSong(tiempo, songId) {
@@ -567,4 +586,11 @@ async function handleDelete() {
   .tiempo-song-row { gap: 5px; padding-inline: 6px; }
 }
 
+.setlist-start { padding: 22px 16px; border: 1px dashed var(--color-border-strong); border-radius: 20px; background: var(--color-surface-secondary); text-align: center; }
+.setlist-start__title { color: var(--color-text-primary); font-family: var(--font-display); font-size: 1rem; font-weight: 700; }
+.setlist-start__hint { margin-top: 4px; color: var(--color-text-muted); font-size: .82rem; line-height: 1.45; }
+.setlist-start__chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 14px; }
+.setlist-start__chip { min-height: 40px; padding: 0 16px; border: 1px solid var(--color-primary); border-radius: 999px; background: var(--color-surface); color: var(--color-primary); font: inherit; font-size: .88rem; font-weight: 700; cursor: pointer; }
+.setlist-start__chip:hover { background: var(--color-primary-soft); }
+.setlist-start__chip--other { border-style: dashed; border-color: var(--color-border-strong); color: var(--color-text-secondary); }
 </style>

@@ -220,7 +220,8 @@ onBeforeUnmount(() => { if (props.open) document.body.style.overflow = previousO
 .song-picker-overlay { position: fixed; z-index: 1300; inset: 0; display: flex; align-items: flex-end; justify-content: center; padding-top: 54px; background: var(--color-overlay); }
 .song-picker { width: min(100%, 600px); height: min(86dvh, 780px); display: flex; flex-direction: column; overflow: hidden; padding: 8px 16px calc(14px + env(safe-area-inset-bottom)); border: 1px solid var(--color-border); border-bottom: 0; border-radius: 24px 24px 0 0; background: var(--color-background); box-shadow: var(--shadow-modal); }
 .song-picker__handle { width: 42px; height: 4px; flex: 0 0 4px; margin: 0 auto 10px; border-radius: 999px; background: var(--color-border-strong); }
-.song-picker__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 2px 2px 12px; }
+/* border/background: anula el header{} global legacy de main.css */
+.song-picker__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 2px 2px 12px; border: 0; background: transparent; }
 .song-picker__head > div { min-width: 0; }
 .song-picker__head span { display: block; max-width: 250px; overflow: hidden; color: var(--color-accent); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 .song-picker__head h2 { margin-top: 2px; font-size: 21px; }

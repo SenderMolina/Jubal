@@ -55,28 +55,14 @@
       <div v-if="selectedDayActivities.length === 0" class="activity-empty">
         No hay actividades en esta fecha.
       </div>
-      <div
+      <ActivityCard
         v-for="a in selectedDayActivities"
         :key="a.id"
-        class="activity-card"
-        @click="router.push('/actividad/' + a.id)"
-      >
-        <div class="activity-date-badge">
-          <div class="day">{{ getDay(a.date) }}</div>
-          <div class="month">{{ getMonth(a.date) }}</div>
-        </div>
-        <div class="activity-info">
-          <div class="activity-title">{{ a.title }}</div>
-          <div v-if="a.time" class="activity-time">{{ a.time }}</div>
-          <div v-if="a.tiempos?.length" class="activity-badges">
-            <span class="activity-badge activity-badge--tiempos">{{ a.tiempos.length }} tiempo{{ a.tiempos.length !== 1 ? 's' : '' }}</span>
-            <span class="activity-badge activity-badge--songs">{{ totalSongs(a) }} canción{{ totalSongs(a) !== 1 ? 'es' : '' }}</span>
-          </div>
-        </div>
-        <button v-if="band.can.manageActivities" class="dots-btn" aria-label="Opciones" @click.stop="openMenu(a)">
-          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-        </button>
-      </div>
+        :activity="a"
+        :today="today"
+        :can-manage="band.can.manageActivities"
+        @menu="openMenu"
+      />
     </div>
 
     <!-- VISTA NORMAL (sin filtro) -->
@@ -90,69 +76,22 @@
       </div>
 
       <template v-else>
-        <!-- PRÓXIMO: la siguiente actividad con su setlist a la vista -->
-        <section class="next-hero" aria-labelledby="next-hero-title">
-          <RouterLink class="next-hero__head" :to="'/actividad/' + hero.id">
-            <span class="next-hero__top">
-              <span class="next-hero__eyebrow">Próximo</span>
-              <span class="next-hero__count">{{ countdownLabel(hero.date) }}</span>
-            </span>
-            <span id="next-hero-title" class="next-hero__title">{{ hero.title }}</span>
-            <span class="next-hero__when">
-              {{ heroDateLabel(hero.date) }}<template v-if="hero.time"> · {{ hero.time }}</template>
-            </span>
-          </RouterLink>
-          <button v-if="band.can.manageActivities" class="dots-btn next-hero__menu" aria-label="Opciones" @click="openMenu(hero)">
-            <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-          </button>
-
-          <ol v-if="hero.tiempos?.length" class="next-hero__setlist" aria-label="Setlist">
-            <li v-for="t in hero.tiempos" :key="t.id" class="next-hero__tiempo">
-              <span class="next-hero__tiempo-name">{{ tiempoName(t) }}</span>
-              <ol v-if="tiempoSongs(t).length" class="next-hero__songs">
-                <li v-for="song in tiempoSongs(t)" :key="song.id">
-                  <!-- act: al pasar de canción se recorre este mismo setlist -->
-                  <RouterLink class="next-hero__song" :to="{ path: '/cancion/' + song.id, query: { act: hero.id } }">
-                    <span class="next-hero__song-title">{{ song.title }}</span>
-                    <span v-if="song.key" class="next-hero__song-key">{{ fmtKey(song.key) }}</span>
-                  </RouterLink>
-                </li>
-              </ol>
-              <span v-else class="next-hero__empty">Sin canciones aún</span>
-            </li>
-          </ol>
-          <p v-else class="next-hero__empty next-hero__empty--all">
-            {{ band.can.manageActivities ? 'Aún no tiene setlist. Ábrela para armarlo.' : 'El setlist aún no está listo.' }}
-          </p>
-        </section>
+        <!-- La próxima actividad: resaltada, con cuenta regresiva y el setlist abierto -->
+        <ActivityCard
+          :activity="hero"
+          :today="today"
+          :countdown="countdownLabel(hero.date)"
+          :can-manage="band.can.manageActivities"
+          featured
+          @menu="openMenu"
+        />
 
         <!-- AGENDA: el resto de lo que viene -->
         <div v-if="agenda.length" class="activities-dashboard">
           <div v-if="agendaThisWeek.length" class="activities-section-label">Esta semana</div>
           <template v-for="(a, i) in agenda" :key="a.id">
             <div v-if="i === laterStartIndex" class="activities-section-label activities-section-label--later">Más adelante</div>
-            <div class="activity-card" @click="router.push('/actividad/' + a.id)">
-              <div class="activity-date-badge" :class="{ 'activity-date-badge--today': a.date === today }">
-                <template v-if="a.date === today">
-                  <div class="day-today">HOY</div>
-                </template>
-                <template v-else>
-                  <div class="day">{{ getDay(a.date) }}</div>
-                  <div class="month">{{ getMonth(a.date) }}</div>
-                </template>
-              </div>
-              <div class="activity-info">
-                <div class="activity-title">{{ a.title }}</div>
-                <div v-if="a.time" class="activity-time">{{ a.time }}</div>
-                <div v-if="a.tiempos?.length" class="activity-badges">
-                  <span class="activity-badge activity-badge--tiempos">{{ a.tiempos.length }} tiempo{{ a.tiempos.length !== 1 ? 's' : '' }}</span>
-                  <span class="activity-badge activity-badge--songs">{{ totalSongs(a) }} canción{{ totalSongs(a) !== 1 ? 'es' : '' }}</span>
-                </div>
-              </div>
-              <button v-if="band.can.manageActivities" class="dots-btn" aria-label="Opciones" @click.stop="openMenu(a)">
-                <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-              </button>
-            </div>
+            <ActivityCard :activity="a" :today="today" :can-manage="band.can.manageActivities" @menu="openMenu" />
           </template>
         </div>
       </template>
@@ -170,7 +109,7 @@ import { useBandStore } from '../stores/band'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import ActionSheet from '../components/ActionSheet.vue'
-import { fmtKey } from '../utils/keys'
+import ActivityCard from '../components/ActivityCard.vue'
 
 const router    = useRouter()
 const route     = useRoute()
@@ -218,25 +157,10 @@ function getMonth(date) {
   return monthNamesShort[m] || ''
 }
 
-// Solo canciones que siguen existiendo: los tiempos guardan ids y una canción
-// borrada queda ahí hasta que se edite la actividad.
-const songsById = computed(() => new Map(store.songs.map(song => [song.id, song])))
-function tiempoSongs(t) {
-  return (t.songs || []).map(id => songsById.value.get(id)).filter(Boolean)
-}
-function totalSongs(a) {
-  return (a.tiempos || []).reduce((sum, t) => sum + tiempoSongs(t).length, 0)
-}
-function tiempoName(t) {
-  if (t.name?.trim()) return t.name.trim()
-  if (t.start) return t.end ? `${t.start} – ${t.end}` : t.start
-  return 'Tiempo'
-}
 
 const today = pad2(new Date())
 const next7  = pad2(new Date(Date.now() + 7 * 86400000))
 
-const weekdaysShort = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
 
 function daysUntil(date) {
   const [y, m, d] = date.split('-').map(Number)
@@ -250,11 +174,6 @@ function countdownLabel(date) {
   if (n === 1) return 'Mañana'
   return `En ${n} días`
 }
-function heroDateLabel(date) {
-  const [y, m, d] = date.split('-').map(Number)
-  return `${weekdaysShort[new Date(y, m - 1, d).getDay()]} ${d} ${monthNamesShort[m - 1]}`
-}
-
 const upcoming = computed(() =>
   store.activities
     .filter(a => a.date >= today)
@@ -337,39 +256,7 @@ const selectedDayActivities = computed(() =>
 <style scoped>
 .btn-pill__cal { width: 15px; height: 15px; display: block; }
 
-
 /* Icono del estado vacío como SVG (a juego con la nav), reemplaza el emoji */
 .setlist-empty__svg { width: 40px; height: 40px; color: var(--color-text-muted); opacity: .6; margin: 0 auto 12px; display: block; }
 
-/* ── PRÓXIMO: la siguiente actividad con su setlist ── */
-.next-hero {
-  position: relative;
-  margin-bottom: 28px;
-  padding: 18px;
-  border: 1px solid var(--color-border);
-  border-radius: 24px;
-  background: var(--color-surface);
-  box-shadow: var(--shadow-small);
-}
-.next-hero__head { display: flex; flex-direction: column; color: inherit; text-decoration: none; border-radius: 14px; }
-.next-hero__head:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 4px; }
-.next-hero__top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding-right: 40px; }
-.next-hero__eyebrow { color: var(--color-info-text); font-size: 12px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
-.next-hero__count { padding: 5px 11px; border-radius: 999px; background: var(--color-info-soft); color: var(--color-info-text); font-size: 12px; font-weight: 900; }
-.next-hero__title { padding-right: 36px; color: var(--color-text-primary); font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; line-height: 1.2; }
-.next-hero__when { margin-top: 4px; color: var(--color-text-secondary); font-size: .88rem; font-weight: 600; }
-.next-hero__menu { position: absolute; top: 10px; right: 8px; width: 40px; height: 40px; justify-content: center; }
-
-/* Numeración corrida en todo el setlist (coincide con "3 de 4" en la canción). */
-.next-hero__setlist { display: flex; flex-direction: column; gap: 14px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--color-border); list-style: none; counter-reset: song; }
-.next-hero__tiempo-name { display: block; margin-bottom: 4px; color: var(--color-section); font-family: var(--font-display); font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
-.next-hero__songs { list-style: none; }
-.next-hero__song { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 8px; border-radius: 12px; color: var(--color-text-primary); text-decoration: none; counter-increment: song; }
-.next-hero__song::before { content: counter(song); width: 18px; flex: 0 0 18px; color: var(--color-text-muted); font-size: .8rem; font-weight: 700; text-align: right; }
-.next-hero__song:hover { background: var(--color-surface-hover); }
-.next-hero__song:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; }
-.next-hero__song-title { flex: 1; min-width: 0; overflow: hidden; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-.next-hero__song-key { flex: 0 0 auto; min-width: 32px; padding: 3px 8px; border-radius: 8px; background: var(--color-accent-soft); color: var(--color-chord); font-family: var(--font-display); font-size: .8rem; font-weight: 700; text-align: center; }
-.next-hero__empty { color: var(--color-text-muted); font-size: .82rem; }
-.next-hero__empty--all { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--color-border); }
 </style>
