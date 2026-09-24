@@ -13,21 +13,11 @@
       </button>
     </div>
 
-    <!-- ── Hero ── -->
-    <div class="detail-hero">
-      <div class="detail-hero__thumb">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-          <line x1="16" y1="2" x2="16" y2="6"/>
-          <line x1="8" y1="2" x2="8" y2="6"/>
-          <line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
-      </div>
-      <div class="detail-hero__title">{{ activity?.title }}</div>
-      <div class="detail-hero__meta">
-        {{ formattedDate }}{{ activity?.time ? ' · ' + activity.time : '' }}
-      </div>
-      <div v-if="activity?.description && activity.description !== activity.title" class="detail-hero__desc">{{ activity.description }}</div>
+    <!-- ── Encabezado: directo sobre el fondo, la fecha en color ── -->
+    <div class="activity-head">
+      <p class="activity-head__when">{{ whenLabel }}</p>
+      <h1 class="activity-head__title">{{ activity?.title }}</h1>
+      <p v-if="activity?.description && activity.description !== activity.title" class="activity-head__desc">{{ activity.description }}</p>
     </div>
 
     <ActionSheet ref="sheet" />
@@ -61,30 +51,20 @@
                   </div>
                   <div class="tiempo-header__actions">
                     <button
-                      class="tiempo-action-btn tiempo-action-btn--add"
+                      class="tiempo-add-btn"
                       type="button"
                       :aria-label="`Agregar canciones a ${tiempoTitle(tiempo)}`"
                       @click.stop="openLibrary(tiempo)"
-                    >+</button>
-                    <button
-                      class="tiempo-action-btn"
-                      type="button"
-                      :aria-label="`Editar ${tiempoTitle(tiempo)}`"
-                      @click.stop="startEditTiempo(tiempo)"
                     >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/>
-                      </svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
                     </button>
                     <button
-                      class="tiempo-action-btn tiempo-action-btn--danger"
+                      class="dots-btn tiempo-menu-btn"
                       type="button"
-                      :aria-label="`Eliminar ${tiempoTitle(tiempo)}`"
-                      @click.stop="deleteTiempo(tiempo.id)"
+                      :aria-label="`Opciones de ${tiempoTitle(tiempo)}`"
+                      @click.stop="openTiempoMenu(tiempo)"
                     >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/>
-                      </svg>
+                      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
                     </button>
                   </div>
                 </div>
@@ -117,8 +97,9 @@
                         @click.stop="router.push('/cancion/' + song.id + '?act=' + route.params.id)"
                       >
                         <strong>{{ song.title }}</strong>
-                        <small>{{ [song.author, song.key && `Tono ${song.key}`].filter(Boolean).join(' · ') || 'Sin datos adicionales' }}</small>
+                        <small v-if="song.author">{{ song.author }}</small>
                       </button>
+                      <span v-if="song.key" class="song-key">{{ fmtKey(song.key) }}</span>
                       <button
                         class="tiempo-song-row__remove"
                         type="button"
@@ -199,7 +180,7 @@
                 <span class="orden__song-title">{{ songById(songId)?.title || 'Canción eliminada' }}</span>
                 <span v-if="songById(songId)?.author" class="orden__song-author">{{ songById(songId).author }}</span>
               </span>
-              <span v-if="songById(songId)?.key" class="orden__key">{{ fmtKey(songById(songId).key) }}</span>
+              <span v-if="songById(songId)?.key" class="song-key">{{ fmtKey(songById(songId).key) }}</span>
             </li>
           </ol>
         </li>
@@ -267,12 +248,15 @@ const songTiempoLabels = computed(() => {
 })
 
 const monthNames = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
-const formattedDate = computed(() => {
+const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+// "Sáb 26 sep · 18:00" (se muestra en mayúsculas)
+const whenLabel = computed(() => {
   if (!activity.value?.date) return ''
   const [y, m, d] = activity.value.date.split('-').map(Number)
-  return `${d} de ${monthNames[m - 1]} ${y}`
+  const weekday = dayNames[new Date(y, m - 1, d).getDay()]
+  const date = `${weekday} ${d} ${monthNames[m - 1].slice(0, 3)}`
+  return activity.value.time ? `${date} · ${activity.value.time}` : date
 })
-
 function songById(id) { return store.songs.find(s => s.id === id) }
 
 function tiempoSongObjects(tiempo) {
@@ -422,11 +406,21 @@ function removeSong(tiempo, songId) {
   save()
 }
 
+function openTiempoMenu(tiempo) {
+  sheet.value?.open({
+    title: tiempoTitle(tiempo),
+    actions: [
+      { label: 'Editar tiempo', icon: 'edit', onSelect: () => startEditTiempo(tiempo) },
+      { label: 'Eliminar tiempo', icon: 'trash', danger: true, onSelect: () => deleteTiempo(tiempo.id) },
+    ],
+  })
+}
+
 function openMenu() {
   sheet.value?.open({
     title: activity.value?.title,
     actions: [
-      { label: 'Editar actividad', icon: 'edit', onSelect: () => router.push(`/actividades/${activity.value.id}/editar`) },
+      { label: 'Editar información', icon: 'edit', onSelect: () => router.push(`/actividades/${activity.value.id}/editar`) },
       { label: 'Eliminar actividad', icon: 'trash', danger: true, onSelect: handleDelete },
     ],
   })
@@ -442,6 +436,25 @@ async function handleDelete() {
 </script>
 
 <style scoped>
+/* ── Encabezado de la actividad: sin tarjeta, jerarquía por color ── */
+.activity-head { margin: 4px 2px 22px; }
+.activity-head__when { color: var(--color-section); font-family: var(--font-display); font-size: .8rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.activity-head__title { margin-top: 4px; color: var(--color-text-primary); font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; line-height: 1.2; }
+.activity-head__desc { margin-top: 8px; color: var(--color-text-secondary); font-size: .9rem; line-height: 1.5; }
+
+/* ── Tiempo (líder): nombre + "+ Canciones" + ⋯ ── */
+.tiempo-name { color: var(--color-section); font-family: var(--font-display); font-size: 1.05rem; }
+.tiempo-block :is(.tiempo-header) { align-items: center; }
+/* Mismo tamaño y color que el ⋯ de al lado: se leen como un par. */
+.tiempo-add-btn { width: 36px; height: 36px; flex: 0 0 36px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--color-text-muted); cursor: pointer; }
+.tiempo-add-btn svg { width: 20px; height: 20px; }
+.tiempo-add-btn:hover { color: var(--color-text-primary); }
+.tiempo-add-btn:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.tiempo-menu-btn { width: 36px; height: 36px; justify-content: center; }
+
+/* Tono: misma pastilla naranja que la agenda y el setlist */
+.song-key { flex: 0 0 auto; min-width: 32px; padding: 3px 8px; border-radius: 8px; background: var(--color-accent-soft); color: var(--color-chord); font-family: var(--font-display); font-size: .8rem; font-weight: 700; text-align: center; }
+
 /* Estado vacío con icono SVG en vez de emoji */
 .setlist-empty__svg { width: 40px; height: 40px; color: var(--color-text-muted); opacity: .6; margin: 0 auto 12px; display: block; }
 
@@ -488,30 +501,6 @@ async function handleDelete() {
   letter-spacing: .01em;
 }
 .tiempo-header__actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-.tiempo-action-btn {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 9px;
-  background: var(--color-surface-secondary);
-  color: var(--color-text-secondary);
-  font-family: var(--font-display);
-  font-size: 20px;
-  line-height: 1;
-  cursor: pointer;
-  transition: transform .12s ease, background .15s ease, border-color .15s ease, color .15s ease;
-}
-.tiempo-action-btn svg { width: 16px; height: 16px; }
-.tiempo-action-btn:hover { border-color: var(--color-primary); background: var(--color-primary-soft); color: var(--color-primary); }
-.tiempo-action-btn:active { transform: scale(.94); }
-.tiempo-action-btn--add { border-color: var(--color-primary); background: var(--color-primary); color: var(--color-text-on-primary); }
-.tiempo-action-btn--add:hover { background: var(--color-primary-hover); color: var(--color-text-on-primary); }
-.tiempo-action-btn--danger { color: var(--color-danger); }
-.tiempo-action-btn--danger:hover { border-color: var(--color-danger); background: var(--color-danger-soft); color: var(--color-danger); }
 
 .tiempo-song-list { overflow: hidden; margin: 2px -8px 0; background: var(--color-surface); }
 .tiempo-song-row { min-height: 64px; display: flex; align-items: center; gap: 7px; padding: 8px; border-bottom: 1px solid var(--color-border); }
@@ -522,9 +511,10 @@ async function handleDelete() {
 .tiempo-song-row__content { min-width: 0; flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 3px 2px; border: 0; background: transparent; color: var(--color-text-primary); text-align: left; cursor: pointer; }
 .tiempo-song-row__content strong { max-width: 100%; overflow: hidden; font-size: 14px; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
 .tiempo-song-row__content small { max-width: 100%; overflow: hidden; color: var(--color-text-secondary); font-size: 12px; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
-.tiempo-song-row__remove { width: 34px; height: 34px; flex: 0 0 34px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 10px; background: var(--color-danger-soft); color: var(--color-danger); cursor: pointer; }
+.tiempo-song-row__remove { width: 36px; height: 36px; flex: 0 0 36px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--color-text-muted); cursor: pointer; }
 .tiempo-song-row__remove svg { width: 14px; height: 14px; display: block; }
-.tiempo-song-row__remove:active { background: var(--color-danger); color: var(--color-text-on-primary); }
+.tiempo-song-row__remove:hover,
+.tiempo-song-row__remove:active { background: var(--color-danger-soft); color: var(--color-danger); }
 
 /* Acción primaria: una sola, clara, en acento (no rojo) */
 
@@ -561,19 +551,6 @@ async function handleDelete() {
 .orden__song-author {
   font-size: .76rem; color: var(--color-text-muted);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-/* Mismo distintivo de tono que en la lista de canciones */
-.orden__key {
-  flex-shrink: 0;
-  min-width: 30px;
-  text-align: center;
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-  font-size: .8rem;
-  font-weight: 800;
-  letter-spacing: -.01em;
-  padding: 4px 9px;
-  border-radius: 9px;
 }
 
 @media (hover: hover) {

@@ -131,7 +131,8 @@ function openMenu(a) {
   sheet.value?.open({
     title: a.title,
     actions: [
-      { label: 'Editar actividad', icon: 'edit', onSelect: () => router.push(`/actividades/${a.id}/editar`) },
+      { label: 'Editar información', icon: 'edit', onSelect: () => router.push(`/actividades/${a.id}/editar`) },
+      { label: 'Editar canciones y tiempos', icon: 'edit', onSelect: () => router.push(`/actividad/${a.id}`) },
       { label: 'Eliminar actividad', icon: 'trash', danger: true, onSelect: () => deleteActivity(a) },
     ],
   })

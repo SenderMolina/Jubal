@@ -7,6 +7,12 @@
       :back-label="editing ? 'Volver a la actividad' : 'Volver a la agenda'"
     />
 
+    <!-- Qué editar: estos datos aquí; canciones y tiempos en el editor de setlist -->
+    <nav v-if="editing" class="edit-switch" aria-label="Qué quieres editar">
+      <span class="edit-switch__item edit-switch__item--active" aria-current="page">Información general</span>
+      <RouterLink class="edit-switch__item" :to="`/actividad/${route.params.id}`" replace>Canciones y tiempos</RouterLink>
+    </nav>
+
     <div v-if="loading" class="activity-form-state" role="status">Cargando actividad…</div>
     <div v-else-if="loadError" class="activity-form-state" role="alert">
       <p>{{ loadError }}</p>
@@ -180,6 +186,12 @@ onBeforeRouteUpdate(canLeave)
 </script>
 
 <style scoped>
+.edit-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 4px 0 18px; padding: 4px; border-radius: 12px; background: var(--color-surface-secondary); }
+.edit-switch__item { min-height: 40px; display: grid; place-items: center; padding: 0 8px; border-radius: 9px; color: var(--color-text-muted); font-family: var(--font-display); font-size: .85rem; font-weight: 600; text-align: center; text-decoration: none; }
+a.edit-switch__item:hover { color: var(--color-primary); }
+a.edit-switch__item:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; }
+.edit-switch__item--active { background: var(--color-surface); color: var(--color-primary); box-shadow: var(--shadow-small); }
+
 .activity-form-page { max-width: 560px; margin-inline: auto; font-family: var(--font-body); }
 .activity-form { display: flex; flex-direction: column; gap: 20px; }
 .activity-form fieldset { display: grid; gap: 18px; min-width: 0; padding: 0; border: 0; }

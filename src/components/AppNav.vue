@@ -24,6 +24,8 @@ const items = computed(() => band.personalMode ? [
   { to: '/actividades', label: 'Agenda', icon: 'activities', paths: ['/actividad/'] },
   { to: '/repertorio', label: 'Repertorios', icon: 'repertoire' },
   { to: '/canciones', label: 'Canciones', icon: 'songs' },
+  // Solo el líder administra la banda (la ruta /banda lo exige).
+  ...(band.can.manageBand ? [{ to: '/banda', label: 'Banda', icon: 'band', paths: ['/configuracion'] }] : []),
 ])
 function isActive(item) { return [item.to, ...(item.paths || [])].some(path => route.path.startsWith(path)) }
 </script>

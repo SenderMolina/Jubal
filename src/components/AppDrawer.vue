@@ -32,12 +32,6 @@
           </form>
           <button v-else class="drawer-item" @click="startCreate"><span class="drawer-plus" aria-hidden="true">＋</span><span class="drawer-item__label">Crear una banda</span></button>
 
-          <template v-if="band.can.manageBand">
-            <p class="drawer-section">Banda</p>
-            <button class="drawer-item" :class="{ active: isPath('/banda') }" @click="go('/banda')">
-              <JubalNavIcon name="band" /><span class="drawer-item__label">Administrar banda</span><span class="drawer-chevron">›</span>
-            </button>
-          </template>
         </div>
       </div>
     </dialog>
@@ -46,7 +40,7 @@
 
 <script setup>
 import { ref, nextTick, watch, onBeforeUnmount } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { ROLE_LABELS, useBandStore } from '../stores/band'
 import JubalNavIcon from './JubalNavIcon.vue'
 import { useToast } from '../composables/useToast'
@@ -55,7 +49,6 @@ import logoText from '../assets/logo_text.png'
 const props = defineProps({ open: Boolean })
 const emit  = defineEmits(['close'])
 
-const route  = useRoute()
 const router = useRouter()
 const band   = useBandStore()
 const { showError } = useToast()
@@ -76,8 +69,6 @@ watch(() => props.open, async (open) => {
 })
 onBeforeUnmount(() => { if (props.open) document.body.style.overflow = previousOverflow })
 
-function isPath(p) { return route.path.startsWith(p) }
-
 function roleLabel(r) {
   return ROLE_LABELS[r] || r
 }
@@ -85,11 +76,6 @@ function roleLabel(r) {
 function goPractice() {
   band.enterPersonal()
   router.push('/practica')
-  emit('close')
-}
-
-function go(path) {
-  router.push(path)
   emit('close')
 }
 
@@ -149,7 +135,6 @@ async function create() {
 .drawer-item.active { background: var(--color-secondary-soft); border-color: var(--color-secondary); border-left: 3px solid var(--color-secondary); color: var(--color-primary); }
 .drawer-item.active svg { color: var(--color-primary); }
 .drawer-selected { width: 20px; height: 20px; flex: 0 0 20px; display: grid; place-items: center; border-radius: 50%; background: var(--color-primary); color: var(--color-text-on-primary); font-size: 11px; font-weight: 900; }
-.drawer-chevron { margin-left: auto; color: var(--color-text-muted); font-size: 22px; }
 .drawer-plus { width: 22px; color: var(--color-primary); font-size: 22px; text-align: center; }
 .drawer-create { padding: 12px; }
 .drawer-create__actions { display: flex; gap: 10px; margin-top: 12px; }
