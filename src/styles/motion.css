@@ -60,16 +60,6 @@
     transform var(--motion-fast) var(--motion-spring);
 }
 
-.bottom-nav__item::before {
-  transform: scaleX(0);
-  transition: transform var(--motion-base) var(--motion-spring), background-color var(--motion-base) ease;
-}
-
-.bottom-nav__item.active::before,
-.bottom-nav__item[aria-current='page']::before {
-  transform: scaleX(1);
-}
-
 .bottom-nav__icon {
   transition: transform var(--motion-base) var(--motion-spring);
 }

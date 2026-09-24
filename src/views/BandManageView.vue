@@ -1,135 +1,125 @@
 <template>
   <div class="band-manage">
-    <header class="bm-page-heading">
-      <span class="bm-eyebrow">Equipo</span>
-      <h1>Administrar banda</h1>
-    </header>
+    <!-- div, no <header>: main.css tiene un header{} global legacy con fondo y borde -->
+    <div class="bm-heading">
+      <span class="bm-eyebrow">Banda</span>
+      <h1 class="bm-title">Administrar banda</h1>
+    </div>
 
-    <section class="bm-profile" aria-label="Datos de la banda">
-      <div class="bm-profile__image-wrap">
-        <img v-if="bandImage && !imageBroken" :src="bandImage" class="bm-profile__image" alt="Imagen de la banda" @error="imageBroken = true">
-        <span v-else class="bm-profile__image bm-profile__image--ph">{{ bandInitial }}</span>
-        <label v-if="band.can.editBand" class="bm-profile__image-action" for="band-image" aria-label="Cambiar imagen de la banda">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4 16 6h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l1.5-2h5Z"/><circle cx="12" cy="13" r="3"/></svg>
-        </label>
-        <input v-if="band.can.editBand" id="band-image" class="bm-profile__file" type="file" accept="image/jpeg,image/png,image/webp" @change="selectImage">
-      </div>
+    <!-- Datos de la banda -->
+    <section class="bm-card bm-profile" aria-label="Datos de la banda">
+      <component
+        :is="band.can.editBand ? 'label' : 'div'"
+        class="bm-profile__image-wrap"
+        :for="band.can.editBand ? 'band-image' : undefined"
+        :aria-label="band.can.editBand ? 'Cambiar imagen de la banda' : undefined"
+      >
+        <img v-if="bandImage && !imageBroken" :src="bandImage" class="bm-profile__image" alt="" @error="imageBroken = true">
+        <span v-else class="bm-profile__image bm-profile__image--ph" aria-hidden="true">{{ bandInitial }}</span>
+        <span v-if="band.can.editBand" class="bm-profile__image-action" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4 16 6h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l1.5-2h5Z"/><circle cx="12" cy="13" r="3"/></svg>
+        </span>
+      </component>
+      <input v-if="band.can.editBand" id="band-image" class="bm-profile__file" type="file" accept="image/jpeg,image/png,image/webp" @change="selectImage">
 
       <form v-if="band.can.editBand" class="bm-profile__form" @submit.prevent="saveBandProfile">
-        <div>
-          <span class="bm-eyebrow">Datos de la banda</span>
-        </div>
-        <label class="form-label" for="band-name">Nombre</label>
+        <label class="bm-label" for="band-name">Nombre de la banda</label>
         <input id="band-name" v-model="bandName" class="form-input" maxlength="60" autocomplete="off">
-        <p class="bm-profile__hint">Imagen JPG, PNG o WebP de hasta 4 MB.</p>
-        <button class="btn btn-primary" :disabled="profileBusy || !bandName.trim() || !profileChanged">
-          {{ profileBusy ? 'Guardando…' : 'Guardar cambios' }}
-        </button>
       </form>
-
       <div v-else class="bm-profile__summary">
-        <span class="bm-eyebrow">Banda</span>
-        <h1>{{ band.currentBand?.name }}</h1>
-        <p>Solo el propietario puede cambiar los datos o eliminar la banda.</p>
+        <strong>{{ band.currentBand?.name }}</strong>
+        <small>Solo el dueño puede cambiar los datos o eliminar la banda.</small>
       </div>
     </section>
+    <!-- Guardar solo aparece cuando hay algo que guardar -->
+    <button
+      v-if="band.can.editBand && profileChanged"
+      class="btn btn-primary bm-profile__save"
+      :disabled="profileBusy || !bandName.trim()"
+      @click="saveBandProfile"
+    >{{ profileBusy ? 'Guardando…' : 'Guardar cambios' }}</button>
 
-    <!-- Miembros -->
-    <div class="bm-section-head">
-      <div>
-        <span class="bm-eyebrow">El equipo</span>
-        <h2 class="bm-heading">Integrantes</h2>
-      </div>
-      <span class="bm-count">{{ members.length }}</span>
-    </div>
-    <div v-if="members.length" class="bm-grid">
-      <article
-        v-for="m in members"
-        :key="m.user_id"
-        class="bm-member"
-        :class="`bm-member--${m.role}`"
-        :title="m.profile?.email || memberName(m)"
-      >
-        <button
-          v-if="canEdit(m)"
-          class="bm-remove"
-          :aria-label="`Quitar a ${memberName(m)}`"
-          title="Quitar integrante"
-          @click="remove(m)"
-        >×</button>
-        <div class="bm-avatar-wrap">
-          <img
-            v-if="m.profile?.avatar_url && !avatarErrors.has(m.user_id)"
-            :src="m.profile.avatar_url"
-            class="bm-avatar"
-            :alt="`Foto de ${memberName(m)}`"
-            @error="hideBrokenAvatar(m.user_id)"
-          >
-          <div v-else class="bm-avatar bm-avatar--ph">{{ initial(m) }}</div>
-          <span class="bm-avatar__badge" aria-hidden="true">{{ roleIcon(m.role) }}</span>
-        </div>
-        <div class="bm-member__info">
-          <h3 class="bm-member__name">{{ memberName(m) }}</h3>
-          <span v-if="m.user_id === band.currentBand?.owner_id" class="bm-owner">Dueño</span>
-        </div>
-
-        <footer class="bm-member__footer">
-          <span class="bm-role-icon" aria-hidden="true">{{ roleIcon(m.role) }}</span>
+    <!-- Integrantes -->
+    <section class="bm-section" aria-labelledby="bm-members-title">
+      <h2 id="bm-members-title" class="bm-section__title">
+        Integrantes <span v-if="members.length" class="bm-count">{{ members.length }}</span>
+      </h2>
+      <ul v-if="members.length" class="bm-card bm-rows">
+        <li v-for="m in members" :key="m.user_id" class="bm-member" :class="`role--${m.role}`">
+          <span class="bm-avatar-wrap">
+            <img
+              v-if="m.profile?.avatar_url && !avatarErrors.has(m.user_id)"
+              :src="m.profile.avatar_url"
+              class="bm-avatar"
+              alt=""
+              @error="hideBrokenAvatar(m.user_id)"
+            >
+            <span v-else class="bm-avatar bm-avatar--ph" aria-hidden="true">{{ initial(m) }}</span>
+          </span>
+          <span class="bm-member__info">
+            <span class="bm-member__name">{{ memberName(m) }}<span v-if="isMe(m)" class="bm-member__me"> · Tú</span></span>
+            <small>{{ m.user_id === band.currentBand?.owner_id ? 'Dueño de la banda' : (m.profile?.email || '') }}</small>
+          </span>
           <UiSelect
             v-if="canEdit(m)"
+            class="bm-role"
             :model-value="m.role"
             :options="roleOptions"
             :aria-label="`Rol de ${memberName(m)}`"
             @update:model-value="changeRole(m, $event)"
           />
-          <span v-else class="bm-role-label">{{ roleLabel(m.role) }}</span>
-        </footer>
-      </article>
-    </div>
-    <p v-else class="bm-empty">Cargando miembros…</p>
+          <span v-else class="bm-role bm-role--static">{{ roleIcon(m.role) }} {{ roleLabel(m.role) }}</span>
+          <button v-if="canEdit(m)" class="bm-more" type="button" :aria-label="`Opciones de ${memberName(m)}`" @click="openMemberMenu(m)">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </button>
+          <span v-else class="bm-more" aria-hidden="true"></span>
+        </li>
+      </ul>
+      <p v-else class="bm-empty">Cargando integrantes…</p>
+    </section>
 
-    <!-- Invitaciones (solo líder) -->
     <template v-if="band.can.manageBand">
-      <h2 class="bm-heading">Invitaciones</h2>
-
-      <div class="bm-create">
-        <label class="form-label">Crear link de invitación con rol:</label>
-        <div class="bm-create__row">
-          <UiSelect v-model="newRole" class="bm-invite-role" :options="roleOptions" aria-label="Rol de la invitación" />
-          <button class="btn btn-primary btn-sm" :disabled="busy" @click="create">Generar link</button>
+      <!-- Invitaciones -->
+      <section class="bm-section" aria-labelledby="bm-invites-title">
+        <h2 id="bm-invites-title" class="bm-section__title">Invitaciones</h2>
+        <p class="bm-hint">Genera un link y compártelo: quien lo abra entra con el rol que elijas.</p>
+        <div class="bm-create">
+          <UiSelect v-model="newRole" class="bm-create__role" :options="roleOptions" aria-label="Rol de la invitación" />
+          <button class="btn btn-primary" :disabled="busy" @click="create">Generar link</button>
         </div>
-      </div>
+        <ul v-if="invites.length" class="bm-card bm-rows">
+          <li v-for="inv in invites" :key="inv.id" class="bm-invite" :class="`role--${inv.role}`">
+            <span class="bm-role bm-role--static">{{ roleIcon(inv.role) }} {{ roleLabel(inv.role) }}</span>
+            <small class="bm-invite__uses">{{ inv.uses }} uso{{ inv.uses === 1 ? '' : 's' }}</small>
+            <button class="bm-text-btn" type="button" @click="copy(inv.token)">Copiar</button>
+            <button class="bm-text-btn bm-text-btn--danger" type="button" @click="revoke(inv)">Revocar</button>
+          </li>
+        </ul>
+        <p v-else class="bm-empty">No hay invitaciones activas.</p>
+      </section>
 
-      <div v-if="invites.length" class="bm-list">
-        <div v-for="inv in invites" :key="inv.id" class="bm-invite">
-          <div class="bm-invite__info">
-            <span class="band-card__role" :class="'role-' + inv.role">{{ roleLabel(inv.role) }}</span>
-            <span class="bm-invite__uses">{{ inv.uses }} uso(s)</span>
-          </div>
-          <div class="bm-invite__actions">
-            <button class="btn btn-sm" @click="copy(inv.token)">Copiar link</button>
-            <button class="btn btn-danger btn-sm" @click="revoke(inv)">Revocar</button>
-          </div>
-        </div>
-      </div>
-      <p v-else class="bm-empty">Aún no hay invitaciones activas.</p>
-
-      <h2 class="bm-heading">Configuración</h2>
-      <RouterLink class="bm-link" to="/configuracion">
-        <span>Configuraciones</span>
-        <span class="bm-link__arrow">›</span>
-      </RouterLink>
+      <!-- Ajustes -->
+      <section class="bm-section" aria-labelledby="bm-settings-title">
+        <h2 id="bm-settings-title" class="bm-section__title">Canciones</h2>
+        <RouterLink class="bm-card bm-link" to="/configuracion">
+          <span class="bm-link__text">
+            <span>Tipos de canción</span>
+            <small>Categorías para organizar el cancionero</small>
+          </span>
+          <span class="bm-link__arrow" aria-hidden="true">›</span>
+        </RouterLink>
+      </section>
 
       <section v-if="band.can.editBand" class="bm-danger" aria-labelledby="delete-band-title">
-        <div>
-          <h2 id="delete-band-title">Eliminar banda</h2>
-          <p>Elimina permanentemente sus actividades, canciones, repertorios e integrantes.</p>
-        </div>
-        <button class="btn btn-danger" :disabled="deleteBusy" @click="deleteCurrentBand">
+        <h2 id="delete-band-title">Eliminar banda</h2>
+        <p>Borra para siempre sus actividades, canciones, repertorios e integrantes.</p>
+        <button class="btn bm-danger__btn" :disabled="deleteBusy" @click="deleteCurrentBand">
           {{ deleteBusy ? 'Eliminando…' : 'Eliminar banda' }}
         </button>
       </section>
     </template>
+
+    <ActionSheet ref="sheet" />
   </div>
 </template>
 
@@ -141,8 +131,12 @@ import { useToast } from '../composables/useToast'
 import { clearLoadError, reportLoadError } from '../composables/useLoadErrors'
 import { useConfirm } from '../composables/useConfirm'
 import UiSelect from '../components/UiSelect.vue'
+import ActionSheet from '../components/ActionSheet.vue'
+import { useAuthStore } from '../stores/auth'
 
 const band = useBandStore()
+const auth = useAuthStore()
+const sheet = ref(null)
 const router = useRouter()
 const { showToast, showError } = useToast()
 const { confirm } = useConfirm()
@@ -171,6 +165,10 @@ const roleOptions = Object.keys(ROLE_LABELS).map(role => ({ value: role, label: 
 
 function memberName(m) {
   return m.profile?.display_name || m.profile?.email?.split('@')[0] || 'Usuario'
+}
+
+function isMe(m) {
+  return m.user_id === auth.user?.id
 }
 
 function initial(m) {
@@ -242,7 +240,7 @@ async function deleteCurrentBand() {
   try {
     await band.deleteBand()
     showToast('Banda eliminada')
-    await router.replace(band.currentBandId ? '/inicio' : '/practica')
+    await router.replace(band.currentBandId ? '/actividades' : '/practica')
   } catch (e) {
     showError(e, 'No se pudo eliminar la banda.')
   } finally {
@@ -270,6 +268,15 @@ async function changeRole(m, role) {
     m.role = role
     showToast('Rol actualizado')
   } catch (e) { showError(e, 'No se pudo actualizar') }
+}
+
+function openMemberMenu(m) {
+  sheet.value?.open({
+    title: memberName(m),
+    actions: [
+      { label: 'Quitar de la banda', icon: 'trash', danger: true, onSelect: () => remove(m) },
+    ],
+  })
 }
 
 async function remove(m) {
@@ -323,83 +330,92 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.band-manage { max-width: 760px; margin: 0 auto; padding-bottom: 24px; }
-.bm-page-heading { margin-bottom: 20px; }
-.bm-page-heading .bm-eyebrow { font-size: 10px; }
-.bm-page-heading h1 { margin: 4px 0 0; color: var(--color-text-primary); font-family: var(--font-display); font-size: 24px; line-height: 1.2; }
-.bm-profile { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 18px; padding-bottom: 20px; border-bottom: 1px solid var(--color-border); }
-.bm-profile__image-wrap { position: relative; width: 104px; height: 104px; }
-.bm-profile__image { width: 104px; height: 104px; display: block; border: 1px solid var(--color-border); border-radius: 24px; object-fit: cover; }
-.bm-profile__image--ph { display: grid; place-items: center; background: var(--color-primary-soft); color: var(--color-primary); font-size: 2.25rem; font-weight: 900; }
-.bm-profile__image-action { position: absolute; right: -7px; bottom: -7px; width: 40px; height: 40px; display: grid; place-items: center; border: 3px solid var(--color-background); border-radius: 50%; background: var(--color-primary); color: var(--color-text-on-primary); cursor: pointer; }
-.bm-profile__image-action svg { width: 19px; height: 19px; }
+.band-manage { max-width: 640px; margin: 0 auto; padding-bottom: 24px; }
+
+/* Roles: cada uno con su color (tokens de main.css) */
+.role--leader { --role-color: var(--color-role-leader); --role-soft: var(--color-role-leader-soft); }
+.role--musician { --role-color: var(--color-role-musician); --role-soft: var(--color-role-musician-soft); }
+.role--singer { --role-color: var(--color-role-singer); --role-soft: var(--color-role-singer-soft); }
+
+.bm-heading { margin: 6px 0 16px; }
+.bm-eyebrow { color: var(--color-accent-hover); font-size: .7rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.bm-title { margin-top: 2px; color: var(--color-text-primary); font-family: var(--font-display); font-size: 1.5rem; line-height: 1.2; }
+
+.bm-card { border: 1px solid var(--color-border); border-radius: 18px; background: var(--color-surface); }
+
+/* Datos de la banda: imagen + nombre en una fila */
+.bm-profile { display: flex; align-items: center; gap: 14px; padding: 14px; }
+.bm-profile__image-wrap { position: relative; flex: 0 0 64px; width: 64px; height: 64px; }
+label.bm-profile__image-wrap { cursor: pointer; }
+label.bm-profile__image-wrap:focus-within { outline: 2px solid var(--color-focus); outline-offset: 3px; border-radius: 18px; }
+.bm-profile__image { width: 64px; height: 64px; display: block; border: 1px solid var(--color-border); border-radius: 18px; object-fit: cover; }
+.bm-profile__image--ph { display: grid; place-items: center; background: var(--color-primary-soft); color: var(--color-primary); font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; }
+.bm-profile__image-action { position: absolute; right: -6px; bottom: -6px; width: 28px; height: 28px; display: grid; place-items: center; border: 2px solid var(--color-surface); border-radius: 50%; background: var(--color-primary); color: var(--color-text-on-primary); }
+.bm-profile__image-action svg { width: 14px; height: 14px; }
 .bm-profile__file { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-.bm-profile__form { min-width: 0; display: grid; gap: 8px; }
-.bm-profile__summary h1 { margin: 2px 0 4px; color: var(--color-text-primary); font-size: 1.25rem; }
-.bm-profile__form .btn { justify-self: start; min-width: 160px; }
-.bm-profile__hint, .bm-profile__summary p { color: var(--color-text-muted); font-size: 12px; line-height: 1.45; }
-.bm-heading { font-size: 14px; margin: 22px 0 10px; }
-.bm-section-head { display: flex; align-items: flex-end; justify-content: space-between; margin: 20px 0 10px; }
-.bm-section-head .bm-heading { margin: 2px 0 0; }
-.bm-eyebrow { color: var(--color-primary-hover); font-size: 8px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
-.bm-count { min-width: 27px; height: 27px; padding: 0 7px; display: grid; place-items: center; border: 1px solid rgba(var(--color-primary-rgb),.25); border-radius: 9px; background: var(--color-primary-soft); color: var(--color-primary-hover); font-size: 11px; font-weight: 900; }
-.bm-list { display: flex; flex-direction: column; gap: 10px; }
-.bm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 12px; }
+.bm-profile__form { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.bm-profile__summary { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.bm-profile__summary strong { font-size: 1.05rem; }
+.bm-profile__summary small { color: var(--color-text-muted); font-size: .78rem; line-height: 1.4; }
+.bm-profile__save { width: 100%; margin-top: 10px; }
+.bm-label { color: var(--color-text-secondary); font-size: .8rem; font-weight: 700; }
 
-.bm-invite {
-  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
-  background: var(--color-surface); border: 1px solid var(--color-border);
-  border-radius: 12px;
-}
-.bm-member { --role-color: var(--color-primary); --role-soft: var(--color-primary-soft); position: relative; isolation: isolate; min-width: 0; aspect-ratio: 1; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 20px; border: 1px solid var(--color-border); border-radius: 16px; background: var(--color-surface); box-shadow: var(--shadow-small); animation: member-in .38s both; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
-.bm-member:nth-child(2n) { animation-delay: .04s; }.bm-member:nth-child(3n) { animation-delay: .08s; }
-.bm-member--leader { --role-color: var(--color-role-leader); --role-soft: var(--color-role-leader-soft); }.bm-member--singer { --role-color: var(--color-role-singer); --role-soft: var(--color-role-singer-soft); }.bm-member--musician { --role-color: var(--color-role-musician); --role-soft: var(--color-role-musician-soft); }
-.bm-member::before { content: ''; position: absolute; z-index: -1; inset: 0; border-radius: inherit; background: transparent; }
-.bm-member:hover { transform: translateY(-2px); border-color: var(--role-color); box-shadow: var(--shadow-medium); }
-.bm-avatar-wrap { position: relative; flex: 0 0 auto; }
-.bm-avatar { width: 66px; height: 66px; border: 3px solid var(--color-surface); border-radius: 50%; object-fit: cover; display: block; box-shadow: 0 0 0 2px var(--role-soft), var(--shadow-small); }
-.bm-avatar--ph {
-  display: flex; align-items: center; justify-content: center;
-  background: var(--role-color); color: var(--color-text-on-primary); font-weight: 900; font-size: 20px;
-}
-.bm-avatar__badge { position: absolute; right: -4px; bottom: -4px; width: 21px; height: 21px; display: grid; place-items: center; border: 3px solid var(--color-surface); border-radius: 50%; background: var(--role-color); color: var(--color-text-on-primary); font-size: 8px; font-weight: 900; }
-.bm-member__info { width: 88%; min-width: 0; margin-top: 6px; text-align: center; }
-.bm-member__name { display: -webkit-box; min-height: 23px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: var(--color-text-primary); font-size: 9.5px; font-weight: 800; line-height: 1.18; }
-.bm-owner { display: inline-flex; margin-top: 2px; padding: 1px 5px; border: 1px solid var(--color-primary-border); border-radius: 999px; background: var(--color-primary-soft); color: var(--color-primary); font-size: 5.5px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
-.bm-remove { position: absolute; z-index: 3; top: 8px; right: 8px; width: 27px; height: 27px; border: 1px solid rgba(var(--color-danger-rgb),.2); border-radius: 8px; background: var(--color-danger-soft); color: var(--color-danger-text); box-shadow: var(--shadow-small); font: inherit; font-size: 16px; line-height: 1; cursor: pointer; }.bm-remove:active { transform: scale(.92); }
-.bm-member__footer { min-height: 25px; display: flex; align-items: center; justify-content: center; gap: 3px; margin-top: 5px; padding: 1px 6px; border: 1px solid var(--role-soft); border-radius: 999px; background: var(--role-soft); color: var(--role-color); }
-.bm-role-icon { width: 16px; height: 16px; display: grid; place-items: center; border-radius: 50%; background: var(--color-surface); color: var(--role-color); font-size: 8px; }
-.bm-role-label { padding-right: 3px; color: var(--role-color); font-size: 7.5px; font-weight: 900; letter-spacing: .03em; text-transform: uppercase; }
+/* Secciones */
+.bm-section { margin-top: 26px; }
+.bm-section__title { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--color-text-primary); font-size: 1rem; }
+.bm-count { min-width: 24px; height: 22px; padding: 0 7px; display: inline-grid; place-items: center; border-radius: 999px; background: var(--color-primary-soft); color: var(--color-primary); font-size: .75rem; font-weight: 800; }
+.bm-hint { margin: -4px 0 10px; color: var(--color-text-muted); font-size: .8rem; line-height: 1.45; }
+.bm-empty { color: var(--color-text-muted); font-size: .88rem; }
 
-.bm-member__footer :deep(.ui-select) { width: 68px; --select-role-color: var(--role-color); }
-.bm-member__footer :deep(.ui-select__trigger) { min-height: 21px; gap: 2px; padding: 2px 1px 2px 3px; border: 0; background: transparent; color: var(--role-color); font-size: 7.5px; font-weight: 900; box-shadow: none; }.bm-member__footer :deep(.ui-select__leading) { display: none; }.bm-member__footer :deep(.ui-select__chevron) { width: 10px; height: 10px; color: var(--role-color); }
-.bm-invite-role { width: 130px; }
-.band-card__role {
-  font-size: 12px; padding: 3px 10px; border-radius: 999px;
-  background: var(--color-surface-secondary); color: var(--color-text-secondary);
-}
-.band-card__role.role-leader { background: var(--color-primary-soft); color: var(--color-primary); }
+/* Filas compactas (integrantes e invitaciones) */
+.bm-rows { overflow: hidden; list-style: none; }
+.bm-member,
+.bm-invite { display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 10px 6px 10px 12px; border-bottom: 1px solid var(--color-border); }
+.bm-member:last-child,
+.bm-invite:last-child { border-bottom: 0; }
 
-.bm-create { margin-bottom: 14px; }
-.bm-create__row { display: flex; gap: 8px; margin-top: 6px; }
-.bm-invite__info { flex: 1; display: flex; align-items: center; gap: 10px; }
-.bm-invite__uses { font-size: 12px; color: var(--color-text-muted); }
-.bm-invite__actions { display: flex; gap: 8px; }
-.bm-empty { color: var(--color-text-muted); font-size: 14px; }
+.bm-avatar-wrap { flex: 0 0 40px; }
+.bm-avatar { width: 40px; height: 40px; display: block; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--role-soft); }
+.bm-avatar--ph { display: grid; place-items: center; background: var(--role-color); color: var(--color-text-on-primary); font-family: var(--font-display); font-size: 1rem; font-weight: 700; }
+.bm-member__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.bm-member__name { overflow: hidden; color: var(--color-text-primary); font-size: .92rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.bm-member__me { color: var(--color-text-muted); font-weight: 600; }
+.bm-member__info small { overflow: hidden; color: var(--color-text-muted); font-size: .75rem; text-overflow: ellipsis; white-space: nowrap; }
 
-.bm-link {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px; background: var(--color-surface); border: 1px solid var(--color-border);
-  border-radius: 12px; text-decoration: none; color: var(--color-text-primary); font-weight: 600;
-}
-.bm-link:hover { border-color: var(--color-primary); color: var(--color-primary); }
+/* Píldora de rol: mismo aspecto editable o no */
+.bm-role { flex: 0 0 auto; }
+/* UiSelect ocupa el 100% por defecto: aquí mide lo que su contenido. */
+.bm-member .bm-role { width: auto; }
+.bm-role :deep(.ui-select__trigger) { width: auto; }
+.bm-role--static,
+.bm-role :deep(.ui-select__trigger) { min-height: 32px; display: inline-flex; align-items: center; gap: 5px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--role-soft); color: var(--role-color); font-size: .78rem; font-weight: 800; box-shadow: none; }
+.bm-role :deep(.ui-select__leading) { color: var(--role-color); background: transparent; }
+.bm-role :deep(.ui-select__chevron) { width: 12px; height: 12px; stroke: var(--role-color); }
+.bm-more { flex: 0 0 40px; width: 40px; height: 40px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--color-text-muted); cursor: pointer; }
+button.bm-more:hover { background: var(--color-surface-secondary); color: var(--color-text-primary); }
+.bm-more svg { width: 20px; height: 20px; }
+
+/* Invitaciones */
+.bm-create { display: flex; gap: 8px; margin-bottom: 12px; }
+.bm-create__role { flex: 1; min-width: 0; }
+.bm-create .btn { flex: 0 0 auto; }
+.bm-invite { padding-right: 8px; }
+.bm-invite__uses { flex: 1; color: var(--color-text-muted); font-size: .78rem; }
+.bm-text-btn { min-height: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; color: var(--color-link); font: inherit; font-size: .82rem; font-weight: 700; cursor: pointer; }
+.bm-text-btn:hover { background: var(--color-surface-secondary); }
+.bm-text-btn--danger { color: var(--color-danger); }
+
+/* Ajustes */
+.bm-link { display: flex; align-items: center; gap: 12px; padding: 14px 16px; color: var(--color-text-primary); text-decoration: none; }
+.bm-link:hover { border-color: var(--color-primary); }
+.bm-link__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-weight: 700; }
+.bm-link__text small { color: var(--color-text-muted); font-size: .78rem; font-weight: 500; }
 .bm-link__arrow { color: var(--color-text-muted); font-size: 1.4rem; line-height: 1; }
-.bm-danger { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 28px; padding-top: 20px; border-top: 1px solid rgba(var(--color-danger-rgb), .3); }
-.bm-danger h2 { margin: 0; color: var(--color-danger); font-size: 15px; }
-.bm-danger p { max-width: 460px; margin-top: 4px; color: var(--color-text-muted); font-size: 12px; line-height: 1.45; }
-.bm-danger .btn { flex: 0 0 auto; }
-@keyframes member-in { from { opacity: 0; transform: translateY(8px) scale(.98); } }
-@media (max-width: 520px) { .bm-profile { grid-template-columns: 1fr; justify-items: center; }.bm-profile__form, .bm-profile__summary { width: 100%; }.bm-profile__form .btn { width: 100%; }.bm-danger { align-items: stretch; flex-direction: column; }.bm-danger .btn { width: 100%; } }
-@media (max-width: 350px) { .bm-grid { grid-template-columns: 1fr 1fr; gap: 7px; }.bm-member { padding: 12px 15px; border-radius: 12px; }.bm-avatar { width: 58px; height: 58px; }.bm-member__name { min-height: 21px; font-size: 8.5px; }.bm-remove { top: 6px; right: 6px; width: 25px; height: 25px; }.bm-member__footer { margin-top: 4px; } }
-@media (prefers-reduced-motion: reduce) { .bm-member { animation: none; transition: none; } }
+
+/* Zona de peligro: presente pero sin gritar; la confirmación protege */
+.bm-danger { margin-top: 32px; padding-top: 18px; border-top: 1px solid rgba(var(--color-danger-rgb), .25); }
+.bm-danger h2 { color: var(--color-danger); font-size: .95rem; }
+.bm-danger p { margin: 4px 0 12px; color: var(--color-text-muted); font-size: .8rem; line-height: 1.45; }
+.bm-danger__btn { width: 100%; justify-content: center; border: 1px solid var(--color-danger); background: transparent; color: var(--color-danger); }
+.bm-danger__btn:hover:not(:disabled) { background: var(--color-danger-soft); }
 </style>

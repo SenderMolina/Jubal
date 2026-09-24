@@ -90,30 +90,41 @@
       </div>
 
       <template v-else>
-        <!-- HERO: la próxima actividad, con cuenta regresiva -->
-        <div
-          class="next-hero"
-          role="link"
-          tabindex="0"
-          @click="router.push('/actividad/' + hero.id)"
-          @keyup.enter="router.push('/actividad/' + hero.id)"
-        >
-          <div class="next-hero__top">
-            <span class="next-hero__eyebrow">Próximo</span>
-            <span class="next-hero__count">{{ countdownLabel(hero.date) }}</span>
-          </div>
-          <div class="next-hero__title">{{ hero.title }}</div>
-          <div class="next-hero__when">
-            {{ heroDateLabel(hero.date) }}<template v-if="hero.time"> · {{ hero.time }}</template>
-          </div>
-          <div v-if="hero.tiempos?.length" class="next-hero__summary">
-            {{ hero.tiempos.length }} tiempo{{ hero.tiempos.length !== 1 ? 's' : '' }}
-            · {{ totalSongs(hero) }} canción{{ totalSongs(hero) !== 1 ? 'es' : '' }}
-          </div>
-          <button v-if="band.can.manageActivities" class="dots-btn next-hero__menu" aria-label="Opciones" @click.stop="openMenu(hero)">
+        <!-- PRÓXIMO: la siguiente actividad con su setlist a la vista -->
+        <section class="next-hero" aria-labelledby="next-hero-title">
+          <RouterLink class="next-hero__head" :to="'/actividad/' + hero.id">
+            <span class="next-hero__top">
+              <span class="next-hero__eyebrow">Próximo</span>
+              <span class="next-hero__count">{{ countdownLabel(hero.date) }}</span>
+            </span>
+            <span id="next-hero-title" class="next-hero__title">{{ hero.title }}</span>
+            <span class="next-hero__when">
+              {{ heroDateLabel(hero.date) }}<template v-if="hero.time"> · {{ hero.time }}</template>
+            </span>
+          </RouterLink>
+          <button v-if="band.can.manageActivities" class="dots-btn next-hero__menu" aria-label="Opciones" @click="openMenu(hero)">
             <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
           </button>
-        </div>
+
+          <ol v-if="hero.tiempos?.length" class="next-hero__setlist" aria-label="Setlist">
+            <li v-for="t in hero.tiempos" :key="t.id" class="next-hero__tiempo">
+              <span class="next-hero__tiempo-name">{{ tiempoName(t) }}</span>
+              <ol v-if="tiempoSongs(t).length" class="next-hero__songs">
+                <li v-for="song in tiempoSongs(t)" :key="song.id">
+                  <!-- act: al pasar de canción se recorre este mismo setlist -->
+                  <RouterLink class="next-hero__song" :to="{ path: '/cancion/' + song.id, query: { act: hero.id } }">
+                    <span class="next-hero__song-title">{{ song.title }}</span>
+                    <span v-if="song.key" class="next-hero__song-key">{{ fmtKey(song.key) }}</span>
+                  </RouterLink>
+                </li>
+              </ol>
+              <span v-else class="next-hero__empty">Sin canciones aún</span>
+            </li>
+          </ol>
+          <p v-else class="next-hero__empty next-hero__empty--all">
+            {{ band.can.manageActivities ? 'Aún no tiene setlist. Ábrela para armarlo.' : 'El setlist aún no está listo.' }}
+          </p>
+        </section>
 
         <!-- AGENDA: el resto de lo que viene -->
         <div v-if="agenda.length" class="activities-dashboard">
@@ -159,6 +170,7 @@ import { useBandStore } from '../stores/band'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import ActionSheet from '../components/ActionSheet.vue'
+import { fmtKey } from '../utils/keys'
 
 const router    = useRouter()
 const route     = useRoute()
@@ -206,8 +218,19 @@ function getMonth(date) {
   return monthNamesShort[m] || ''
 }
 
+// Solo canciones que siguen existiendo: los tiempos guardan ids y una canción
+// borrada queda ahí hasta que se edite la actividad.
+const songsById = computed(() => new Map(store.songs.map(song => [song.id, song])))
+function tiempoSongs(t) {
+  return (t.songs || []).map(id => songsById.value.get(id)).filter(Boolean)
+}
 function totalSongs(a) {
-  return (a.tiempos || []).reduce((sum, t) => sum + (t.songs?.length || 0), 0)
+  return (a.tiempos || []).reduce((sum, t) => sum + tiempoSongs(t).length, 0)
+}
+function tiempoName(t) {
+  if (t.name?.trim()) return t.name.trim()
+  if (t.start) return t.end ? `${t.start} – ${t.end}` : t.start
+  return 'Tiempo'
 }
 
 const today = pad2(new Date())
@@ -314,50 +337,39 @@ const selectedDayActivities = computed(() =>
 <style scoped>
 .btn-pill__cal { width: 15px; height: 15px; display: block; }
 
-/* ── HERO: la próxima actividad (firma de la pantalla) ── */
-.next-hero {
-  position: relative;
-  border-radius: var(--radius);
-  border: 1px solid var(--color-border);
-  background: var(--color-secondary-soft);
-  padding: 16px 18px 18px;
-  margin-bottom: 22px;
-  cursor: pointer;
-  box-shadow: var(--shadow-small);
-  transition: transform .18s ease, box-shadow .18s ease;
-  -webkit-tap-highlight-color: transparent;
-}
-.next-hero:hover { transform: translateY(-1px); box-shadow: var(--shadow-medium); }
-.next-hero:active { transform: scale(.995); }
-.next-hero:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
-.next-hero__top { display: flex; align-items: center; margin-bottom: 9px; }
-.next-hero__eyebrow {
-  font-size: .68rem; font-weight: 700; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--color-text-secondary);
-}
-.next-hero__count {
-  margin-left: auto;
-  background: var(--color-info-soft); color: var(--color-info-text);
-  font-size: .7rem; font-weight: 700;
-  padding: 3px 11px; border-radius: 999px;
-}
-.next-hero__title {
-  font-size: 1.4rem; font-weight: 700; line-height: 1.15;
-  color: var(--color-text-primary); padding-right: 30px;
-}
-.next-hero__when { font-size: .88rem; font-weight: 600; color: var(--color-text-secondary); margin-top: 5px; }
-.next-hero__summary { font-size: .8rem; color: var(--color-text-muted); margin-top: 6px; }
-.next-hero__menu { position: absolute; top: 10px; right: 8px; }
 
 /* Icono del estado vacío como SVG (a juego con la nav), reemplaza el emoji */
 .setlist-empty__svg { width: 40px; height: 40px; color: var(--color-text-muted); opacity: .6; margin: 0 auto 12px; display: block; }
 
-@media (prefers-reduced-motion: reduce) {
-  .next-hero { transition: none; }
-  .next-hero:hover, .next-hero:active { transform: none; }
+/* ── PRÓXIMO: la siguiente actividad con su setlist ── */
+.next-hero {
+  position: relative;
+  margin-bottom: 28px;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-small);
 }
+.next-hero__head { display: flex; flex-direction: column; color: inherit; text-decoration: none; border-radius: 14px; }
+.next-hero__head:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 4px; }
+.next-hero__top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding-right: 40px; }
+.next-hero__eyebrow { color: var(--color-info-text); font-size: 12px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.next-hero__count { padding: 5px 11px; border-radius: 999px; background: var(--color-info-soft); color: var(--color-info-text); font-size: 12px; font-weight: 900; }
+.next-hero__title { padding-right: 36px; color: var(--color-text-primary); font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; line-height: 1.2; }
+.next-hero__when { margin-top: 4px; color: var(--color-text-secondary); font-size: .88rem; font-weight: 600; }
+.next-hero__menu { position: absolute; top: 10px; right: 8px; width: 40px; height: 40px; justify-content: center; }
 
-.next-hero { padding:20px;margin-bottom:28px;border:1px solid var(--color-border);border-radius:28px;background:var(--color-surface);box-shadow:var(--shadow-small); }
-.next-hero:hover { transform:translateY(-2px);box-shadow:var(--shadow-medium); }.next-hero:active { transform:scale(.99);box-shadow:var(--shadow-small); }
-.next-hero__eyebrow { color:var(--color-info-text);font-size:12px;font-weight:900; }.next-hero__count { padding:6px 12px;background:var(--color-info-soft);color:var(--color-info-text);font-size:12px;font-weight:900;box-shadow:none; }.next-hero__title { color:var(--color-text-primary);font-size:24px;font-weight:900; }.next-hero__when { color:var(--color-text-secondary);font-size:14px; }.next-hero__summary { color:var(--color-text-muted);font-size:13px;font-weight:700; }
+/* Numeración corrida en todo el setlist (coincide con "3 de 4" en la canción). */
+.next-hero__setlist { display: flex; flex-direction: column; gap: 14px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--color-border); list-style: none; counter-reset: song; }
+.next-hero__tiempo-name { display: block; margin-bottom: 4px; color: var(--color-section); font-family: var(--font-display); font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.next-hero__songs { list-style: none; }
+.next-hero__song { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 8px; border-radius: 12px; color: var(--color-text-primary); text-decoration: none; counter-increment: song; }
+.next-hero__song::before { content: counter(song); width: 18px; flex: 0 0 18px; color: var(--color-text-muted); font-size: .8rem; font-weight: 700; text-align: right; }
+.next-hero__song:hover { background: var(--color-surface-hover); }
+.next-hero__song:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; }
+.next-hero__song-title { flex: 1; min-width: 0; overflow: hidden; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.next-hero__song-key { flex: 0 0 auto; min-width: 32px; padding: 3px 8px; border-radius: 8px; background: var(--color-accent-soft); color: var(--color-chord); font-family: var(--font-display); font-size: .8rem; font-weight: 700; text-align: center; }
+.next-hero__empty { color: var(--color-text-muted); font-size: .82rem; }
+.next-hero__empty--all { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--color-border); }
 </style>

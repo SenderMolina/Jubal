@@ -48,6 +48,8 @@
   /* Acordes: naranja del acento, oscurecido lo justo para leerse como texto en negrita
      (3.5:1 sobre el fondo) y distinguirse de la letra (azul casi negro) de un vistazo. */
   --color-chord: #dc5f0a;
+  /* Secciones de la letra (Intro, Verso, Coro…): teal, tercer color distinto de letra y acordes. */
+  --color-section: #0e7490;
 
   /* Estados semánticos */
   --color-success: #2e8b67;
@@ -512,8 +514,6 @@ header {
   color: var(--color-primary);
   background: var(--color-secondary-soft);
 }
-.bottom-nav__item::before { content: ''; position: absolute; top: -5px; width: 20px; height: 3px; border-radius: 0 0 4px 4px; background: transparent; }
-.bottom-nav__item.active::before { background: var(--color-accent); }
 .bottom-nav__icon {
   width: 27px;
   height: 27px;
@@ -576,8 +576,7 @@ header {
    Mismo ritmo que ChordLine (acordes inline): acorde pegado a su letra, aire entre versos. */
 .chord-line { color: var(--color-chord); font-weight: 700; font-size: 0.85rem; line-height: 1.25; font-family: ui-monospace, 'Roboto Mono', Menlo, Consolas, monospace; }
 .lyric-line { color: var(--color-text-primary); line-height: 1.6; margin-bottom: 10px; font-size: 0.85rem; font-family: ui-monospace, 'Roboto Mono', Menlo, Consolas, monospace; }
-.section-label { display: flex; align-items: center; gap: 8px; color: var(--color-primary); font-size: 0.75rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-top: 24px; margin-bottom: 8px; }
-.section-label::before { content: '●'; font-size: 0.6rem; line-height: 1; }
+.section-label { margin: 22px 0 10px; color: var(--color-section); font-family: var(--font-display); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-align: center; text-transform: uppercase; }
 
 /* ── SONGS HEADER ── */
 .songs-header {
@@ -1304,12 +1303,10 @@ button:disabled { cursor: default; }
 .fab-add-song { right: max(20px, calc((100vw - 600px) / 2 + 20px)); bottom: calc(92px + env(safe-area-inset-bottom)); width: 56px; height: 56px; border: 1px solid var(--color-primary); border-radius: 18px; background: var(--color-primary); color: var(--color-text-on-primary); box-shadow: var(--shadow-medium); }
 .fab-add-song:hover { background: var(--color-primary-hover); }
 .fab-add-song:active { background: var(--color-primary-pressed); }
-.bottom-nav { left: 50%; right: auto; bottom: 0; width: min(100%, 600px); min-height: 76px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; transform: translateX(-50%); border: 1px solid var(--color-border); border-bottom: 0; border-radius: 22px 22px 0 0; background: var(--color-navigation); backdrop-filter: blur(16px); box-shadow: 0 -6px 24px rgba(var(--color-primary-rgb), .1); }
+.bottom-nav { left: 50%; right: auto; bottom: 0; width: min(100%, 600px); min-height: 76px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; transform: translateX(-50%); border: 1px solid var(--color-border); border-bottom: 0; border-radius: 22px 22px 0 0; background: var(--color-navigation); backdrop-filter: blur(16px); box-shadow: 0 -6px 24px rgba(var(--color-primary-rgb), .1); }
 .bottom-nav__item { min-width: 0; min-height: 58px; padding: 7px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 14px; background: transparent; color: var(--color-text-secondary); text-decoration: none; cursor: pointer; }
 .bottom-nav__item:not(.active):hover { background: var(--color-surface-hover); }
 .bottom-nav__item.active, .bottom-nav__item[aria-current='page'] { position: relative; background: var(--color-secondary-soft); color: var(--color-primary); box-shadow: none; transform: none; }
-.bottom-nav__item::before { content: ''; position: absolute; top: 4px; width: 22px; height: 3px; border-radius: 999px; background: transparent; }
-.bottom-nav__item.active::before, .bottom-nav__item[aria-current='page']::before { background: var(--color-accent); }
 .bottom-nav__icon { width: 23px; height: 23px; filter: none; }
 .bottom-nav__label { position: static; width: auto; height: auto; max-width: 100%; margin: 0; overflow: hidden; clip: auto; color: inherit; font-size: 11px; font-weight: 800; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
 .sheet, .ctx-menu { border: 1px solid var(--color-border); background: var(--color-surface-raised); box-shadow: var(--shadow-modal); }

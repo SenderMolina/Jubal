@@ -21,7 +21,6 @@ const items = computed(() => band.personalMode ? [
   { to: '/rutina', label: 'Rutinas', icon: 'activities' },
   { to: '/canciones', label: 'Canciones', icon: 'songs' },
 ] : [
-  { to: '/inicio', label: 'Inicio', icon: 'home' },
   { to: '/actividades', label: 'Agenda', icon: 'activities', paths: ['/actividad/'] },
   { to: '/repertorio', label: 'Repertorios', icon: 'repertoire' },
   { to: '/canciones', label: 'Canciones', icon: 'songs' },

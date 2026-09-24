@@ -21,7 +21,7 @@
     <ActionSheet ref="sheet" />
 
     <!-- Letra y acordes: ocupan toda la vista -->
-    <article class="song-sheet">
+    <article class="song-sheet" :class="{ 'song-sheet--dock': hasNav }">
       <template v-if="renderedLines.length">
         <template v-for="(line, i) in renderedLines" :key="i">
           <div v-if="line.type === 'spacer'" class="song-sheet__spacer"></div>
@@ -36,18 +36,19 @@
     </article>
 
     <!-- Controles flotantes: siempre a mano con el pulgar -->
-    <nav v-if="song" class="song-dock" aria-label="Controles de la canción">
-      <button v-if="hasNav" class="song-dock__nav" aria-label="Canción anterior" :disabled="navIndex <= 0" @click="goTo(-1)">
+    <nav v-if="song && hasNav" class="song-dock" aria-label="Controles de la canción">
+      <button class="song-dock__nav" aria-label="Canción anterior" :disabled="navIndex <= 0" @click="goTo(-1)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
-      <button v-if="canPlay" class="song-dock__play" @click="openPlayer">
+      <span v-if="navIndex >= 0" class="song-dock__count">{{ navIndex + 1 }} de {{ navList.length }}</span>
+      <button v-if="SHOW_PRACTICE_TOOLS && canPlay" class="song-dock__play" @click="openPlayer">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20"/></svg>
         Play
       </button>
-      <button class="song-dock__practice" :disabled="practiceBusy" @click="openPractice">
+      <button v-if="SHOW_PRACTICE_TOOLS" class="song-dock__practice" :disabled="practiceBusy" @click="openPractice">
         {{ linkedSkill ? 'Ver práctica' : (practiceBusy ? 'Agregando…' : 'Practicar') }}
       </button>
-      <button v-if="hasNav" class="song-dock__nav" aria-label="Canción siguiente" :disabled="navIndex < 0 || navIndex >= navList.length - 1" @click="goTo(1)">
+      <button class="song-dock__nav" aria-label="Canción siguiente" :disabled="navIndex < 0 || navIndex >= navList.length - 1" @click="goTo(1)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
     </nav>
@@ -119,6 +120,9 @@ const { showError, attempt } = useToast()
 const { confirm }   = useConfirm()
 
 const sheet       = ref(null)
+// ponytail: Play (autoscroll) y Practicar quedan ocultos hasta que maduren; su código
+// sigue funcionando. Para volver a mostrarlos, cambiar a true.
+const SHOW_PRACTICE_TOOLS = false
 const practiceBusy = ref(false)
 
 const song = computed(() => store.songs.find(s => s.id === Number(route.params.id)))
@@ -188,16 +192,20 @@ const renderedLines = computed(() => {
 // ── Navegación entre canciones ──
 // El contexto llega por query: ?rep=<id> (repertorio) o ?act=<id> (actividad).
 // Sin contexto se navega sobre toda la biblioteca.
+// Solo ids de canciones que existen: repertorios y tiempos pueden guardar
+// canciones ya borradas.
 const navList = computed(() => {
+  const exists = new Set(store.songs.map(s => s.id))
   const repId = Number(route.query.rep)
   if (repId) {
     const rep = store.repertoires.find(r => r.id === repId)
-    if (rep?.songs?.length) return rep.songs
+    const ids = (rep?.songs || []).filter(id => exists.has(id))
+    if (ids.length) return ids
   }
   const actId = Number(route.query.act)
   if (actId) {
     const act = store.activities.find(a => a.id === actId)
-    const ids = (act?.tiempos || []).flatMap(t => t.songs || [])
+    const ids = (act?.tiempos || []).flatMap(t => t.songs || []).filter(id => exists.has(id))
     if (ids.length) return ids
   }
   return store.songs.map(s => s.id)
@@ -214,7 +222,6 @@ const songMeta = computed(() => {
     s.author,
     s.key && `Tono ${s.key}`,
     s.bpm && `${s.bpm} BPM`,
-    hasNav.value && navIndex.value >= 0 && `${navIndex.value + 1} de ${navList.value.length}`,
   ].filter(Boolean).join(' · ')
 })
 
@@ -391,7 +398,7 @@ onBeforeUnmount(() => {
   releaseWakeLock()
 })
 
-onMounted(() => { if (!practice.ready) practice.loadSkills() })
+onMounted(() => { if (SHOW_PRACTICE_TOOLS && !practice.ready) practice.loadSkills() })
 </script>
 
 <style scoped>
@@ -457,11 +464,12 @@ onMounted(() => { if (!practice.ready) practice.loadSkills() })
 
 /* Letra a todo el ancho, sin tarjeta. El padding inferior deja libre el dock. */
 .song-sheet {
-  padding: 18px 2px calc(112px + env(safe-area-inset-bottom));
+  padding: 18px 2px 40px;
   font-size: 1rem;
   line-height: 2;
   white-space: pre-wrap;
 }
+.song-sheet--dock { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
 .song-sheet__spacer { height: 10px; }
 /* Mismo tamaño para los dos formatos de acordes: la alineación depende de ello. */
 .song-sheet :deep(.chord-line),
@@ -483,7 +491,8 @@ onMounted(() => { if (!practice.ready) practice.loadSkills() })
   left: 50%;
   bottom: calc(14px + env(safe-area-inset-bottom));
   z-index: 30;
-  width: min(calc(100% - 28px), 420px);
+  width: max-content;
+  max-width: calc(100% - 28px);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -506,6 +515,7 @@ onMounted(() => { if (!practice.ready) practice.loadSkills() })
   -webkit-tap-highlight-color: transparent;
 }
 .song-dock__nav:disabled { opacity: .35; cursor: default; }
+.song-dock__count { min-width: 56px; color: var(--color-text-secondary); font-size: .8rem; font-weight: 700; text-align: center; white-space: nowrap; }
 .song-dock__nav svg { width: 20px; height: 20px; }
 .song-dock__play,
 .song-dock__practice {

@@ -22,11 +22,11 @@ const RoutineView = () => import('../views/RoutineView.vue')
 const RoutinePlayView = () => import('../views/RoutinePlayView.vue')
 const MetronomoView = () => import('../views/MetronomoView.vue')
 const HomeView = () => import('../views/HomeView.vue')
-const BandDashboardView = () => import('../views/BandDashboardView.vue')
 
 const routes = [
-  { path: '/',                redirect: '/inicio' },
-  { path: '/inicio',          component: BandDashboardView },
+  { path: '/',                redirect: '/actividades' },
+  // Inicio y Agenda se fusionaron: /inicio se conserva por enlaces viejos.
+  { path: '/inicio',          redirect: '/actividades' },
   { path: '/practica',        component: HomeView },
   { path: '/actividades',     component: ActividadesView },
   { path: '/actividades/nueva', component: ActivityFormView, meta: { form: true, title: 'Nueva actividad', can: 'manageActivities', denied: '/actividades' } },
@@ -62,7 +62,7 @@ const router = createRouter({
 
 // Rutas exclusivas de banda: sin banda activa, al dashboard de práctica.
 // (canciones/repertorios NO están aquí: existen también en el espacio personal)
-const BAND_ONLY = ['/inicio', '/actividad', '/banda', '/configuracion', '/live']
+const BAND_ONLY = ['/actividad', '/banda', '/configuracion', '/live']
 // Rutas exclusivas del espacio personal: activan el modo personal
 // (ej. recarga o re-login directo en /entrenar).
 const PERSONAL_ONLY = ['/practica', '/entrenar', '/skill', '/estadisticas', '/rutina', '/metronomo']
@@ -78,7 +78,7 @@ router.beforeEach((to) => {
     return '/practica'
   }
   // Permiso declarado en la ruta (meta.can): ver `can` en stores/band.js.
-  if (to.meta.can && !band.can[to.meta.can]) return to.meta.denied || '/inicio'
+  if (to.meta.can && !band.can[to.meta.can]) return to.meta.denied || '/actividades'
   if (to.path === '/actividades' && to.query.nueva && band.can.manageActivities) {
     return { path: '/actividades/nueva', query: to.query.fecha ? { fecha: to.query.fecha } : {} }
   }

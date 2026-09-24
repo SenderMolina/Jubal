@@ -65,7 +65,7 @@ watch(() => authStore.isAuthenticated, async (authed) => {
       .some(path => route.path.startsWith(path))
     if (isPersonalRoute && !bandStore.personalMode) {
       bandStore.enterPersonal()
-    } else if (route.path === '/inicio' && !bandStore.currentBandId) {
+    } else if (route.path === '/actividades' && !bandStore.currentBandId) {
       if (bandStore.bands.length) {
         bandStore.selectBand(bandStore.bands[0].id)
       } else {

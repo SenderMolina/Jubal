@@ -197,8 +197,8 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
 
 .live-content { flex: 1; overflow-y: auto; padding: 24px 20px 40px; }
 .live-section__label {
-  font-size: .8rem; text-transform: uppercase; letter-spacing: .06em;
-  color: var(--color-primary); font-weight: 700; margin-bottom: 12px;
+  margin-bottom: 12px; color: var(--color-section); text-align: center; text-transform: uppercase;
+  font-family: var(--font-display); font-size: .8rem; font-weight: 600; letter-spacing: .08em;
 }
 .live-spacer { height: 12px; }
 .live-chord { color: var(--color-chord); font-weight: 700; font-family: ui-monospace, 'Roboto Mono', monospace; white-space: pre; line-height: 1.5; }
@@ -206,7 +206,7 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
 
 /* Vista corista (estilo Spotify): grande y centrada */
 .live-content--singer { padding: 32px 24px; display: flex; flex-direction: column; justify-content: center; }
-.live-content--singer .live-section__label { text-align: center; font-size: 1rem; }
+.live-content--singer .live-section__label { font-size: .9rem; }
 .live-content--singer .live-lyric { font-size: 1.7rem; line-height: 2.1; text-align: center; font-family: 'Nunito', sans-serif; font-weight: 600; }
 /* Acordes inline en vivo: legibles para músico; para corista, letra grande/centrada */
 .live-chordpro :deep(.cp-line) { font-size: 1rem; line-height: 1.6; }

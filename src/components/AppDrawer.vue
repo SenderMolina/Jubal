@@ -37,9 +37,6 @@
             <button class="drawer-item" :class="{ active: isPath('/banda') }" @click="go('/banda')">
               <JubalNavIcon name="band" /><span class="drawer-item__label">Administrar banda</span><span class="drawer-chevron">›</span>
             </button>
-            <button class="drawer-item" :class="{ active: isPath('/configuracion') }" @click="go('/configuracion')">
-              <JubalNavIcon name="settings" /><span class="drawer-item__label">Configuraciones</span><span class="drawer-chevron">›</span>
-            </button>
           </template>
         </div>
       </div>
@@ -98,7 +95,7 @@ function go(path) {
 
 function goBand(id) {
   band.selectBand(id)
-  router.push('/inicio')
+  router.push('/actividades')
   emit('close')
 }
 
@@ -118,7 +115,7 @@ async function create() {
   busy.value = true
   try {
     await band.createBand(newName.value.trim())
-    router.push('/inicio')
+    router.push('/actividades')
     creating.value = false
     newName.value = ''
     emit('close')
