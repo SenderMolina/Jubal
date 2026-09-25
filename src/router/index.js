@@ -15,6 +15,8 @@ const RepertorioDetailView = () => import('../views/RepertorioDetailView.vue')
 const BandManageView = () => import('../views/BandManageView.vue')
 const ProfileView = () => import('../views/ProfileView.vue')
 const EntrenarView = () => import('../views/EntrenarView.vue')
+const ExerciseFormView = () => import('../views/ExerciseFormView.vue')
+const CatalogView = () => import('../views/CatalogView.vue')
 const SkillDetailView = () => import('../views/SkillDetailView.vue')
 const EstadisticasView = () => import('../views/EstadisticasView.vue')
 const RoutineView = () => import('../views/RoutineView.vue')
@@ -44,6 +46,8 @@ const routes = [
   { path: '/live',            redirect: '/actividades' },
   { path: '/perfil',          component: ProfileView },
   { path: '/entrenar',        component: EntrenarView },
+  { path: '/entrenar/nuevo',  component: ExerciseFormView, meta: { form: true } },
+  { path: '/entrenar/catalogo', component: CatalogView, meta: { form: true } },
   { path: '/skill/:id',       component: SkillDetailView },
   { path: '/estadisticas',    component: EstadisticasView },
   { path: '/rutina',          component: RoutineView },

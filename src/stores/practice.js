@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { supabase } from '../supabase'
 import { clearLoadError, reportLoadError } from '../composables/useLoadErrors'
 import { sectionsToPracticeParts } from '../utils/sections'
@@ -13,14 +13,25 @@ export const usePracticeStore = defineStore('practice', () => {
   const routines = ref([])  // rutinas del usuario, cada una con sections[] e items[]
   const routine = ref(null) // rutina seleccionada en el constructor
   const routineError = ref('')
+  // Catálogo personal: fuentes (manual, YouTube…) y técnicas (legato…).
+  const catalog = ref([])
+  const byName = (a, b) => a.name.localeCompare(b.name, 'es', { numeric: true })
+  const sources = computed(() => catalog.value.filter(item => item.kind === 'source').sort(byName))
+  const techniques = computed(() => catalog.value.filter(item => item.kind === 'technique').sort(byName))
+  const sourceName = skill => sources.value.find(item => item.id === skill?.source_id)?.name || ''
+  const techniqueNames = skill => techniques.value.filter(item => skill?.technique_ids?.includes(item.id)).map(item => item.name)
 
   async function loadSkills() {
-    const { data, error } = await supabase
-      .from('skills')
-      .select('*, song:songs(id,title,author,key,bpm,lyrics,band_id), parts:skill_parts(*)')
-      .order('created_at', { ascending: false })
-    if (error) { reportLoadError('objetivos de práctica', error, loadSkills); return }
-    clearLoadError('objetivos de práctica')
+    const [{ data, error }, catalogResult] = await Promise.all([
+      supabase
+        .from('skills')
+        .select('*, song:songs(id,title,author,key,bpm,lyrics,band_id), parts:skill_parts(*)')
+        .order('created_at', { ascending: false }),
+      supabase.from('practice_catalog').select('*'),
+    ])
+    if (error || catalogResult.error) { reportLoadError('ejercicios', error || catalogResult.error, loadSkills); return }
+    clearLoadError('ejercicios')
+    catalog.value = catalogResult.data || []
     skills.value = (data || []).map(s => ({
       ...s,
       parts: (s.parts || []).sort((a, b) => a.position - b.position),
@@ -30,16 +41,20 @@ export const usePracticeStore = defineStore('practice', () => {
 
   async function createSkill({
     name,
-    type,
+    type = 'technique',
     target_bpm = null,
+    current_bpm = null,
+    target_date = null,
+    technique_ids = [],
+    source_id = null,
     song_id = null,
     parts = [],
-    status = 'learning',
+    status = 'wishlist',
     notes = null,
   }) {
     const { data, error } = await supabase
       .from('skills')
-      .insert({ name, type, target_bpm, song_id, status, notes })
+      .insert({ name, type, target_bpm, current_bpm, target_date, technique_ids, source_id, song_id, status, notes })
       .select('*, song:songs(id,title,author,key,bpm,lyrics,band_id), parts:skill_parts(*)')
       .single()
     if (error) throw error
@@ -100,6 +115,8 @@ export const usePracticeStore = defineStore('practice', () => {
   }
 
   async function updateSkill(id, patch) {
+    // Concluir guarda la fecha; reabrir la limpia.
+    if ('status' in patch) patch = { ...patch, completed_at: patch.status === 'mastered' ? new Date().toISOString() : null }
     const { error } = await supabase.from('skills').update(patch).eq('id', id)
     if (error) throw error
     const s = skills.value.find(x => x.id === id)
@@ -110,6 +127,37 @@ export const usePracticeStore = defineStore('practice', () => {
     const { error } = await supabase.from('skills').delete().eq('id', id)
     if (error) throw error
     skills.value = skills.value.filter(s => s.id !== id)
+  }
+
+  // ---------- Catálogo ----------
+  async function createCatalogItem(kind, name) {
+    const { data, error } = await supabase
+      .from('practice_catalog').insert({ kind, name: name.trim() }).select().single()
+    if (error) throw error.code === '23505' ? new Error(`Ya existe "${name.trim()}"`) : error
+    catalog.value.push(data)
+    return data
+  }
+
+  async function renameCatalogItem(id, name) {
+    const { error } = await supabase.from('practice_catalog').update({ name: name.trim() }).eq('id', id)
+    if (error) throw error.code === '23505' ? new Error(`Ya existe "${name.trim()}"`) : error
+    const item = catalog.value.find(entry => entry.id === id)
+    if (item) item.name = name.trim()
+  }
+
+  // La BD deja source_id en null (FK); las técnicas se quitan a mano porque
+  // viven en un arreglo sin FK.
+  async function deleteCatalogItem(id) {
+    const { error } = await supabase.from('practice_catalog').delete().eq('id', id)
+    if (error) throw error
+    catalog.value = catalog.value.filter(item => item.id !== id)
+    for (const skill of skills.value) {
+      if (skill.source_id === id) skill.source_id = null
+      if (skill.technique_ids?.includes(id)) {
+        const technique_ids = skill.technique_ids.filter(value => value !== id)
+        await updateSkill(skill.id, { technique_ids })
+      }
+    }
   }
 
   // ---------- Partes ----------
@@ -157,21 +205,23 @@ export const usePracticeStore = defineStore('practice', () => {
   async function loadAllSessions() {
     const { data, error } = await supabase
       .from('practice_sessions')
-      .select('id, skill_id, part_id, bpm, duration_seconds, quality, practiced_at, routine_run_item_id')
+      .select('id, skill_id, part_id, bpm, duration_seconds, quality, practiced_at, routine_run_item_id, phase')
       .order('practiced_at', { ascending: false })
     if (error) throw error
     return data || []
   }
 
-  // Guarda una sesión y actualiza el bpm de la skill; si alcanzó la meta,
-  // la marca como dominada.
+  // Guarda una sesión (con la fase en que se hizo) y actualiza el bpm de la
+  // skill. Practicar un deseo lo pasa a Aprendiendo; el resto de cambios de
+  // estado, incluido Concluido, los decide el músico.
   async function logSession({ skill_id, part_id = null, bpm = null, duration_seconds, routine_run_item_id = null, quality = 3 }) {
+    const s = skills.value.find(x => x.id === skill_id)
+    const phase = !s || s.status === 'wishlist' ? 'learning' : s.status
     const { error } = await supabase
       .from('practice_sessions')
-      .insert({ skill_id, part_id, bpm, duration_seconds, routine_run_item_id, quality })
+      .insert({ skill_id, part_id, bpm, duration_seconds, routine_run_item_id, quality, phase })
     if (error) throw error
 
-    const s = skills.value.find(x => x.id === skill_id)
     if (s && part_id) {
       const { data: partSessions, error: partError } = await supabase
         .from('practice_sessions')
@@ -194,7 +244,7 @@ export const usePracticeStore = defineStore('practice', () => {
 
     if (s) {
       const patch = {}
-      if (s.status !== 'mastered' && Number(duration_seconds) >= 10) patch.status = 'practicing'
+      if (s.status === 'wishlist') patch.status = 'learning'
       if (bpm) {
         const { data: recent, error: recentError } = await supabase
           .from('practice_sessions')
@@ -204,14 +254,8 @@ export const usePracticeStore = defineStore('practice', () => {
           .order('practiced_at', { ascending: false })
           .limit(5)
         if (recentError) throw recentError
-        const reliable = (recent || []).filter(item => Number(item.duration_seconds) >= 60 && (item.quality || 3) >= 3)
         patch.current_bpm = stableBpm(recent || []) || bpm
-        const qualifying = s.target_bpm
-          ? reliable.filter(item => Number(item.bpm) >= s.target_bpm).length
-          : 0
-        if (s.target_bpm && qualifying >= 3) patch.status = 'mastered'
       }
-      if (!s.target_bpm && s.parts.length && s.parts.every(part => Number(part.progress) >= 100)) patch.status = 'mastered'
       if (Object.keys(patch).length) await updateSkill(skill_id, patch)
     }
   }
@@ -467,6 +511,7 @@ export const usePracticeStore = defineStore('practice', () => {
 
   function reset() {
     skills.value = []
+    catalog.value = []
     ready.value = false
     routines.value = []
     routine.value = null
@@ -474,7 +519,8 @@ export const usePracticeStore = defineStore('practice', () => {
   }
 
   return {
-    skills, ready, routines, routine, routineError,
+    skills, ready, routines, routine, routineError, catalog, sources, techniques,
+    createCatalogItem, renameCatalogItem, deleteCatalogItem, sourceName, techniqueNames,
     loadSkills, createSkill, createSkillFromSong, syncSongParts, updateSkill, deleteSkill,
     addPart, updatePart, deletePart,
     loadSessions, loadAllSessions, logSession,

@@ -126,10 +126,10 @@
           </div>
           <div v-else class="routine-section__empty"><strong>Sección vacía</strong></div>
 
-          <button v-if="availableSkills.length" class="routine-add-exercise" @click="openSkillPicker(section)">
+          <button v-if="store.skills.length" class="routine-add-exercise" @click="openSkillPicker(section)">
             <span>＋</span><b>Agregar ejercicio</b><i>›</i>
           </button>
-          <RouterLink v-else-if="!store.skills.length" class="routine-create-skill" to="/entrenar">＋ Crear ejercicios en Entrenar</RouterLink>
+          <RouterLink v-else-if="!store.skills.length" class="routine-create-skill" to="/entrenar/nuevo">＋ Crear un ejercicio</RouterLink>
         </section>
       </div>
 
@@ -160,11 +160,14 @@
               <h2 id="skill-picker-title">Agregar ejercicio</h2>
               <button aria-label="Cerrar" @click="closeSkillPicker">×</button>
             </header>
+            <input v-model="pickerQuery" class="form-input skill-picker__search" type="search" placeholder="Buscar ejercicio, fuente o técnica…" aria-label="Buscar ejercicio">
+            <template v-for="group in pickerGroups" :key="group.id || 'sin-fuente'">
+            <h3 class="skill-picker__group">{{ group.name }} <span>{{ group.items.length }}</span></h3>
             <div class="skill-picker__grid">
-              <button v-for="item in availableSkills" :key="item.id" class="skill-card" :class="`skill-card--${item.type || 'other'}`" :disabled="busy" @click="addExercise(skillPickerSection, item.id)">
+              <button v-for="item in group.items" :key="item.id" class="skill-card" :class="`skill-card--${item.type || 'other'}`" :disabled="busy" @click="addExercise(skillPickerSection, item.id)">
                 <span class="skill-card__icon">{{ skillIcon(item.type) }}</span>
                 <span class="skill-card__body">
-                  <small>{{ skillType(item.type) }}</small>
+                  <small>{{ store.techniqueNames(item).join(', ') || skillType(item.type) }}</small>
                   <strong>{{ item.name }}</strong>
                   <span class="skill-card__track"><i :style="{ width: `${skillMastery(item)}%` }"></i></span>
                   <em>{{ skillMastery(item) }}% dominio <template v-if="item.current_bpm">· {{ item.current_bpm }} BPM</template></em>
@@ -172,7 +175,9 @@
                 <span class="skill-card__add">＋</span>
               </button>
             </div>
-            <RouterLink class="skill-picker__create" to="/entrenar" @click="closeSkillPicker">＋ Crear una habilidad nueva</RouterLink>
+            </template>
+            <p v-if="!pickerGroups.length" class="skill-picker__empty">Sin coincidencias.</p>
+            <RouterLink class="skill-picker__create" to="/entrenar/nuevo" @click="closeSkillPicker">＋ Crear un ejercicio nuevo</RouterLink>
           </section>
         </div>
       </Transition>
@@ -186,7 +191,7 @@ import { useRouter } from 'vue-router'
 import { usePracticeStore } from '../stores/practice'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
-import { TYPE_LABELS, skillProgress } from '../utils/skills'
+import { TYPE_LABELS, groupBySource, skillProgress } from '../utils/skills'
 import UiSelect from '../components/UiSelect.vue'
 
 const DAYS = [
@@ -214,8 +219,14 @@ const skillPickerSection = ref(null)
 const routineNameInput = ref(null)
 const busy = ref(false)
 
-const availableSkills = computed(() => {
-  return store.skills
+// Selector agrupado por fuente; los concluidos quedan fuera para no estorbar.
+const pickerQuery = ref('')
+const pickerGroups = computed(() => {
+  const q = pickerQuery.value.trim().toLocaleLowerCase('es')
+  return groupBySource(store.skills
+    .filter(item => item.status !== 'mastered')
+    .filter(item => !q || [item.name, store.sourceName(item), ...store.techniqueNames(item)].filter(Boolean).join(' ').toLocaleLowerCase('es').includes(q))
+    .sort((a, b) => a.name.localeCompare(b.name, 'es', { numeric: true })), store.sources)
 })
 const totalMinutes = computed(() => routineMinutes(routine.value))
 
@@ -282,7 +293,7 @@ async function removeSection(section) {
   if (ok) await run(() => store.removeRoutineSection(section.id), 'Sección eliminada')
 }
 function openSkillPicker(section) { skillPickerSection.value = section }
-function closeSkillPicker() { skillPickerSection.value = null }
+function closeSkillPicker() { skillPickerSection.value = null; pickerQuery.value = '' }
 async function addExercise(section, skillId) {
   if (!skillId) return
   const selected = skill(skillId)
@@ -323,7 +334,7 @@ onMounted(async () => {
 .routine-section__empty { display: flex; flex-direction: column; align-items: center; padding: 15px 12px 3px; color: var(--color-text-muted); text-align: center; }.routine-section__empty > span { width: 30px; height: 30px; display: grid; place-items: center; margin-bottom: 5px; border-radius: 10px; background: var(--color-surface-secondary); color: var(--color-primary); font-size: 17px; }.routine-section__empty strong { color: var(--color-text-secondary); font-size: 9px; }.routine-section__empty small { margin-top: 2px; font-size: 7px; }.routine-add-exercise { width: calc(100% - 22px); min-height: 48px; display: grid; grid-template-columns: 32px 1fr auto; grid-template-rows: auto auto; align-items: center; gap: 0 8px; margin: 10px 11px 11px; padding: 7px 10px; border: 1px dashed rgba(var(--color-primary-rgb),.55); border-radius: 13px; background: var(--color-primary-soft); color: var(--color-primary-hover); font: inherit; text-align: left; cursor: pointer; }.routine-add-exercise > span { grid-row: 1/3; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 10px; background: var(--color-primary); color: var(--color-text-on-primary); font-size: 17px; }.routine-add-exercise b { align-self: end; font-size: 10px; }.routine-add-exercise small { align-self: start; color: var(--color-text-muted); font-size: 7px; }.routine-add-exercise i { grid-column: 3; grid-row: 1/3; font-size: 19px; font-style: normal; }.routine-create-skill { display: block; padding: 12px; color: var(--color-link); font-size: 9px; font-weight: 800; text-align: center; text-decoration: none; }
 .routine-add-section { min-height: 48px; border: 1px dashed var(--color-primary); border-radius: 16px; background: var(--color-primary-soft); color: var(--color-primary-hover); font: inherit; font-size: 10px; font-weight: 900; cursor: pointer; }.routine-add-section span { font-size: 16px; vertical-align: -1px; }.routine-loading { padding: 30px; color: var(--color-text-muted); font-size: 10px; text-align: center; }
 .routine-error { display: flex; align-items: flex-start; gap: 10px; padding: 13px; border: 1px solid rgba(var(--color-danger-rgb),.25); border-radius: 15px; background: var(--color-danger-soft); color: var(--color-text-primary); }.routine-error > span { width: 28px; height: 28px; flex: 0 0 28px; display: grid; place-items: center; border-radius: 50%; background: var(--color-danger); color: var(--color-text-on-primary); font-weight: 900; }.routine-error strong { font-size: 11px; }.routine-error p { margin-top: 3px; color: var(--color-text-secondary); font-size: 9px; }.routine-error small { display: block; margin-top: 7px; color: var(--color-text-muted); font-size: 8px; line-height: 1.45; }.routine-error b { color: var(--color-text-primary); }
-.skill-picker { position: fixed; z-index: 1200; inset: 0; display: flex; align-items: flex-end; justify-content: center; padding-top: 50px; background: var(--color-overlay); backdrop-filter: blur(4px); }.skill-picker__sheet { width: min(620px,100%); max-height: calc(100dvh - 50px); overflow-y: auto; padding: 7px 14px calc(18px + env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; background: var(--color-background); box-shadow: var(--shadow-modal); }.skill-picker__handle { width: 42px; height: 4px; margin: 0 auto 10px; border-radius: 9px; background: var(--color-border); }.skill-picker header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 0 2px 13px; }.skill-picker header span { color: var(--color-primary-hover); font-size: 8px; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }.skill-picker header h2 { margin-top: 3px; font-size: 18px; }.skill-picker header p { margin-top: 3px; color: var(--color-text-muted); font-size: 9px; }.skill-picker header button { width: 31px; height: 31px; flex: 0 0 31px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); color: var(--color-text-secondary); font-size: 19px; cursor: pointer; }.skill-picker__grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }.skill-card { min-width: 0; display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid var(--color-border); border-radius: 15px; background: var(--color-surface); color: var(--color-text-primary); font: inherit; text-align: left; box-shadow: var(--shadow-small); cursor: pointer; }.skill-card__icon { width: 39px; height: 39px; flex: 0 0 39px; display: grid; place-items: center; border-radius: 12px; background: var(--color-primary-soft); color: var(--color-primary-hover); font-size: 17px; }.skill-card--solo .skill-card__icon { background: var(--color-objective-practicing-soft); color: var(--color-objective-practicing); }.skill-card--technique .skill-card__icon { background: var(--color-role-singer-soft); color: var(--color-role-singer); }.skill-card--song .skill-card__icon { background: var(--color-info-soft); color: var(--color-info-text); }.skill-card__body { min-width: 0; flex: 1; display: flex; flex-direction: column; }.skill-card__body > small { color: var(--color-primary-hover); font-size: 6px; font-weight: 900; text-transform: uppercase; }.skill-card__body strong { overflow: hidden; margin: 2px 0 6px; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }.skill-card__track { height: 4px; overflow: hidden; border-radius: 5px; background: var(--color-surface-secondary); }.skill-card__track i { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); }.skill-card__body em { margin-top: 4px; color: var(--color-text-muted); font-size: 6px; font-style: normal; }.skill-card__add { color: var(--color-primary); font-size: 17px; }.skill-picker__create { display: block; margin-top: 10px; padding: 12px; border: 1px dashed var(--color-link); border-radius: 13px; color: var(--color-link); font-size: 9px; font-weight: 900; text-align: center; text-decoration: none; }.skill-sheet-enter-active,.skill-sheet-leave-active { transition: opacity .2s ease; }.skill-sheet-enter-active .skill-picker__sheet,.skill-sheet-leave-active .skill-picker__sheet { transition: transform .25s ease; }.skill-sheet-enter-from,.skill-sheet-leave-to { opacity: 0; }.skill-sheet-enter-from .skill-picker__sheet,.skill-sheet-leave-to .skill-picker__sheet { transform: translateY(35px); }
+.skill-picker { position: fixed; z-index: 1200; inset: 0; display: flex; align-items: flex-end; justify-content: center; padding-top: 50px; background: var(--color-overlay); backdrop-filter: blur(4px); }.skill-picker__sheet { width: min(620px,100%); max-height: calc(100dvh - 50px); overflow-y: auto; padding: 7px 14px calc(18px + env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; background: var(--color-background); box-shadow: var(--shadow-modal); }.skill-picker__handle { width: 42px; height: 4px; margin: 0 auto 10px; border-radius: 9px; background: var(--color-border); }.skill-picker header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 0 2px 13px; }.skill-picker header span { color: var(--color-primary-hover); font-size: 8px; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }.skill-picker header h2 { margin-top: 3px; font-size: 18px; }.skill-picker header p { margin-top: 3px; color: var(--color-text-muted); font-size: 9px; }.skill-picker header button { width: 31px; height: 31px; flex: 0 0 31px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); color: var(--color-text-secondary); font-size: 19px; cursor: pointer; }.skill-picker__search { margin-bottom: 4px; }.skill-picker__group { display: flex; align-items: center; gap: 6px; margin: 14px 2px 8px; font-size: 13px; font-weight: 900; }.skill-picker__group span { padding: 1px 7px; border-radius: 999px; background: var(--color-surface-secondary); color: var(--color-text-muted); font-size: 11px; }.skill-picker__empty { padding: 20px; color: var(--color-text-muted); text-align: center; }.skill-picker__grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }.skill-card { min-width: 0; display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid var(--color-border); border-radius: 15px; background: var(--color-surface); color: var(--color-text-primary); font: inherit; text-align: left; box-shadow: var(--shadow-small); cursor: pointer; }.skill-card__icon { width: 39px; height: 39px; flex: 0 0 39px; display: grid; place-items: center; border-radius: 12px; background: var(--color-primary-soft); color: var(--color-primary-hover); font-size: 17px; }.skill-card--solo .skill-card__icon { background: var(--color-objective-practicing-soft); color: var(--color-objective-practicing); }.skill-card--technique .skill-card__icon { background: var(--color-role-singer-soft); color: var(--color-role-singer); }.skill-card--song .skill-card__icon { background: var(--color-info-soft); color: var(--color-info-text); }.skill-card__body { min-width: 0; flex: 1; display: flex; flex-direction: column; }.skill-card__body > small { color: var(--color-primary-hover); font-size: 6px; font-weight: 900; text-transform: uppercase; }.skill-card__body strong { overflow: hidden; margin: 2px 0 6px; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }.skill-card__track { height: 4px; overflow: hidden; border-radius: 5px; background: var(--color-surface-secondary); }.skill-card__track i { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); }.skill-card__body em { margin-top: 4px; color: var(--color-text-muted); font-size: 6px; font-style: normal; }.skill-card__add { color: var(--color-primary); font-size: 17px; }.skill-picker__create { display: block; margin-top: 10px; padding: 12px; border: 1px dashed var(--color-link); border-radius: 13px; color: var(--color-link); font-size: 9px; font-weight: 900; text-align: center; text-decoration: none; }.skill-sheet-enter-active,.skill-sheet-leave-active { transition: opacity .2s ease; }.skill-sheet-enter-active .skill-picker__sheet,.skill-sheet-leave-active .skill-picker__sheet { transition: transform .25s ease; }.skill-sheet-enter-from,.skill-sheet-leave-to { opacity: 0; }.skill-sheet-enter-from .skill-picker__sheet,.skill-sheet-leave-to .skill-picker__sheet { transform: translateY(35px); }
 @media (max-width:480px) { .skill-picker__grid { grid-template-columns: 1fr; } }
 @media (max-width:350px) { .routine-builder { gap: 10px; }.routine-intro p { display:none; }.routine-days { gap: 3px; }.routine-days button small { display:none; }.routine-exercise__settings { margin-left: 0; }.routine-create,.routine-section-create { grid-template-columns: 1fr 1fr; }.routine-create input,.routine-section-create input { grid-column: 1/-1; } }
 @media (prefers-reduced-motion:reduce) { .skill-sheet-enter-active,.skill-sheet-leave-active,.skill-sheet-enter-active .skill-picker__sheet,.skill-sheet-leave-active .skill-picker__sheet { transition:none; } }

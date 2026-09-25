@@ -1,137 +1,97 @@
 <template>
   <div class="metro-view">
-    <!-- Escenario: la práctica ocurre aquí -->
-    <section class="stage" :class="{ running: isRunning }">
-      <div class="stage__ambient" aria-hidden="true"></div>
-
-      <!-- div, no <header>: main.css tiene un header{} global legacy con fondo claro -->
-      <div class="stage__head">
-        <template v-if="skill">
-          <span class="stage__label">{{ part ? 'Sección en práctica' : 'Objetivo en práctica' }}</span>
-          <h1 class="stage__title">{{ skill.name }}</h1>
-          <p v-if="part || targetLabel" class="stage__meta">
-            {{ [part?.name, targetLabel].filter(Boolean).join(' · ') }}
-          </p>
-        </template>
-        <template v-else>
-          <span class="stage__label">Metrónomo</span>
-          <h1 class="stage__title">Práctica libre</h1>
-        </template>
+    <div class="metro-topbar">
+      <button class="metro-back" aria-label="Volver" @click="goBack">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m14 6-6 6 6 6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </button>
+      <div class="metro-heading">
+        <h1>{{ skill?.name || 'Metrónomo' }}</h1>
+        <p>{{ [part?.name, targetLabel].filter(Boolean).join(', ') || 'Práctica libre' }}</p>
       </div>
+    </div>
 
-      <!-- Tempo -->
-      <div class="stage__bpm">
-        <button class="bpm-btn" aria-label="Bajar 5 BPM" @click="setBpm(bpm - 5)">−5</button>
-        <button class="bpm-btn bpm-btn--fine" aria-label="Bajar 1 BPM" @click="setBpm(bpm - 1)">−</button>
-        <div class="bpm-value">
-          <input type="number" :value="bpm" aria-label="Pulsos por minuto" @change="setBpm(+$event.target.value)">
-          <span>BPM</span>
+    <section class="device" :class="{ running: isRunning }" aria-label="Metrónomo">
+      <!-- Pantalla: solo lectura, salvo el tempo que se puede escribir -->
+      <div class="lcd">
+        <label class="lcd__tempo">
+          <input
+            class="lcd__bpm"
+            type="number"
+            inputmode="numeric"
+            min="20"
+            max="300"
+            :value="bpm"
+            :style="{ width: `${String(bpm).length + 0.2}ch` }"
+            aria-label="Pulsos por minuto"
+            @change="setBpm(+$event.target.value); $event.target.value = bpm"
+          >
+          <span>bpm</span>
+        </label>
+        <dl class="lcd__readouts">
+          <div><dt>compás</dt><dd>{{ beatsPerBar }}/4</dd></div>
+          <div><dt>pulso</dt><dd class="note">{{ currentSubdivision.icon }}</dd></div>
+          <div><dt>tiempo</dt><dd :class="{ live: isRunning }">{{ timerLabel }}</dd></div>
+        </dl>
+        <div class="lcd__beats" aria-hidden="true">
+          <span v-for="i in beatsPerBar" :key="i" :class="{ on: currentBeat === i - 1, down: i === 1 && accentEnabled }" />
+          <small v-if="trainerEnabled">sube {{ trainerStep }} bpm cada {{ trainerBars }} compases</small>
         </div>
-        <button class="bpm-btn bpm-btn--fine" aria-label="Subir 1 BPM" @click="setBpm(bpm + 1)">+</button>
-        <button class="bpm-btn" aria-label="Subir 5 BPM" @click="setBpm(bpm + 5)">+5</button>
-      </div>
-      <input
-        class="stage__tempo-range"
-        type="range" min="20" max="300" step="1" :value="bpm"
-        aria-label="Ajustar tempo"
-        @input="setBpm(+$event.target.value)"
-      >
-      <div class="stage__presets" aria-label="Tempos rápidos">
-        <button v-for="tempo in [60, 80, 100, 120, 160]" :key="tempo" @click="setBpm(tempo)">{{ tempo }}</button>
       </div>
 
-      <!-- Pulso visual del compás -->
-      <div class="stage__beats" aria-hidden="true">
-        <span
-          v-for="i in beatsPerBar"
-          :key="i"
-          :class="{ active: currentBeat === i - 1, accent: i === 1 }"
-        />
+      <div class="device__dial">
+        <TempoDial :model-value="bpm" @update:model-value="setBpm">
+          <div class="dial-controls">
+            <button class="dial-step" aria-label="Bajar 1 BPM" @click="setBpm(bpm - 1)">−</button>
+            <button class="dial-play" :class="{ beat: beatFlash, accent: accentFlash }" :aria-label="isRunning ? 'Pausar' : 'Iniciar'" @click="toggle">
+              <svg v-if="!isRunning" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+              <svg v-else viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z" /></svg>
+            </button>
+            <button class="dial-step" aria-label="Subir 1 BPM" @click="setBpm(bpm + 1)">+</button>
+          </div>
+        </TempoDial>
       </div>
 
-      <!-- Controles: el dial late con el beat -->
-      <div class="stage__controls">
-        <button class="stage__tap" @click="tap">TAP</button>
-        <button
-          class="stage__play"
-          :class="{ beat: beatFlash, accent: accentFlash }"
-          :aria-label="isRunning ? 'Pausar' : 'Iniciar'"
-          @click="toggle"
-        >
-          <svg v-if="!isRunning" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-          <svg v-else viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+      <!-- Teclas: compás y pulso rotan entre opciones con cada toque -->
+      <div class="keys">
+        <button class="key" :aria-label="`Compás ${beatsPerBar} por 4. Toca para cambiar`" @click="cycleBeats"><b>{{ beatsPerBar }}/4</b><small>compás</small></button>
+        <button class="key" :aria-label="`${currentSubdivision.label}. Toca para cambiar`" @click="cycleSubdivision"><b class="note">{{ currentSubdivision.icon }}</b><small>{{ currentSubdivision.short }}</small></button>
+        <button class="key" @click="tap"><b>Tap</b><small>marcar</small></button>
+        <button class="key" :class="{ active: settingsOpen }" :aria-expanded="settingsOpen" aria-controls="metro-settings" @click="settingsOpen = !settingsOpen">
+          <b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></svg></b>
+          <small>ajustes</small>
         </button>
-        <span class="stage__timer" :class="{ running: isRunning }">{{ timerLabel }}</span>
+      </div>
+
+      <div v-if="settingsOpen" id="metro-settings" class="settings">
+        <div class="settings__row">
+          <span>Acento en el 1</span>
+          <button class="switch" :class="{ on: accentEnabled }" role="switch" :aria-checked="accentEnabled" aria-label="Acento en el primer tiempo" @click="accentEnabled = !accentEnabled"><i /></button>
+        </div>
+        <label class="settings__row">
+          <span>Volumen</span>
+          <input class="settings__volume" type="range" min="0" max="1" step="0.05" :value="volume" @input="setVolume($event.target.value)">
+        </label>
+        <div class="settings__row">
+          <span>Subir tempo solo</span>
+          <button class="switch" :class="{ on: trainerEnabled }" role="switch" :aria-checked="trainerEnabled" aria-label="Subir tempo automáticamente" @click="trainerEnabled = !trainerEnabled"><i /></button>
+        </div>
+        <div v-if="trainerEnabled" class="settings__row settings__trainer">
+          <label>+ <input v-model.number="trainerStep" type="number" inputmode="numeric" min="1" max="20" aria-label="BPM que sube"> bpm</label>
+          <label>cada <input v-model.number="trainerBars" type="number" inputmode="numeric" min="1" max="32" aria-label="Compases entre cada subida"> compases</label>
+        </div>
+      </div>
+
+      <div v-if="skill" class="session">
+        <button v-if="!rating" class="session__save" :disabled="!elapsedSeconds" @click="startRating">
+          Guardar práctica <span>{{ timerLabel }}</span>
+        </button>
+        <div v-else class="session__rate" role="group" aria-label="¿Cómo se sintió?">
+          <span>¿Cómo se sintió?</span>
+          <button v-for="option in QUALITY" :key="option.value" :disabled="saving" @click="saveSession(option.value)">{{ option.label }}</button>
+          <button class="session__cancel" aria-label="Cancelar" :disabled="saving" @click="rating = false">×</button>
+        </div>
       </div>
     </section>
-
-    <!-- Compás -->
-    <div class="metro-row">
-      <span class="metro-row__label">Compás</span>
-      <div class="metro-bar">
-        <button
-          v-for="n in [2, 3, 4, 6]"
-          :key="n"
-          :class="{ active: beatsPerBar === n }"
-          @click="beatsPerBar = n"
-        >{{ n }}<small>/4</small></button>
-      </div>
-    </div>
-
-    <div class="metro-row metro-row--stack">
-      <div class="metro-setting">
-        <span class="metro-row__label">Subdivisión</span>
-        <div class="metro-subdivision">
-          <button
-            v-for="option in SUBDIVISIONS"
-            :key="option.value"
-            :class="{ active: subdivision === option.value }"
-            :aria-label="option.label"
-            @click="setSubdivision(option.value)"
-          ><b>{{ option.icon }}</b><small>{{ option.short }}</small></button>
-        </div>
-      </div>
-      <div class="metro-setting metro-setting--sound">
-        <button class="metro-toggle" :class="{ active: accentEnabled }" @click="accentEnabled = !accentEnabled">
-          <span aria-hidden="true">{{ accentEnabled ? '●' : '○' }}</span> Acento
-        </button>
-        <label class="metro-volume">
-          <span aria-hidden="true">{{ volume ? '◖))' : '◖' }}</span>
-          <input type="range" min="0" max="1" step="0.05" :value="volume" aria-label="Volumen" @input="setVolume($event.target.value)">
-        </label>
-      </div>
-    </div>
-
-    <div class="metro-row metro-row--trainer">
-      <div>
-        <span class="metro-row__label">Entrenador de tempo</span>
-        <small>{{ trainerEnabled ? `Sube ${trainerStep} BPM cada ${trainerBars} compases` : 'Incrementa el tempo automáticamente' }}</small>
-      </div>
-      <button class="switch" :class="{ active: trainerEnabled }" :aria-pressed="trainerEnabled" @click="trainerEnabled = !trainerEnabled"><span /></button>
-      <div v-if="trainerEnabled" class="trainer-options">
-        <label>+ <input v-model.number="trainerStep" type="number" min="1" max="20"> BPM</label>
-        <label>cada <input v-model.number="trainerBars" type="number" min="1" max="32"> compases</label>
-      </div>
-    </div>
-
-    <!-- Cierre de sesión -->
-    <div v-if="skill" class="metro-row">
-      <span class="metro-row__label">¿Cómo se sintió?</span>
-      <div class="metro-quality">
-        <button
-          v-for="option in QUALITY"
-          :key="option.value"
-          :class="{ active: quality === option.value }"
-          @click="quality = option.value"
-        ><b>{{ option.icon }}</b><small>{{ option.label }}</small></button>
-      </div>
-    </div>
-    <button
-      v-if="skill"
-      class="btn btn-primary metro-save"
-      :disabled="!elapsedSeconds"
-      @click="saveSession"
-    >{{ elapsedSeconds ? `Guardar sesión · ${timerLabel}` : 'Guardar sesión' }}</button>
   </div>
 </template>
 
@@ -142,6 +102,7 @@ import { useMetronome } from '../composables/useMetronome'
 import { usePracticeStore } from '../stores/practice'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
+import TempoDial from '../components/TempoDial.vue'
 
 const router = useRouter()
 const {
@@ -154,16 +115,35 @@ const { showToast, showError } = useToast()
 const { confirm } = useConfirm()
 
 const QUALITY = [
-  { value: 1, icon: '●', label: 'Difícil' },
-  { value: 3, icon: '◆', label: 'Bien' },
-  { value: 5, icon: '★', label: 'Fluyó' },
+  { value: 1, label: 'Difícil' },
+  { value: 3, label: 'Bien' },
+  { value: 5, label: 'Fluyó' },
 ]
-const quality = ref(3)
 const SUBDIVISIONS = [
-  { value: 1, icon: '♩', short: 'Negras', label: 'Una negra por pulso' },
-  { value: 2, icon: '♪', short: 'Corcheas', label: 'Dos corcheas por pulso' },
-  { value: 4, icon: '♬', short: 'Semis', label: 'Cuatro semicorcheas por pulso' },
+  { value: 1, icon: '♩', short: 'negras', label: 'Una negra por pulso' },
+  { value: 2, icon: '♫', short: 'corcheas', label: 'Dos corcheas por pulso' },
+  { value: 4, icon: '♬', short: 'semis', label: 'Cuatro semicorcheas por pulso' },
 ]
+const BEATS = [2, 3, 4, 6]
+const currentSubdivision = computed(() => SUBDIVISIONS.find(option => option.value === subdivision.value) || SUBDIVISIONS[0])
+const settingsOpen = ref(false)
+const rating = ref(false)
+const saving = ref(false)
+
+function cycleBeats() {
+  beatsPerBar.value = BEATS[(BEATS.indexOf(beatsPerBar.value) + 1) % BEATS.length]
+}
+
+function cycleSubdivision() {
+  const index = SUBDIVISIONS.findIndex(option => option.value === subdivision.value)
+  setSubdivision(SUBDIVISIONS[(index + 1) % SUBDIVISIONS.length].value)
+}
+
+// Guardar pide primero cómo se sintió; elegir la calificación guarda.
+function startRating() {
+  stop()
+  rating.value = true
+}
 const trainerEnabled = ref(false)
 const trainerStep = ref(2)
 const trainerBars = ref(4)
@@ -206,29 +186,35 @@ const timerLabel = computed(() => {
   return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`
 })
 
-async function saveSession() {
-  const s = skill.value
-  stop()
-  const wasMastered = s.status === 'mastered'  // logSession lo puede mutar
+async function saveSession(quality) {
+  saving.value = true
   try {
     await store.logSession({
-      skill_id: s.id,
+      skill_id: skill.value.id,
       part_id: part.value?.id || null,
       bpm: bpm.value,
       duration_seconds: elapsedSeconds.value,
-      quality: quality.value,
+      quality,
     })
-    const mastered = s.status === 'mastered' && !wasMastered
-    showToast(mastered ? '🎉 ¡Objetivo dominado!' : 'Sesión guardada')
+    showToast('Práctica guardada')
     close()
-    router.back()
+    goBack()
   } catch (e) {
-    showError(e, 'No se pudo guardar la sesión')
+    showError(e, 'No se pudo guardar la práctica')
+  } finally {
+    saving.value = false
   }
 }
 
+function goBack() {
+  if (router.options.history.state.back) router.back()
+  else router.replace('/practica')
+}
+
 function handleKeyboard(event) {
+  if (event.defaultPrevented) return
   const target = event.target
+  if (event.code === 'Space' && target instanceof Element && target.closest('button')) return
   if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return
   if (event.code === 'Space') { event.preventDefault(); toggle() }
   else if (event.key === 'ArrowUp' || event.key === 'ArrowRight') { event.preventDefault(); setBpm(bpm.value + 1) }
@@ -253,182 +239,161 @@ onBeforeRouteLeave(async () => {
 </script>
 
 <style scoped>
+/* Metrónomo como aparato: una carcasa con pantalla, perilla y teclas.
+   Colores de la marca en versión "hardware": carcasa marino, vidrio con
+   dígitos turquesa iluminado y naranja para el pulso 1 y el play. */
 .metro-view {
-  max-width: 440px; margin: 0 auto;
-  /* Sin padding lateral: .page ya lo aporta (16/20px) */
-  padding: 12px 0 0;
-  display: flex; flex-direction: column; gap: 14px;
-  /* Llenar hasta el menú: alto de viewport menos header de la app y paddings de .page */
-  min-height: calc(100dvh - 182px);
+  --body: #083b59;
+  --body-edge: #052b42;
+  --key: #0e4d72;
+  --key-text: #d7ecf2;
+  --glass: #021c2a;
+  --lit: #7fe6f5;
+  --ghost: rgba(127, 230, 245, .16);
+  --downbeat: #f39015;
+  width: 100%; max-width: 520px; height: 100dvh; margin: 0 auto;
+  padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  display: grid; grid-template-rows: 48px minmax(0, 1fr); gap: 6px;
 }
-@media (max-width: 600px) {
-  .metro-view { min-height: calc(100dvh - 136px); }
+.metro-topbar { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.metro-back { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border: 0; border-radius: 50%; background: transparent; color: var(--color-primary); cursor: pointer; }
+.metro-back svg { width: 24px; height: 24px; }
+.metro-heading { min-width: 0; }
+.metro-heading h1 { overflow: hidden; font-size: 18px; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.metro-heading p { overflow: hidden; color: var(--color-text-secondary); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Carcasa ── */
+.device {
+  min-height: 0; display: flex; flex-direction: column; gap: 12px;
+  padding: 14px 14px 16px; border-radius: 30px;
+  background: linear-gradient(180deg, #0b4467, var(--body) 40%, var(--body-edge));
+  box-shadow: 0 18px 40px rgba(5, 43, 66, .35), inset 0 1px 0 rgba(255, 255, 255, .12);
+  color: var(--key-text);
 }
 
-/* ---- Escenario ---- */
-.stage {
-  flex: 1; display: flex; flex-direction: column;
-  position: relative; isolation: isolate; overflow: hidden;
-  padding: 20px 16px 24px; border-radius: 26px; color: var(--color-text-primary);
-  background: var(--color-primary-soft);
-  border: 1px solid rgba(var(--color-primary-rgb), .24);
-  box-shadow: var(--shadow-small);
+/* ── Pantalla ── */
+.lcd {
+  flex-shrink: 0; display: grid; grid-template-columns: auto 1fr; align-items: end; gap: 6px 12px;
+  padding: 12px 16px 12px; border-radius: 16px;
+  background: radial-gradient(120% 140% at 20% 0%, #06304a, var(--glass) 60%);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, .55), 0 1px 0 rgba(255, 255, 255, .1);
 }
-.stage__ambient {
-  position: absolute; z-index: -1; right: -55px; top: -85px;
-  width: 195px; height: 195px; border-radius: 50%;
-  background: var(--color-warning-soft);
+.lcd__tempo { display: flex; align-items: baseline; gap: 4px; }
+.lcd__bpm {
+  padding: 0; border: 0; background: transparent; color: var(--lit); text-align: right;
+  font-family: var(--font-display); font-size: 58px; font-weight: 600; line-height: .95; font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 14px rgba(127, 230, 245, .45); appearance: textfield; -moz-appearance: textfield;
 }
-.stage__head { text-align: center; }
-.stage__label {
-  color: var(--color-primary); font-size: 8px; font-weight: 900;
-  letter-spacing: .12em; text-transform: uppercase;
-}
-.stage__title {
-  margin-top: 3px; font-size: 17px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.stage__meta { margin-top: 3px; color: var(--color-text-secondary); font-size: 10px; }
+/* Le gana a la regla global de 16px en campos (evita zoom en iOS; aquí es mayor). */
+.device .lcd input.lcd__bpm[type='number'] { font-size: 58px; }
+.lcd__bpm::-webkit-outer-spin-button, .lcd__bpm::-webkit-inner-spin-button { -webkit-appearance: none; }
+.lcd__bpm:focus-visible { outline: 2px solid var(--lit); outline-offset: 3px; border-radius: 6px; }
+.lcd__tempo span { color: rgba(127, 230, 245, .7); font-size: 13px; font-weight: 700; }
+.lcd__readouts { display: flex; justify-content: flex-end; gap: 14px; margin: 0 0 4px; }
+.lcd__readouts div { display: flex; flex-direction: column; align-items: flex-end; }
+.lcd__readouts dt { color: rgba(127, 230, 245, .55); font-size: 11px; font-weight: 700; }
+.lcd__readouts dd { margin: 0; color: var(--lit); font-family: var(--font-display); font-size: 19px; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.lcd__readouts dd:not(.live) { opacity: .92; }
+.note { font-family: system-ui, sans-serif !important; font-size: 28px !important; line-height: 1; }
+.lcd__beats { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; min-height: 14px; }
+.lcd__beats span { width: 22px; height: 7px; border-radius: 4px; background: var(--ghost); transition: background .05s, box-shadow .05s; }
+.lcd__beats span.on { background: var(--lit); box-shadow: 0 0 10px rgba(127, 230, 245, .8); }
+.lcd__beats span.down.on { background: var(--downbeat); box-shadow: 0 0 12px rgba(243, 144, 21, .85); }
+.lcd__beats small { margin-left: auto; overflow: hidden; color: rgba(127, 230, 245, .7); font-size: 11px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 
-/* margin auto arriba y abajo: el tempo y el dial se reparten el alto sobrante */
-.stage__bpm { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: auto; padding-top: 16px; }
-.bpm-btn {
-  width: 46px; height: 42px; flex-shrink: 0; cursor: pointer;
-  border: 1px solid rgba(var(--color-primary-rgb), .25); border-radius: 13px;
-  background: var(--color-surface); color: var(--color-primary);
-  font: inherit; font-size: 12px; font-weight: 800;
+/* ── Perilla: ocupa el espacio que dejen pantalla, teclas y ajustes ── */
+.device__dial { flex: 1; min-height: 120px; container-type: size; display: grid; place-items: center; }
+.device__dial :deep(.tempo-dial) { width: min(100cqw - 8px, 100cqh - 8px, 320px); }
+.dial-controls { display: flex; align-items: center; gap: 5cqw; }
+.dial-step {
+  width: 13cqw; height: 13cqw; min-width: 36px; min-height: 36px; display: grid; place-items: center;
+  border: 0; border-radius: 50%; background: transparent; color: var(--body); font-size: max(20px, 7cqw); font-weight: 700; cursor: pointer;
 }
-.bpm-btn--fine { width: 36px; background: var(--color-surface-secondary); }
-.bpm-btn:active { background: var(--color-primary-soft); }
-.bpm-value { display: flex; flex-direction: column; align-items: center; min-width: 118px; }
-.bpm-value input {
-  width: 118px; text-align: center; line-height: 1;
-  font-size: 54px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -.03em;
-  background: none; border: none; color: var(--color-primary); outline: none;
-  -moz-appearance: textfield; appearance: textfield;
+.dial-step:active { background: rgba(8, 59, 89, .1); }
+.dial-play {
+  width: 32cqw; height: 32cqw; min-width: 64px; min-height: 64px; display: grid; place-items: center;
+  border: 0; border-radius: 50%; background: radial-gradient(circle at 50% 30%, #ffab45, var(--downbeat) 70%);
+  color: var(--body); box-shadow: 0 6px 14px rgba(217, 120, 8, .45), inset 0 2px 0 rgba(255, 255, 255, .35);
+  cursor: pointer; transition: transform .08s, box-shadow .08s;
 }
-.bpm-value input::-webkit-outer-spin-button,
-.bpm-value input::-webkit-inner-spin-button { -webkit-appearance: none; }
-.bpm-value span { color: var(--color-text-secondary); font-size: 8px; font-weight: 900; letter-spacing: .22em; }
-.stage__tempo-range { width: min(300px, 88%); margin: 9px auto 0; accent-color: var(--color-primary); }
-.stage__presets { display: flex; justify-content: center; gap: 5px; margin-top: 8px; }
-.stage__presets button { min-width: 39px; padding: 4px 6px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-text-secondary); font: inherit; font-size: 9px; cursor: pointer; }
+.dial-play svg { width: 40%; height: 40%; }
+.dial-play.beat { transform: scale(1.04); }
+.dial-play.accent { box-shadow: 0 0 0 6px rgba(243, 144, 21, .3), 0 6px 14px rgba(217, 120, 8, .45); }
 
-.stage__beats { display: flex; justify-content: center; gap: 11px; margin: 17px 0 4px; }
-.stage__beats span {
-  width: 11px; height: 11px; border-radius: 50%;
-  background: var(--color-surface); border: 1px solid rgba(var(--color-primary-rgb), .3);
-  transition: transform .06s, background .06s, box-shadow .06s;
+/* ── Teclas ── */
+.keys { flex-shrink: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.key {
+  min-height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  border: 0; border-radius: 16px; background: linear-gradient(180deg, #125a84, var(--key));
+  box-shadow: 0 3px 0 var(--body-edge), inset 0 1px 0 rgba(255, 255, 255, .14);
+  color: var(--key-text); font: inherit; cursor: pointer; transition: transform .06s, box-shadow .06s;
 }
-.stage__beats .accent { border-color: var(--color-accent); }
-.stage__beats .active { background: var(--color-primary); transform: scale(1.45); }
-.stage__beats .accent.active { background: var(--color-accent); box-shadow: 0 0 0 5px var(--color-accent-soft); }
+.key:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--body-edge), inset 0 1px 0 rgba(255, 255, 255, .1); }
+.key b { display: grid; place-items: center; height: 24px; font-family: var(--font-display); font-size: 19px; font-weight: 600; }
+.key b svg { width: 20px; height: 20px; }
+.key small { color: rgba(215, 236, 242, .65); font-size: 11px; font-weight: 700; }
+.key.active { background: linear-gradient(180deg, #1c7aa8, #125a84); color: #fff; }
 
-.stage__controls {
-  display: grid; grid-template-columns: 1fr auto 1fr;
-  align-items: center; margin-top: auto; padding-top: 14px;
+/* ── Ajustes (plegables dentro de la carcasa) ── */
+.settings { flex-shrink: 0; display: flex; flex-direction: column; padding: 2px 14px; border-radius: 16px; background: rgba(2, 28, 42, .45); }
+.settings__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 46px; font-size: 14px; font-weight: 700; }
+.settings__row + .settings__row { border-top: 1px solid rgba(215, 236, 242, .1); }
+.settings__volume { width: 55%; accent-color: var(--lit); }
+.settings__trainer { justify-content: flex-start; gap: 16px; color: rgba(215, 236, 242, .8); font-weight: 600; }
+.settings__trainer label { display: flex; align-items: center; gap: 6px; }
+.settings__trainer input {
+  width: 44px; height: 36px; padding: 0; border: 1px solid rgba(127, 230, 245, .3); border-radius: 10px;
+  background: var(--glass); color: var(--lit); font: inherit; font-weight: 800; text-align: center; appearance: textfield; -moz-appearance: textfield;
 }
-.stage__tap {
-  justify-self: center; width: 56px; height: 56px; border-radius: 50%; cursor: pointer;
-  border: 1px solid rgba(var(--color-primary-rgb), .28); background: var(--color-surface);
-  color: var(--color-primary); font: inherit; font-size: 10px; font-weight: 800; letter-spacing: .08em;
-}
-.stage__tap:active { background: var(--color-primary-soft); }
-.stage__play {
-  width: 92px; height: 92px; border-radius: 50%; border: none; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--color-accent); color: var(--color-text-on-accent);
-  box-shadow: var(--shadow-medium);
-  transition: transform .09s ease-out, box-shadow .09s ease-out;
-}
-.stage__play svg { width: 38px; height: 38px; }
-.stage__play.beat { transform: scale(1.06); }
-.stage__play.accent {
-  box-shadow: 0 0 0 9px var(--color-accent-soft), var(--shadow-medium);
-}
-.stage.running .stage__play { background: var(--color-accent-pressed); color: var(--color-text-on-accent); box-shadow: var(--shadow-medium); }
-.stage__timer {
-  justify-self: center; min-width: 54px; text-align: center;
-  color: var(--color-text-secondary); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;
-}
-.stage__timer.running { color: var(--color-primary); }
+.settings__trainer input::-webkit-outer-spin-button, .settings__trainer input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.switch { width: 46px; height: 28px; flex-shrink: 0; padding: 3px; border: 0; border-radius: 999px; background: rgba(215, 236, 242, .2); cursor: pointer; }
+.switch i { display: block; width: 22px; height: 22px; border-radius: 50%; background: var(--key-text); transition: transform .15s; }
+.switch.on { background: var(--lit); }
+.switch.on i { transform: translateX(18px); background: var(--body); }
 
-.stage button:focus-visible, .metro-view button:focus-visible {
-  outline: 2px solid var(--color-primary); outline-offset: 2px;
+/* ── Guardar práctica ── */
+.session { flex-shrink: 0; }
+.session__save {
+  width: 100%; min-height: 50px; display: flex; align-items: center; justify-content: center; gap: 10px;
+  border: 1px solid rgba(127, 230, 245, .35); border-radius: 16px; background: transparent;
+  color: var(--lit); font: inherit; font-size: 15px; font-weight: 800; cursor: pointer;
 }
-.stage button:focus-visible { outline-color: var(--color-focus); }
+.session__save span { font-family: var(--font-display); font-weight: 600; font-variant-numeric: tabular-nums; opacity: .75; }
+.session__save:disabled { opacity: .4; cursor: default; }
+.session__rate { display: grid; grid-template-columns: repeat(3, 1fr) 44px; gap: 8px; align-items: center; }
+.session__rate > span { grid-column: 1 / -1; font-size: 13px; font-weight: 700; color: rgba(215, 236, 242, .8); }
+.session__rate button { min-height: 48px; border: 0; border-radius: 14px; background: var(--lit); color: var(--body); font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; }
+.session__rate .session__cancel { background: rgba(215, 236, 242, .15); color: var(--key-text); font-size: 20px; }
+.session__rate button:disabled { opacity: .5; }
 
-/* ---- Fuera del escenario ---- */
-.metro-row {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 11px 14px; border: 1px solid var(--color-border); border-radius: 16px;
-  background: var(--color-surface); box-shadow: var(--shadow-small);
-}
-.metro-row__label {
-  color: var(--color-text-secondary); font-size: 10px; font-weight: 800;
-  letter-spacing: .06em; text-transform: uppercase; flex-shrink: 0;
-}
-.metro-bar { display: flex; gap: 6px; }
-.metro-bar button {
-  width: 44px; height: 34px; cursor: pointer; font: inherit; font-size: 13px; font-weight: 700;
-  background: var(--color-surface-secondary); border: 1px solid var(--color-border);
-  border-radius: 10px; color: var(--color-text-secondary);
-}
-.metro-bar button small { font-size: 9px; font-weight: 500; color: inherit; opacity: .55; }
-.metro-bar button.active { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-text-on-primary); }
-.metro-bar button.active small { opacity: .75; }
-.metro-row--stack { align-items: stretch; flex-direction: column; gap: 10px; }
-.metro-setting { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.metro-subdivision { display: flex; gap: 5px; }
-.metro-subdivision button { min-width: 66px; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface-secondary); color: var(--color-text-secondary); font: inherit; cursor: pointer; }
-.metro-subdivision b { font-size: 15px; }
-.metro-subdivision small { font-size: 8px; }
-.metro-subdivision button.active { border-color: var(--color-primary); background: var(--color-primary-soft); color: var(--color-primary-hover); }
-.metro-setting--sound { padding-top: 9px; border-top: 1px solid var(--color-border); }
-.metro-toggle { padding: 6px 9px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface-secondary); color: var(--color-text-muted); font: inherit; font-size: 9px; font-weight: 700; cursor: pointer; }
-.metro-toggle.active { color: var(--color-primary-hover); border-color: var(--color-primary); background: var(--color-primary-soft); }
-.metro-volume { display: flex; align-items: center; gap: 7px; color: var(--color-text-muted); font-size: 10px; }
-.metro-volume input { width: 120px; accent-color: var(--color-primary); }
-.metro-row--trainer { display: grid; grid-template-columns: 1fr auto; }
-.metro-row--trainer > div:first-child { display: flex; flex-direction: column; gap: 3px; }
-.metro-row--trainer > div:first-child small { color: var(--color-text-muted); font-size: 9px; }
-.switch { width: 40px; height: 23px; padding: 2px; border: 0; border-radius: 999px; background: var(--color-border); cursor: pointer; transition: background .15s; }
-.switch span { display: block; width: 19px; height: 19px; border-radius: 50%; background: var(--color-surface); box-shadow: var(--shadow-small); transition: transform .15s; }
-.switch.active { background: var(--color-primary); }
-.switch.active span { transform: translateX(17px); }
-.trainer-options { grid-column: 1 / -1; display: flex; gap: 8px; padding-top: 8px; border-top: 1px solid var(--color-border); }
-.trainer-options label { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; color: var(--color-text-muted); font-size: 9px; }
-.trainer-options input { width: 42px; padding: 5px; border: 1px solid var(--color-border); border-radius: 7px; background: var(--color-surface-secondary); color: var(--color-text-primary); text-align: center; }
+.device button:focus-visible, .device input:focus-visible { outline: 2px solid var(--lit); outline-offset: 2px; }
+.metro-back:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 
-.metro-quality { display: flex; gap: 6px; }
-.metro-quality button {
-  display: flex; align-items: center; gap: 5px;
-  padding: 8px 10px; cursor: pointer; font: inherit;
-  background: var(--color-surface-secondary); border: 1px solid var(--color-border);
-  border-radius: 10px; color: var(--color-text-secondary);
+@media (max-width: 360px) {
+  .metro-view { padding-inline: 8px; }
+  .device { padding: 12px 10px 12px; gap: 10px; border-radius: 24px; }
+  .lcd { padding: 10px 12px; }
+  .device .lcd input.lcd__bpm[type='number'] { font-size: 48px; }
+  .lcd__readouts { gap: 10px; }
+  .lcd__readouts dd { font-size: 16px; }
+  .keys { gap: 7px; }
 }
-.metro-quality button.active { border-color: var(--color-primary); background: var(--color-primary-soft); color: var(--color-primary-hover); }
-.metro-quality b { font-size: 11px; }
-.metro-quality small { font-size: 11px; font-weight: 600; }
-
-.metro-save { width: 100%; justify-content: center; padding: 13px; font-variant-numeric: tabular-nums; }
-
-@media (max-width: 350px) {
-  .stage { padding-inline: 12px; }
-  .bpm-value { min-width: 104px; }
-  .bpm-value input { width: 104px; font-size: 48px; }
-  .bpm-btn { width: 40px; }
-  .bpm-btn--fine { display: none; }
-  .metro-row { flex-direction: column; align-items: stretch; }
-  .metro-quality button { flex: 1; justify-content: center; }
-  .metro-setting { align-items: stretch; flex-direction: column; }
-  .metro-subdivision button { flex: 1; min-width: 0; }
+@media (max-height: 680px) {
+  .device { gap: 8px; padding-block: 10px 14px; }
+  .device .lcd input.lcd__bpm[type='number'] { font-size: 46px; }
+  .key { min-height: 50px; }
+  .session__save { min-height: 44px; }
+}
+/* Horizontal en teléfono: perilla a toda altura a la izquierda; pantalla,
+   teclas, ajustes y guardar apilados a la derecha. */
+@media (min-width: 600px) and (max-height: 600px) {
+  .metro-view { max-width: 960px; }
+  .device { display: grid; grid-template-columns: minmax(0, .9fr) minmax(300px, 1fr); grid-template-rows: auto auto auto auto minmax(0, 1fr); gap: 10px 18px; }
+  .device__dial { grid-column: 1; grid-row: 1 / -1; min-height: 0; }
+  .lcd, .keys, .settings, .session { grid-column: 2; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .stage__play, .stage__beats span { transition: none; }
-  .stage__play.beat { transform: none; }
+  .dial-play, .lcd__beats span, .switch i, .key { transition: none; }
+  .dial-play.beat, .key:active { transform: none; }
 }
-
-.stage__label { font-size:11px; }.stage__title { font-size:21px; }.stage__meta { font-size:13px; }.bpm-value span { font-size:11px; }.stage__presets button { min-height:32px;font-size:11px;font-weight:800; }.stage__timer { font-size:17px; }
-.metro-row { padding:13px 15px;border-radius:18px;box-shadow:none; }.metro-row__label { font-size:12px; }.metro-bar button { min-height:40px;font-size:14px; }.metro-subdivision button { min-height:44px; }.metro-subdivision small,.metro-toggle,.metro-row--trainer > div:first-child small,.trainer-options label { font-size:11px; }.metro-quality small { font-size:12px; }
 </style>

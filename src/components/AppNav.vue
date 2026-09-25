@@ -17,7 +17,7 @@ const route = useRoute()
 const band = useBandStore()
 const items = computed(() => band.personalMode ? [
   { to: '/practica', label: 'Inicio', icon: 'home' },
-  { to: '/entrenar', label: 'Practicar', icon: 'tracker', paths: ['/skill/'] },
+  { to: '/entrenar', label: 'Ejercicios', icon: 'tracker', paths: ['/skill/'] },
   { to: '/rutina', label: 'Rutinas', icon: 'activities' },
   { to: '/canciones', label: 'Canciones', icon: 'songs' },
 ] : [

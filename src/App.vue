@@ -7,7 +7,7 @@
     <div v-else-if="!bandStore.ready" class="role-screen"></div>
     <template v-else>
       <AppHeader v-if="!isFullscreen" :menu-open="menuOpen" @open-menu="menuOpen = true" />
-      <main class="page app-shell active" :class="{ 'page--no-nav': hideNav }">
+      <main class="page app-shell active" :class="{ 'page--no-nav': hideNav, 'page--metronome': isMetronome }">
         <RouterView v-slot="{ Component, route: viewRoute }">
           <Transition name="route-view" mode="out-in">
             <component :is="Component" :key="viewRoute.path" />
@@ -105,13 +105,19 @@ watch(() => authStore.isAuthenticated, async (authed) => {
   }
 }, { immediate: true })
 
-// Detalle de actividad y canción van a pantalla completa
+const isMetronome = computed(() => route.path === '/metronomo')
+
+// Las vistas de práctica dedicadas ocultan el encabezado de la aplicación.
 const isFullscreen = computed(() =>
-  route.path.startsWith('/actividad/') || route.path.startsWith('/cancion/') || route.path.startsWith('/rutina/jugar/')
+  isMetronome.value || route.path.startsWith('/actividad/') || route.path.startsWith('/cancion/') || route.path.startsWith('/rutina/jugar/')
 )
 
 // Canción y formularios ocultan la navegación inferior
 const hideNav = computed(() =>
-  route.meta.form || route.path.startsWith('/cancion/') || route.path.startsWith('/rutina/jugar/')
+  isMetronome.value || route.meta.form || route.path.startsWith('/cancion/') || route.path.startsWith('/rutina/jugar/')
 )
 </script>
+
+<style scoped>
+.page.app-shell.page--metronome { max-width: none; min-height: 0; padding: 0; }
+</style>

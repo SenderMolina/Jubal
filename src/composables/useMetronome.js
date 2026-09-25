@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { todayBpm } from '../utils/skills'
 
 // Metrónomo con Web Audio: los clicks se agendan con lookahead sobre el reloj
 // del AudioContext (setInterval solo alimenta la cola), así el tempo no se
@@ -142,8 +143,9 @@ function open(s = null, workBpm = null, selectedPart = null) {
     // La parte tiene su propio tempo: arrancar ahí, o por debajo de su meta
     setBpm(selectedPart.current_bpm || Math.round(selectedPart.target_bpm * 0.7))
   } else if (s?.current_bpm || s?.target_bpm) {
-    // Arrancar en el bpm alcanzado, o algo por debajo de la meta
-    setBpm(s.current_bpm || Math.round(s.target_bpm * 0.7))
+    // Arrancar en el tempo de hoy (plan hacia la fecha meta), o algo por
+    // debajo de la meta si aún no hay tempo alcanzado
+    setBpm(todayBpm(s) || Math.round(s.target_bpm * 0.7))
   }
   resetElapsed()
 }

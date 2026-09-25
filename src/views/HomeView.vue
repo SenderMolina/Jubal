@@ -3,7 +3,7 @@
     <section class="home-hero">
       <span class="home-hero__date">{{ todayLabel }}</span>
       <h2>Un buen día<br>para hacer música.</h2>
-      <RouterLink class="home-hero__action" to="/entrenar"><span>Ir a mis objetivos</span><span aria-hidden="true">↗</span></RouterLink>
+      <RouterLink class="home-hero__action" to="/entrenar"><span>Ir a mis ejercicios</span><span aria-hidden="true">↗</span></RouterLink>
       <div class="home-hero__art" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
     </section>
 

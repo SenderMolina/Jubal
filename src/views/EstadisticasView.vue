@@ -13,7 +13,7 @@
     <section class="stat-powers" aria-label="Resumen de progreso">
       <article><span class="stat-powers__icon">🔥</span><strong>{{ streak }}</strong><small>racha actual</small></article>
       <article><span class="stat-powers__icon">⏱</span><strong>{{ formatMinutes(totalSeconds) }}</strong><small>tiempo total</small></article>
-      <article><span class="stat-powers__icon">🏆</span><strong>{{ mastered }}</strong><small>dominadas</small></article>
+      <article><span class="stat-powers__icon">🏆</span><strong>{{ mastered }}</strong><small>concluidas</small></article>
     </section>
 
     <section class="progress-card weekly-card">
@@ -119,9 +119,10 @@
       <div v-if="store.skills.length" class="skills-summary">
         <div class="skills-ring" :class="{ complete: skillCompletion >= 100 }" :style="{ '--skill-progress': skillCompletion }"><strong>{{ skillCompletion }}%</strong><small>dominio</small></div>
         <div class="skills-summary__legend">
-          <span><i class="mastered"></i>Dominadas <b>{{ mastered }}</b></span>
+          <span><i class="mastered"></i>Concluidas <b>{{ mastered }}</b></span>
           <span><i class="practicing"></i>Practicando <b>{{ practicing }}</b></span>
-          <span><i></i>Por aprender <b>{{ learning }}</b></span>
+          <span><i></i>Aprendiendo <b>{{ learning }}</b></span>
+          <span><i></i>Deseos <b>{{ wishlist }}</b></span>
         </div>
       </div>
       <p v-else class="progress-empty">Crea tu primera skill para comenzar la aventura.</p>
@@ -150,6 +151,7 @@ const activeDays = computed(() => weekDays.value.filter(day => day.seconds >= AC
 const mastered = computed(() => store.skills.filter(s => s.status === 'mastered').length)
 const practicing = computed(() => store.skills.filter(s => s.status === 'practicing').length)
 const learning = computed(() => store.skills.filter(s => s.status === 'learning').length)
+const wishlist = computed(() => store.skills.filter(s => s.status === 'wishlist').length)
 const streak = computed(() => practiceStreak(sessions.value))
 const skillCompletion = computed(() => store.skills.length
   ? Math.round(store.skills.reduce((total, skill) => total + skillProgress(skill), 0) / store.skills.length)
@@ -218,7 +220,7 @@ const achievements = computed(() => [
   { icon: '🎸', name: 'Primer riff', description: 'Completa tu primera sesión', unlocked: sessions.value.length >= 1 },
   { icon: '🔥', name: 'En llamas', description: 'Alcanza una racha de 3 días', unlocked: streak.value >= 3 },
   { icon: '⏱', name: 'Hora de poder', description: 'Acumula 60 minutos', unlocked: totalSeconds.value >= 3600 },
-  { icon: '⭐', name: 'Skill dominada', description: 'Completa una meta musical', unlocked: mastered.value >= 1 },
+  { icon: '⭐', name: 'Skill concluida', description: 'Concluye una meta musical', unlocked: mastered.value >= 1 },
 ])
 const unlockedAchievements = computed(() => achievements.value.filter(item => item.unlocked).length)
 

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { progressFromSessions, skillProgress, stableBpm } from './skills.js'
+import { groupBySource, progressFromSessions, skillProgress, stableBpm, todayBpm } from './skills.js'
 
 assert.equal(stableBpm([]), null)
 // Un pico corto o de baja calidad no cuenta como tempo alcanzado
@@ -36,5 +36,19 @@ assert.equal(progressFromSessions([
 ], 120), 100)
 assert.ok(progressFromSessions([{ duration_seconds: 60, quality: 3, bpm: 70 }], 100) > 0)
 assert.ok(progressFromSessions([{ duration_seconds: 60, quality: 3, bpm: 70 }], 100) < 100)
+
+const now = new Date('2026-09-24T10:00:00').getTime()
+assert.equal(todayBpm({ current_bpm: 120, target_bpm: 180 }, now), 120)          // sin fecha meta
+assert.equal(todayBpm({ target_bpm: 180, target_date: '2026-10-24' }, now), null) // sin tempo actual
+assert.equal(todayBpm({ current_bpm: 120, target_bpm: 180, target_date: '2026-10-24' }, now), 122) // 60 bpm / 30 días
+assert.equal(todayBpm({ current_bpm: 170, target_bpm: 180, target_date: '2026-09-24' }, now), 180) // último día
+assert.equal(todayBpm({ current_bpm: 190, target_bpm: 180, target_date: '2026-10-24' }, now), 190) // ya pasó la meta
+
+const sources = [{ id: 'y', name: 'YouTube' }, { id: 'j', name: 'Julio Valle' }]
+assert.deepEqual(groupBySource([
+  { id: 1, source_id: 'y' }, { id: 2 }, { id: 3, source_id: 'j' }, { id: 4, source_id: 'y' }, { id: 5, source_id: 'borrada' },
+], sources).map(group => [group.name, group.items.map(item => item.id)]), [
+  ['Julio Valle', [3]], ['YouTube', [1, 4]], ['Sin fuente', [2, 5]],
+])
 
 console.log('skill progress: ok')

@@ -5,10 +5,39 @@ export const TYPE_LABELS = {
   song: 'Canción',
 }
 
+// Ciclo de vida. 'mastered' (Concluido) solo lo marca el músico.
 export const STATUS_LABELS = {
-  learning: 'Por aprender',
+  wishlist: 'Deseo',
+  learning: 'Aprendiendo',
   practicing: 'Practicando',
-  mastered: 'Dominada',
+  mastered: 'Concluido',
+}
+
+// Agrupa por fuente del catálogo (A–Z, "Sin fuente" al final) conservando
+// el orden de cada grupo. Lo usan la biblioteca y el selector de rutinas.
+export const NO_SOURCE = 'Sin fuente'
+export function groupBySource(skills = [], sources = []) {
+  const names = new Map(sources.map(source => [source.id, source.name]))
+  const groups = new Map()
+  for (const skill of skills) {
+    const id = names.has(skill.source_id) ? skill.source_id : null
+    if (!groups.has(id)) groups.set(id, [])
+    groups.get(id).push(skill)
+  }
+  return [...groups].map(([id, items]) => ({ id, name: id ? names.get(id) : NO_SOURCE, items }))
+    .sort((a, b) => (!a.id) - (!b.id) || a.name.localeCompare(b.name, 'es', { numeric: true }))
+}
+
+// Tempo de trabajo del día: reparte lo que falta hasta la meta entre los días
+// que quedan a la fecha meta. Se recalcula con el BPM actual, así que si un día
+// no practicas el paso diario sube solo. Sin fecha meta = tempo actual.
+export function todayBpm(s, now = Date.now()) {
+  const current = Number(s?.current_bpm) || null
+  const target = Number(s?.target_bpm) || null
+  if (!current || !target || !s.target_date || current >= target) return current
+  const days = Math.ceil((new Date(`${s.target_date}T23:59:59`) - now) / 86400000)
+  if (days <= 1) return target
+  return Math.min(target, current + Math.ceil((target - current) / days))
 }
 
 // Única fuente de verdad para el dominio 0..100. Combina estructura, tempo
