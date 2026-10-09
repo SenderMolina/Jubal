@@ -108,6 +108,17 @@
         </div>
       </div>
 
+      <div class="song-form__field song-form__audio">
+        <label class="song-form__label" :for="`${uid}-audio`">Audio para practicar</label>
+        <p class="song-form__audio-help">MP3, M4A, WAV, OGG o WebM · máximo 25 MB.</p>
+        <input :id="`${uid}-audio`" type="file" :accept="AUDIO_ACCEPT" :disabled="busy" :aria-describedby="`${uid}-audio-status`" @change="selectAudio">
+        <p :id="`${uid}-audio-status`" class="song-form__audio-help" :role="audioError ? 'alert' : 'status'">
+          {{ audioError || (audioFile ? `Por guardar: ${audioFile.name}` : removeAudio ? 'Se quitará el audio al guardar.' : song?.audio_name || (song?.audio_path ? 'Audio adjunto' : 'Sin audio adjunto.')) }}
+        </p>
+        <button v-if="audioError || audioFile || (song?.audio_path && !removeAudio)" type="button" class="btn btn-ghost btn-sm" :disabled="busy" @click="clearAudio">Quitar audio</button>
+        <button v-else-if="removeAudio" type="button" class="btn btn-ghost btn-sm" :disabled="busy" @click="removeAudio = false">Conservar audio actual</button>
+      </div>
+
       <div v-if="store.songTypes.length" class="song-form__field">
         <span class="song-form__label">Tipo</span>
         <div class="type-pills type-pills--form">
@@ -136,6 +147,7 @@ import { computed, nextTick, onMounted, ref, useId, watch } from 'vue'
 import { useAppStore } from '../stores/app'
 import { formatDuration, parseDuration } from '../utils/duration'
 import { KEYS, fmtKey } from '../utils/keys'
+import { AUDIO_ACCEPT, validateAudioFile } from '../utils/songAudio'
 import UiCombobox from './UiCombobox.vue'
 
 // Formulario único de canción (crear y editar). Emite `submit` con los campos
@@ -170,6 +182,32 @@ const titleInput = ref(null)
 const keyRow = ref(null)
 const titleError = ref(false)
 const tab = ref('lyrics')
+const audioFile = ref(null)
+const removeAudio = ref(false)
+const audioError = ref('')
+let audioInput = null
+
+function selectAudio(event) {
+  audioInput = event.target
+  const file = event.target.files?.[0]
+  if (!file) return
+  try {
+    validateAudioFile(file)
+    audioFile.value = file
+    removeAudio.value = false
+    audioError.value = ''
+  } catch (error) {
+    audioError.value = error.message
+    event.target.value = ''
+  }
+}
+
+function clearAudio() {
+  audioFile.value = null
+  removeAudio.value = Boolean(props.song?.audio_path)
+  audioError.value = ''
+  if (audioInput) audioInput.value = ''
+}
 
 // Recordar tono y autor de la última canción creada: suelen repetirse.
 function remembered(key) {
@@ -218,6 +256,8 @@ watch(tab, async (value) => {
 })
 
 function submit() {
+  if (props.busy) return
+  if (audioError.value) { tab.value = 'details'; return }
   const title = form.value.title.trim()
   if (!title) {
     titleError.value = true
@@ -236,6 +276,8 @@ function submit() {
     duration: parseDuration(form.value.durationText),
     types: form.value.types,
     lyrics: form.value.lyrics.trim(),
+    audioFile: audioFile.value,
+    removeAudio: removeAudio.value,
   })
 }
 
@@ -245,6 +287,9 @@ onMounted(() => { if (!props.song) titleInput.value?.focus() })
 
 <style scoped>
 .song-form { display: flex; flex-direction: column; }
+.song-form__audio { padding: 14px; border: 1px solid var(--color-border); border-radius: 14px; }
+.song-form__audio input { max-width: 100%; font: inherit; font-size: .85rem; }
+.song-form__audio-help { color: var(--color-text-muted); font-size: .8rem; overflow-wrap: anywhere; }
 
 /* Título: una sola línea inferior como indicador (sin el recuadro de foco). */
 .song-form__title {

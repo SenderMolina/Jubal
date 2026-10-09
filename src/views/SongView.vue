@@ -2,26 +2,39 @@
   <div class="song-view">
     <!-- Barra superior flotante (modo vista) -->
     <header class="song-float-top">
-      <button class="song-fab" aria-label="Volver" @click="router.back()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <line x1="19" y1="12" x2="5" y2="12"/>
-          <polyline points="12 19 5 12 12 5"/>
-        </svg>
+      <button v-if="song && hasNav" class="song-fab song-fab--nav" aria-label="Canción anterior" :disabled="navIndex <= 0" @click="goTo(-1)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
       <div class="song-float-top__info">
-        <h1 class="song-float-top__title">{{ song?.title }}</h1>
-        <p v-if="songMeta" class="song-float-top__meta">{{ songMeta }}</p>
+        <div class="song-float-top__heading">
+          <h1 class="song-float-top__title" :title="song?.title">{{ song?.title }}</h1>
+          <span v-if="song && hasNav && navIndex >= 0" class="song-float-top__count" :aria-label="`${navIndex + 1} de ${navList.length}`">{{ navIndex + 1 }}/{{ navList.length }}</span>
+        </div>
+        <p v-if="songMeta" class="song-float-top__meta" :title="songMeta">{{ songMeta }}</p>
       </div>
+      <button v-if="song && hasNav" class="song-fab song-fab--nav" aria-label="Canción siguiente" :disabled="navIndex < 0 || navIndex >= navList.length - 1" @click="goTo(1)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
       <button v-if="band.can.editLibrary && song" class="song-fab" aria-label="Opciones" @click="openMenu">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
       </button>
       <span v-else class="song-fab-spacer" aria-hidden="true"></span>
     </header>
 
+    <div v-if="SHOW_PRACTICE_TOOLS && song" class="song-practice-controls">
+      <button v-if="canPlay" class="song-dock__play" @click="openPlayer">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20"/></svg>
+        Play
+      </button>
+      <button class="song-dock__practice" :disabled="practiceBusy" @click="openPractice">
+        {{ linkedSkill ? 'Ver práctica' : (practiceBusy ? 'Agregando…' : 'Practicar') }}
+      </button>
+    </div>
+
     <ActionSheet ref="sheet" />
 
     <!-- Letra y acordes: ocupan toda la vista -->
-    <article class="song-sheet" :class="{ 'song-sheet--dock': hasNav }">
+    <article class="song-sheet" :class="{ 'song-sheet--dock': song?.audio_path }">
       <template v-if="renderedLines.length">
         <template v-for="(line, i) in renderedLines" :key="i">
           <div v-if="line.type === 'spacer'" class="song-sheet__spacer"></div>
@@ -35,23 +48,12 @@
       </div>
     </article>
 
-    <!-- Controles flotantes: siempre a mano con el pulgar -->
-    <nav v-if="song && hasNav" class="song-dock" aria-label="Controles de la canción">
-      <button class="song-dock__nav" aria-label="Canción anterior" :disabled="navIndex <= 0" @click="goTo(-1)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <span v-if="navIndex >= 0" class="song-dock__count">{{ navIndex + 1 }} de {{ navList.length }}</span>
-      <button v-if="SHOW_PRACTICE_TOOLS && canPlay" class="song-dock__play" @click="openPlayer">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20"/></svg>
-        Play
-      </button>
-      <button v-if="SHOW_PRACTICE_TOOLS" class="song-dock__practice" :disabled="practiceBusy" @click="openPractice">
-        {{ linkedSkill ? 'Ver práctica' : (practiceBusy ? 'Agregando…' : 'Practicar') }}
-      </button>
-      <button class="song-dock__nav" aria-label="Canción siguiente" :disabled="navIndex < 0 || navIndex >= navList.length - 1" @click="goTo(1)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
-    </nav>
+    <SongAudioPlayer
+      v-if="song?.audio_path"
+      :key="`${song.id}:${song.audio_path}`"
+      :path="song.audio_path"
+      :title="song.title"
+    />
 
     <!-- Reproductor: pantalla completa con autoscroll -->
     <Teleport to="body">
@@ -108,6 +110,7 @@ import { formatDuration } from '../utils/duration'
 import { parseSections } from '../utils/sections'
 import ActionSheet from '../components/ActionSheet.vue'
 import ChordLine from '../components/ChordLine.vue'
+import SongAudioPlayer from '../components/SongAudioPlayer.vue'
 
 const route     = useRoute()
 const router    = useRouter()
@@ -394,8 +397,7 @@ onMounted(() => { if (SHOW_PRACTICE_TOOLS && !practice.ready) practice.loadSkill
 .song-view { position: relative; }
 
 /* Cápsulas flotantes: translúcidas para que la letra se intuya por debajo. */
-.song-float-top,
-.song-dock {
+.song-float-top {
   border: 1px solid var(--color-border);
   background: color-mix(in srgb, var(--color-navigation) 84%, transparent);
   -webkit-backdrop-filter: blur(16px);
@@ -407,14 +409,18 @@ onMounted(() => { if (SHOW_PRACTICE_TOOLS && !practice.ready) practice.loadSkill
   position: sticky;
   top: calc(8px + env(safe-area-inset-top));
   z-index: 20;
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 2px;
   padding: 6px;
   border-radius: 22px;
 }
 .song-float-top__info { flex: 1; min-width: 0; text-align: center; }
+.song-float-top__heading { display: flex; align-items: center; justify-content: center; gap: 6px; min-width: 0; }
+.song-float-top__count { flex: 0 0 auto; color: var(--color-text-secondary); font-size: .7rem; font-weight: 600; white-space: nowrap; }
 .song-float-top__title {
+  min-width: 0;
   overflow: hidden;
   color: var(--color-text-primary);
   font-size: 1rem;
@@ -449,6 +455,9 @@ onMounted(() => { if (SHOW_PRACTICE_TOOLS && !practice.ready) practice.loadSkill
 .song-fab:hover { background: var(--color-surface-secondary); }
 .song-fab:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .song-fab svg { width: 22px; height: 22px; }
+.song-fab--nav { border: 1px solid var(--color-border); background: var(--color-surface); }
+.song-fab--nav svg { width: 20px; height: 20px; }
+.song-fab:disabled { opacity: .35; cursor: default; }
 
 /* Letra a todo el ancho, sin tarjeta. El padding inferior deja libre el dock. */
 .song-sheet {
@@ -457,7 +466,7 @@ onMounted(() => { if (SHOW_PRACTICE_TOOLS && !practice.ready) practice.loadSkill
   line-height: 2;
   white-space: pre-wrap;
 }
-.song-sheet--dock { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+.song-sheet--dock { padding-bottom: calc(210px + env(safe-area-inset-bottom)); }
 .song-sheet__spacer { height: 10px; }
 /* Mismo tamaño para los dos formatos de acordes: la alineación depende de ello. */
 .song-sheet :deep(.chord-line),
@@ -474,37 +483,7 @@ onMounted(() => { if (SHOW_PRACTICE_TOOLS && !practice.ready) practice.loadSkill
   white-space: normal;
 }
 
-.song-dock {
-  position: fixed;
-  left: 50%;
-  bottom: calc(14px + env(safe-area-inset-bottom));
-  z-index: 30;
-  width: max-content;
-  max-width: calc(100% - 28px);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px;
-  border-radius: 999px;
-  transform: translateX(-50%);
-}
-.song-dock__nav {
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 50%;
-  background: var(--color-surface);
-  color: var(--color-text-primary);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.song-dock__nav:disabled { opacity: .35; cursor: default; }
-.song-dock__count { min-width: 56px; color: var(--color-text-secondary); font-size: .8rem; font-weight: 700; text-align: center; white-space: nowrap; }
-.song-dock__nav svg { width: 20px; height: 20px; }
+.song-practice-controls { display: flex; gap: 8px; margin-top: 8px; }
 .song-dock__play,
 .song-dock__practice {
   flex: 1;
@@ -529,7 +508,7 @@ onMounted(() => { if (SHOW_PRACTICE_TOOLS && !practice.ready) practice.loadSkill
 .song-dock__play svg { width: 14px; height: 14px; }
 .song-dock__practice { border: 1px solid var(--color-primary); background: var(--color-primary-soft); color: var(--color-primary-hover); }
 .song-dock__practice:disabled { opacity: .6; cursor: wait; }
-.song-dock button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.song-practice-controls button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
 /* Reproductor: letra un poco más grande, mismo tamaño en los dos formatos de acordes. */
 .player-body :deep(.chord-line),

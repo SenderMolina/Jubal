@@ -3,9 +3,10 @@ import { ref, watch } from 'vue'
 import { supabase } from '../supabase'
 import { useBandStore } from './band'
 import { clearLoadError, reportLoadError } from '../composables/useLoadErrors'
+import { AUDIO_BUCKET, saveWithSongAudio, uploadSongAudio } from '../utils/songAudio'
 
 // Columnas editables de una canción (el resto las pone la base o el ámbito).
-const SONG_FIELDS = ['title', 'author', 'key', 'bpm', 'duration', 'lyrics', 'types']
+const SONG_FIELDS = ['title', 'author', 'key', 'bpm', 'duration', 'lyrics', 'types', 'audio_path', 'audio_name']
 const pick = (fields, keys) => Object.fromEntries(keys.filter(k => k in fields).map(k => [k, fields[k]]))
 
 export const useAppStore = defineStore('app', () => {
@@ -138,20 +139,51 @@ export const useAppStore = defineStore('app', () => {
 
   const replaceIn = (list, row) => list.map(item => item.id === row.id ? { ...item, ...row } : item)
 
+  async function removeSongAudio(path) {
+    const { error } = await supabase.storage.from(AUDIO_BUCKET).remove([path])
+    if (error) throw error
+  }
+
+  async function saveSong(fields, previous = null) {
+    if (!band.can.editLibrary) throw new Error('Solo el administrador puede editar canciones de la banda.')
+    const bandId = bid()
+    const personalMode = band.personalMode
+    return saveWithSongAudio(fields, previous, {
+      upload: async file => {
+        const { data, error } = await supabase.auth.getUser()
+        if (error) throw error
+        return uploadSongAudio(supabase, file, { bandId, userId: data.user?.id })
+      },
+      save: values => {
+        if (bid() !== bandId || band.personalMode !== personalMode) throw new Error('Cambiaste de espacio. Vuelve a guardar la canción.')
+        return previous
+          ? updateRow('songs', previous.id, pick(values, SONG_FIELDS))
+          : insertRow('songs', pick(values, SONG_FIELDS))
+      },
+      remove: removeSongAudio,
+    })
+  }
+
   async function createSong(fields) {
-    const song = await insertRow('songs', pick(fields, SONG_FIELDS))
+    const song = await saveSong(fields)
     songs.value = [...songs.value, song]
     return song
   }
 
   async function updateSong(id, fields) {
-    const song = await updateRow('songs', id, pick(fields, SONG_FIELDS))
+    const previous = songs.value.find(song => song.id === id)
+    if (!previous) throw new Error('No encontramos esta canción.')
+    const song = await saveSong(fields, previous)
     songs.value = replaceIn(songs.value, song)
     return song
   }
 
   async function deleteSong(id) {
+    const audioPath = songs.value.find(song => song.id === id)?.audio_path
     await deleteRow('songs', id)
+    if (audioPath) {
+      try { await removeSongAudio(audioPath) } catch (error) { console.warn('No se pudo limpiar el audio de la canción eliminada.', error) }
+    }
     songs.value = songs.value.filter(song => song.id !== id)
     // repertoire_songs borra en cascada; reflejarlo sin esperar al realtime.
     repertoires.value = repertoires.value.map(repertoire => ({
